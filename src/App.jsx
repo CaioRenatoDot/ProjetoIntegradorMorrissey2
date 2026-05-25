@@ -1,300 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
-
-const fallbackPoster =
-  "https://placehold.co/420x590/111827/f8fafc?text=Sem+imagem";
-
-const loginRowSearches = ["breaking bad", "dark", "the office"];
-const randomFilmSearches = [
-  "matrix",
-  "batman",
-  "alien",
-  "lost",
-  "friends",
-  "sherlock",
-  "dexter",
-  "house",
-  "hannibal",
-  "fargo",
-  "watchmen",
-  "westworld",
-];
-const rowShiftLeft = [
-  "translate-x-0",
-  "-translate-x-24",
-  "-translate-x-48",
-  "-translate-x-72",
-  "-translate-x-96",
-  "-translate-x-120",
-];
-const rowShiftRight = [
-  "-translate-x-120",
-  "-translate-x-96",
-  "-translate-x-72",
-  "-translate-x-48",
-  "-translate-x-24",
-  "translate-x-0",
-];
-
-function cleanSummary(summary) {
-  if (!summary) return "Sinopse indisponivel.";
-  return summary.replace(/<[^>]*>/g, "");
-}
-
-function getRandomItems(items, quantity) {
-  return [...items].sort(() => Math.random() - 0.5).slice(0, quantity);
-}
-
-function shuffleItems(items) {
-  return [...items].sort(() => Math.random() - 0.5);
-}
-
-function SeriesCard({ show }) {
-  const genres = show.genres?.length ? show.genres.join(", ") : "Sem genero";
-  const rating = show.rating?.average ?? "N/A";
-
-  return (
-    <article className="group overflow-hidden rounded border border-slate-700 bg-slate-900 shadow-sm transition hover:-translate-y-1 hover:border-emerald-500 hover:shadow-xl hover:shadow-emerald-950/30">
-      <div className="relative aspect-[2/3] overflow-hidden bg-slate-800">
-        <img
-          className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
-          src={show.image?.medium || fallbackPoster}
-          alt={`Poster da serie ${show.name}`}
-        />
-        <div className="absolute right-2 top-2 rounded bg-slate-950/85 px-2 py-1 text-xs font-black text-emerald-400">
-          {rating}
-        </div>
-      </div>
-
-      <div className="space-y-2 p-3">
-        <h2 className="line-clamp-1 text-sm font-black text-slate-50">
-          {show.name}
-        </h2>
-        <p className="line-clamp-1 text-xs font-bold text-slate-400">
-          {genres}
-        </p>
-        <p className="line-clamp-2 text-xs leading-5 text-slate-500">
-          {cleanSummary(show.summary)}
-        </p>
-      </div>
-    </article>
-  );
-}
-
-function LoginScreen({ email, onBack, onEmailChange, onLogin, series }) {
-  const fallbackShows = useMemo(
-    () =>
-      series.length
-        ? series.slice(0, 8)
-        : [
-            {
-              id: "mock-1",
-              name: "Breaking Bad",
-              image: { medium: fallbackPoster },
-            },
-            { id: "mock-2", name: "Dark", image: { medium: fallbackPoster } },
-            {
-              id: "mock-3",
-              name: "The Office",
-              image: { medium: fallbackPoster },
-            },
-          ],
-    [series]
-  );
-  const [posterRows, setPosterRows] = useState(
-    loginRowSearches.map((query) => ({ query, shows: fallbackShows }))
-  );
-  const [rowStep, setRowStep] = useState(0);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    async function fetchLoginRows() {
-      const usedIds = new Set();
-
-      try {
-        const rows = await Promise.all(
-          loginRowSearches.map(async (query) => {
-            const response = await fetch(
-              `https://api.tvmaze.com/search/shows?q=${encodeURIComponent(
-                query
-              )}`
-            );
-
-            if (!response.ok) {
-              throw new Error("Nao foi possivel carregar os posters do login.");
-            }
-
-            const data = await response.json();
-            const shows = data
-              .map((item) => item.show)
-              .filter((show) => show.image?.medium && !usedIds.has(show.id))
-              .slice(0, 8);
-
-            shows.forEach((show) => usedIds.add(show.id));
-            return { query, shows: shows.length ? shows : fallbackShows };
-          })
-        );
-
-        if (isMounted) setPosterRows(rows);
-      } catch {
-        if (isMounted) {
-          setPosterRows(
-            loginRowSearches.map((query) => ({ query, shows: fallbackShows }))
-          );
-        }
-      }
-    }
-
-    fetchLoginRows();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [fallbackShows]);
-
-  useEffect(() => {
-    const timer = window.setInterval(() => {
-      setRowStep((currentStep) => (currentStep + 1) % rowShiftLeft.length);
-    }, 2200);
-
-    return () => window.clearInterval(timer);
-  }, []);
-
-  return (
-    <section className="relative left-1/2 grid min-h-[calc(100vh-64px)] w-screen -translate-x-1/2 overflow-hidden bg-black lg:grid-cols-[3fr_2fr]">
-      <div className="relative flex min-h-[440px] flex-col justify-center gap-5 overflow-hidden bg-[#050505] py-8 lg:min-h-[720px]">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(0,192,48,0.18),transparent_28%),linear-gradient(90deg,rgba(0,0,0,0.72),transparent_48%,rgba(0,0,0,0.72))]" />
-
-        <div className="absolute left-6 top-8 z-20 sm:left-10">
-          <p className="text-sm font-black uppercase tracking-wide text-[#00c030]">
-            Tres buscas diferentes
-          </p>
-          <h2 className="mt-2 max-w-xl text-4xl font-black text-white sm:text-5xl">
-            Posters em movimento para entrar no clima.
-          </h2>
-        </div>
-
-        <div className="relative z-10 mt-28 space-y-5 sm:mt-36">
-          {posterRows.map((row, index) => {
-            const directionClass =
-              index % 2 === 0 ? rowShiftRight[rowStep] : rowShiftLeft[rowStep];
-
-            return (
-              <div className="w-full overflow-hidden" key={row.query}>
-                <div
-                  className={`flex w-max gap-3 transition-transform duration-[1900ms] ease-linear sm:gap-4 ${directionClass}`}
-                >
-                  {[...row.shows, ...row.shows].map((show, showIndex) => (
-                    <article
-                      className="w-24 flex-none sm:w-32 lg:w-36"
-                      key={`${row.query}-${show.id}-${showIndex}`}
-                    >
-                      <img
-                        className="aspect-[2/3] w-full rounded-lg border border-slate-500/30 object-cover shadow-2xl shadow-black/50"
-                        src={show.image?.medium || fallbackPoster}
-                        alt={`Poster da serie ${show.name}`}
-                      />
-                    </article>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="flex items-center bg-[#0d0d0d] p-6 sm:p-10">
-        <div className="w-full">
-          <button
-            className="mb-12 font-serif text-3xl font-bold text-white"
-            onClick={onBack}
-            type="button"
-          >
-            Watchd
-          </button>
-
-          <h1 className="text-4xl font-black text-white">Bem-vindo de volta</h1>
-          <p className="mt-3 text-sm leading-6 text-slate-400">
-            Faca login para continuar assistindo
-          </p>
-
-          <form className="mt-6 space-y-4" onSubmit={onLogin}>
-            <div>
-              <label
-                className="mb-2 block text-sm font-bold text-slate-300"
-                htmlFor="login-email"
-              >
-                Email
-              </label>
-              <div className="relative">
-                <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">
-                  @
-                </span>
-                <input
-                  className="min-h-12 w-full rounded-md border border-zinc-800 bg-zinc-900 px-4 pl-11 text-slate-50 outline-none transition placeholder:text-slate-500 focus:border-[#00c030] focus:bg-black focus:ring-4 focus:ring-[#00c030]/15"
-                  id="login-email"
-                  onChange={(event) => onEmailChange(event.target.value)}
-                  placeholder="caio@email.com"
-                  required
-                  type="email"
-                  value={email}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label
-                className="mb-2 block text-sm font-bold text-slate-300"
-                htmlFor="login-password"
-              >
-                Senha
-              </label>
-              <div className="relative">
-                <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">
-                  #
-                </span>
-                <input
-                  className="min-h-12 w-full rounded-md border border-zinc-800 bg-zinc-900 px-4 pl-11 text-slate-50 outline-none transition placeholder:text-slate-500 focus:border-[#00c030] focus:bg-black focus:ring-4 focus:ring-[#00c030]/15"
-                  id="login-password"
-                  placeholder="Digite qualquer senha"
-                  required
-                  type="password"
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between gap-4 text-sm">
-              <label className="flex items-center gap-2 font-semibold text-slate-400">
-                <input className="accent-[#00c030]" type="checkbox" />
-                Lembrar acesso
-              </label>
-              <a
-                className="font-bold text-[#00c030] transition hover:text-[#32d85a]"
-                href="#login"
-              >
-                Esqueci minha senha
-              </a>
-            </div>
-
-            <button className="min-h-12 w-full rounded-md bg-[#00c030] px-5 font-black text-[#0d0d0d] shadow-[0_0_28px_rgba(0,192,48,0.16)] transition hover:-translate-y-0.5 hover:bg-[#32d85a] hover:shadow-[0_14px_30px_rgba(0,192,48,0.22)]">
-              Entrar
-            </button>
-          </form>
-
-          <p className="mt-8 text-sm text-slate-500">
-            Novo por aqui?{" "}
-            <a
-              className="font-bold text-[#00c030] transition hover:text-[#32d85a]"
-              href="#login"
-            >
-              Criar conta
-            </a>
-          </p>
-        </div>
-      </div>
-    </section>
-  );
-}
+import { useEffect, useState } from "react";
+import Hero from "./components/Hero";
+import LoginScreen from "./components/LoginScreen";
+import Navbar from "./components/Navbar";
+import ResultsSection from "./components/ResultsSection";
+import { randomFilmSearches } from "./data/constants";
+import { searchShows } from "./services/tvmaze";
+import { getRandomItems, shuffleItems } from "./utils/arrays";
 
 export default function App() {
   const [query, setQuery] = useState("");
@@ -317,25 +28,12 @@ export default function App() {
         if (!hasSearched) {
           const selectedSearches = getRandomItems(randomFilmSearches, 4);
           const responses = await Promise.all(
-            selectedSearches.map(async (term) => {
-              const response = await fetch(
-                `https://api.tvmaze.com/search/shows?q=${encodeURIComponent(
-                  term
-                )}`
-              );
-
-              if (!response.ok) {
-                throw new Error("Nao foi possivel carregar filmes aleatorios.");
-              }
-
-              return response.json();
-            })
+            selectedSearches.map((term) => searchShows(term))
           );
 
           const uniqueShows = new Map();
           responses
             .flat()
-            .map((item) => item.show)
             .filter((show) => show.image?.medium)
             .forEach((show) => uniqueShows.set(show.id, show));
 
@@ -343,18 +41,7 @@ export default function App() {
           return;
         }
 
-        const response = await fetch(
-          `https://api.tvmaze.com/search/shows?q=${encodeURIComponent(
-            searchTerm
-          )}`
-        );
-
-        if (!response.ok) {
-          throw new Error("Nao foi possivel buscar as series.");
-        }
-
-        const data = await response.json();
-        setSeries(data.map((item) => item.show));
+        setSeries(await searchShows(searchTerm));
       } catch (requestError) {
         setError(requestError.message);
         setSeries([]);
@@ -388,102 +75,26 @@ export default function App() {
 
   return (
     <main className="min-h-screen bg-[#14181c] text-slate-100">
-      <nav className="sticky top-0 z-50 min-h-16 border-b border-[#2e2e2e] bg-[#1a1a1a]">
-        <div className="mx-auto flex min-h-16 max-w-6xl flex-wrap items-center gap-x-6 gap-y-3 px-4 py-2 md:flex-nowrap md:py-0">
-          <a
-            className="flex-none font-serif text-2xl font-bold leading-none text-white"
-            href="/"
-          >
-            Watchd
-          </a>
+      {!isLoginVisible && (
+        <Navbar
+          isLoggedIn={isLoggedIn}
+          isNavSearchOpen={isNavSearchOpen}
+          onLoginClick={() => setIsLoginVisible(true)}
+          onSearchClose={() => setIsNavSearchOpen(false)}
+          onSearchOpen={() => setIsNavSearchOpen(true)}
+          onSearchSubmit={handleSubmit}
+          query={query}
+          setQuery={setQuery}
+        />
+      )}
 
-          <div className="order-3 flex h-10 w-full items-center gap-5 overflow-x-auto text-[13px] font-semibold uppercase tracking-[0.13em] text-[#aaa] md:order-none md:h-16 md:w-auto md:overflow-visible">
-            <a
-              className="flex h-full flex-none items-center border-b-2 border-[#00c030] text-white transition hover:border-[#00c030] hover:text-white"
-              href="#catalogo"
-              onClick={() => setIsLoginVisible(false)}
-            >
-              Films
-            </a>
-            <a
-              className="flex h-full flex-none items-center border-b-2 border-transparent transition hover:border-[#00c030] hover:text-white"
-              href="#resultados"
-            >
-              Diary
-            </a>
-            <a
-              className="flex h-full flex-none items-center border-b-2 border-transparent transition hover:border-[#00c030] hover:text-white"
-              href="#resultados"
-            >
-              Lists
-            </a>
-          </div>
-
-          <form
-            className="order-4 flex w-full items-center md:order-none md:ml-auto md:w-auto"
-            onSubmit={handleSubmit}
-          >
-            <label className="sr-only" htmlFor="nav-search">
-              Buscar serie
-            </label>
-            <button
-              className={`grid h-9 w-9 place-items-center rounded border text-lg transition ${
-                isNavSearchOpen
-                  ? "border-zinc-700 bg-zinc-800 text-white"
-                  : "border-transparent bg-transparent text-[#aaa] hover:border-zinc-700 hover:bg-zinc-800 hover:text-white"
-              }`}
-              aria-label="Abrir busca"
-              onClick={() => setIsNavSearchOpen(true)}
-              type="button"
-            >
-              &#8981;
-            </button>
-            <input
-              id="nav-search"
-              className={`h-9 rounded border border-transparent bg-[#2a2a2a] text-sm text-white outline-none transition-all duration-200 placeholder:text-[#aaa] focus:border-[#00c030] ${
-                isNavSearchOpen
-                  ? "ml-2 w-[calc(100%-44px)] px-3 opacity-100 md:w-56"
-                  : "w-0 p-0 opacity-0"
-              }`}
-              minLength="2"
-              onChange={(event) => setQuery(event.target.value)}
-              onBlur={() => setIsNavSearchOpen(false)}
-              placeholder="Search"
-              required
-              type="search"
-              value={query}
-            />
-          </form>
-
-          <div className="ml-auto flex items-center gap-2 md:ml-0">
-            {isLoggedIn ? (
-              <button
-                className="inline-flex min-h-9 items-center justify-center rounded border border-zinc-700 px-3 text-sm font-bold text-slate-200 transition hover:border-zinc-500 hover:bg-zinc-800 hover:text-white"
-                type="button"
-              >
-                Caio
-              </button>
-            ) : (
-              <button
-                className="inline-flex min-h-9 items-center justify-center rounded border border-zinc-700 px-3 text-sm font-bold text-slate-200 transition hover:border-zinc-500 hover:bg-zinc-800 hover:text-white"
-                onClick={() => setIsLoginVisible(true)}
-                type="button"
-              >
-                Sign in
-              </button>
-            )}
-            <button
-              className="inline-flex min-h-9 items-center justify-center rounded border border-[#00c030] bg-[#00c030] px-3 text-sm font-black text-[#111] transition hover:border-[#22d646] hover:bg-[#22d646]"
-              onClick={() => setIsLoginVisible(true)}
-              type="button"
-            >
-              Create account
-            </button>
-          </div>
-        </div>
-      </nav>
-
-      <div className="mx-auto max-w-6xl px-4 pb-8">
+      <div
+        className={
+          isLoginVisible
+            ? "w-full overflow-hidden"
+            : "mx-auto max-w-6xl px-4 pb-8"
+        }
+      >
         {isLoginVisible ? (
           <LoginScreen
             email={loginEmail}
@@ -494,97 +105,12 @@ export default function App() {
           />
         ) : (
           <>
-            <header
-              id="catalogo"
-              className="relative left-1/2 mb-10 min-h-[calc(100vh-64px)] w-screen -translate-x-1/2 overflow-hidden border-b border-slate-800 bg-[radial-gradient(circle_at_80%_20%,rgba(16,185,129,0.16),transparent_28%),linear-gradient(180deg,#10151a_0%,#14181c_78%)] px-4 pb-10"
-            >
-              <div className="mx-auto grid min-h-[calc(100vh-64px)] max-w-6xl gap-10 lg:grid-cols-[1.05fr_0.95fr]">
-                <div className="flex flex-col justify-center py-10">
-                  <p className="text-sm font-black uppercase tracking-wide text-emerald-400">
-                    Catalogo de series
-                  </p>
-                  <h1 className="mt-4 max-w-3xl text-5xl font-black tracking-tight text-white sm:text-6xl lg:text-7xl">
-                    Encontre algo para assistir
-                  </h1>
-                  <p className="mt-5 max-w-2xl text-base leading-7 text-slate-400 sm:text-lg">
-                    Explore uma selecao aleatoria de titulos ou pesquise pelo
-                    nome para encontrar um resultado especifico.
-                  </p>
-
-                  <form
-                    id="buscar"
-                    className="mt-8 flex flex-col gap-3 rounded border border-slate-700 bg-slate-950/80 p-3 shadow-2xl shadow-black/30 backdrop-blur sm:max-w-2xl sm:flex-row"
-                    onSubmit={handleSubmit}
-                  >
-                    <label className="sr-only" htmlFor="series-search">
-                      Buscar serie
-                    </label>
-                    <input
-                      id="series-search"
-                      className="min-h-11 flex-1 rounded border border-slate-700 bg-slate-950 px-4 text-slate-100 outline-none placeholder:text-slate-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-                      minLength="2"
-                      onChange={(event) => setQuery(event.target.value)}
-                      placeholder="Ex: The Office, Dark, Friends..."
-                      required
-                      type="search"
-                      value={query}
-                    />
-                    <button className="min-h-11 rounded bg-emerald-500 px-6 font-black text-slate-950 transition hover:bg-emerald-400">
-                      Buscar
-                    </button>
-                  </form>
-                </div>
-
-                <div className="relative min-h-[360px] self-center lg:min-h-[560px]">
-                  <div className="absolute left-0 top-8 w-[38%] rotate-[-8deg] opacity-85 sm:left-8 lg:left-0 lg:top-16">
-                    <img
-                      className="aspect-[2/3] w-full rounded border border-slate-700 object-cover shadow-2xl shadow-black/50"
-                      src={series[1]?.image?.medium || fallbackPoster}
-                      alt={`Poster da serie ${
-                        series[1]?.name || "em destaque"
-                      }`}
-                    />
-                  </div>
-                  <div className="absolute left-[28%] top-0 z-10 w-[44%]">
-                    <img
-                      className="aspect-[2/3] w-full rounded border border-emerald-500/70 object-cover shadow-2xl shadow-emerald-950/40"
-                      src={series[0]?.image?.medium || fallbackPoster}
-                      alt={`Poster da serie ${series[0]?.name || "principal"}`}
-                    />
-                  </div>
-                  <div className="absolute right-0 top-12 w-[34%] rotate-[7deg] opacity-85 sm:right-8 lg:right-0 lg:top-24">
-                    <img
-                      className="aspect-[2/3] w-full rounded border border-slate-700 object-cover shadow-2xl shadow-black/50"
-                      src={series[2]?.image?.medium || fallbackPoster}
-                      alt={`Poster da serie ${
-                        series[2]?.name || "recomendado"
-                      }`}
-                    />
-                  </div>
-
-                  <div className="absolute bottom-0 left-0 right-0 z-20 mx-auto grid max-w-md grid-cols-3 gap-3 rounded border border-slate-700 bg-slate-950/85 p-3 shadow-2xl shadow-black/40 backdrop-blur">
-                    <div>
-                      <p className="text-xl font-black text-white">
-                        {series.length}
-                      </p>
-                      <p className="text-xs font-bold text-slate-500">
-                        resultados
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xl font-black text-white">TVMaze</p>
-                      <p className="text-xs font-bold text-slate-500">dados</p>
-                    </div>
-                    <div>
-                      <p className="text-xl font-black text-emerald-400">
-                        Live
-                      </p>
-                      <p className="text-xs font-bold text-slate-500">busca</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </header>
+            <Hero
+              onSearchSubmit={handleSubmit}
+              query={query}
+              series={series}
+              setQuery={setQuery}
+            />
 
             {error && (
               <p className="mb-6 rounded border border-red-900 bg-red-950/50 px-4 py-3 text-sm font-bold text-red-200">
@@ -592,35 +118,12 @@ export default function App() {
               </p>
             )}
 
-            <div
-              id="resultados"
-              className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
-            >
-              <h2 className="text-lg font-black text-white">
-                {hasSearched
-                  ? `Resultados para ${searchTerm}`
-                  : "Filmes aleatorios"}
-              </h2>
-              <p className="text-sm font-bold text-slate-400">
-                {isLoading
-                  ? "Buscando..."
-                  : `${series.length} resultado${
-                      series.length === 1 ? "" : "s"
-                    }`}
-              </p>
-            </div>
-
-            {isLoading ? (
-              <div className="rounded border border-slate-700 bg-slate-900 p-8 text-center font-bold text-slate-400">
-                Carregando dados...
-              </div>
-            ) : (
-              <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-                {series.map((show) => (
-                  <SeriesCard key={show.id} show={show} />
-                ))}
-              </section>
-            )}
+            <ResultsSection
+              hasSearched={hasSearched}
+              isLoading={isLoading}
+              searchTerm={searchTerm}
+              series={series}
+            />
           </>
         )}
       </div>
