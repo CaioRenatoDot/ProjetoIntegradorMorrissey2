@@ -1,1 +1,211 @@
 @import "tailwindcss";
+
+.letterboxd-navbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  width: 100%;
+  min-height: 64px;
+  border-bottom: 1px solid #2e2e2e;
+  background: #1a1a1a;
+}
+
+.letterboxd-navbar__inner {
+  display: flex;
+  min-height: 64px;
+  max-width: 1152px;
+  margin: 0 auto;
+  padding: 0 16px;
+  align-items: center;
+  gap: 24px;
+}
+
+.letterboxd-navbar__logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  flex: 0 0 auto;
+  color: #fff;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1;
+  text-decoration: none;
+}
+
+.letterboxd-navbar__links {
+  display: flex;
+  height: 64px;
+  align-items: center;
+  gap: 20px;
+}
+
+.letterboxd-navbar__links a {
+  display: inline-flex;
+  height: 64px;
+  align-items: center;
+  border-bottom: 2px solid transparent;
+  color: #aaa;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.13em;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: border-color 160ms ease, color 160ms ease;
+}
+
+.letterboxd-navbar__links a:hover,
+.letterboxd-navbar__links a.is-active {
+  border-bottom-color: #00c030;
+  color: #fff;
+}
+
+.letterboxd-navbar__search {
+  position: relative;
+  margin-left: auto;
+  display: flex;
+  justify-content: flex-end;
+  flex: 0 0 auto;
+}
+
+.letterboxd-navbar__search button {
+  width: 34px;
+  height: 34px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: #aaa;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+
+.letterboxd-navbar__search button:hover,
+.letterboxd-navbar__search.is-open button {
+  border-color: #3a3a3a;
+  background: #242424;
+  color: #fff;
+}
+
+.letterboxd-navbar__search input {
+  width: 0;
+  height: 34px;
+  margin-left: 0;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: #2a2a2a;
+  color: #fff;
+  font: 400 14px Arial, Helvetica, sans-serif;
+  outline: none;
+  opacity: 0;
+  padding: 0;
+  pointer-events: none;
+  transition: width 180ms ease, opacity 160ms ease, margin-left 180ms ease,
+    padding 180ms ease, border-color 160ms ease, background-color 160ms ease;
+}
+
+.letterboxd-navbar__search input::placeholder {
+  color: #aaa;
+}
+
+.letterboxd-navbar__search input:focus {
+  border-color: #00c030;
+  background: #242424;
+}
+
+.letterboxd-navbar__search.is-open input,
+.letterboxd-navbar__search:focus-within input {
+  width: 220px;
+  margin-left: 8px;
+  opacity: 1;
+  padding: 0 12px;
+  pointer-events: auto;
+}
+
+.letterboxd-navbar__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.letterboxd-navbar__actions a,
+.letterboxd-navbar__actions button {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  cursor: pointer;
+  font: 700 13px Arial, Helvetica, sans-serif;
+  text-decoration: none;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+  white-space: nowrap;
+}
+
+.letterboxd-navbar__sign-in {
+  border: 1px solid #3a3a3a;
+  color: #e5e5e5;
+  padding: 0 13px;
+}
+
+.letterboxd-navbar__sign-in:hover {
+  border-color: #575757;
+  background: #242424;
+  color: #fff;
+}
+
+.letterboxd-navbar__create {
+  border: 1px solid #00c030;
+  background: #00c030;
+  color: #111;
+  padding: 0 14px;
+}
+
+.letterboxd-navbar__create:hover {
+  background: #22d646;
+  border-color: #22d646;
+}
+
+@media (max-width: 760px) {
+  .letterboxd-navbar__inner {
+    min-height: auto;
+    flex-wrap: wrap;
+    gap: 10px 14px;
+    padding: 10px 16px;
+  }
+
+  .letterboxd-navbar__links {
+    order: 3;
+    width: 100%;
+    height: 38px;
+    gap: 18px;
+    overflow-x: auto;
+  }
+
+  .letterboxd-navbar__links a {
+    height: 38px;
+    flex: 0 0 auto;
+  }
+
+  .letterboxd-navbar__search {
+    order: 4;
+    flex-basis: 100%;
+    margin-left: 0;
+    justify-content: flex-start;
+  }
+
+  .letterboxd-navbar__search.is-open input,
+  .letterboxd-navbar__search:focus-within input {
+    width: calc(100% - 42px);
+  }
+
+  .letterboxd-navbar__actions {
+    margin-left: auto;
+  }
+
+  .letterboxd-navbar__sign-in {
+    display: none;
+  }
+}
