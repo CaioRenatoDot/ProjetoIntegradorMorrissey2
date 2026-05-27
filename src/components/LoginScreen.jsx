@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Lock, Mail, User } from "lucide-react";
+import { KeyRound, Lock, Mail, MailCheck, User } from "lucide-react";
 import {
   fallbackPoster,
   rowShiftLeft,
@@ -23,6 +23,8 @@ export default function LoginScreen({
   const [renderedMode, setRenderedMode] = useState(mode);
   const [isModeVisible, setIsModeVisible] = useState(true);
   const isRenderedRegisterMode = renderedMode === "register";
+  const isRenderedForgotMode = renderedMode === "forgot";
+  const authCopy = getAuthCopy(renderedMode);
   const fallbackShows = useMemo(
     () =>
       series.length
@@ -100,10 +102,10 @@ export default function LoginScreen({
 
         <div className="absolute left-6 top-8 z-20 sm:left-10">
           <p className="text-sm font-black uppercase tracking-wide text-[#00c030]">
-            Your next obsession starts here
+            {authCopy.eyebrow}
           </p>
           <h2 className="mt-2 max-w-md text-2xl font-black text-white sm:text-3xl">
-            Sign in and keep discovering unforgettable stories.
+            {authCopy.feature}
           </h2>
         </div>
 
@@ -139,15 +141,19 @@ export default function LoginScreen({
             }`}
           >
             <h1 className="text-4xl font-black text-white">
-              {isRenderedRegisterMode ? "Create your account" : "Welcome back"}
+              {authCopy.title}
             </h1>
             <p className="mt-3 text-sm leading-6 text-slate-400">
-              {isRenderedRegisterMode
-                ? "Build your profile and start saving your favorite series."
-                : "Sign in to keep watching."}
+              {authCopy.description}
             </p>
 
-            {isRenderedRegisterMode ? (
+            {isRenderedForgotMode ? (
+              <ForgotPasswordForm
+                email={email}
+                onEmailChange={onEmailChange}
+                onModeChange={onModeChange}
+              />
+            ) : isRenderedRegisterMode ? (
               <RegisterForm
                 email={email}
                 onEmailChange={onEmailChange}
@@ -158,19 +164,18 @@ export default function LoginScreen({
                 email={email}
                 onEmailChange={onEmailChange}
                 onLogin={onLogin}
+                onModeChange={onModeChange}
               />
             )}
 
             <p className="mt-8 text-sm text-slate-500">
-              {isRenderedRegisterMode ? "Already have an account?" : "New here?"}{" "}
+              {authCopy.switchLabel}{" "}
               <button
                 className="font-bold text-[#00c030] transition hover:text-[#32d85a]"
-                onClick={() =>
-                  onModeChange(isRenderedRegisterMode ? "login" : "register")
-                }
+                onClick={() => onModeChange(authCopy.switchMode)}
                 type="button"
               >
-                {isRenderedRegisterMode ? "Sign in" : "Create account"}
+                {authCopy.switchAction}
               </button>
             </p>
           </div>
@@ -178,6 +183,42 @@ export default function LoginScreen({
       </div>
     </section>
   );
+}
+
+function getAuthCopy(mode) {
+  if (mode === "register") {
+    return {
+      description: "Build your profile and start saving your favorite series.",
+      eyebrow: "Your next obsession starts here",
+      feature: "Create your Watchd account and keep every story close.",
+      switchAction: "Sign in",
+      switchLabel: "Already have an account?",
+      switchMode: "login",
+      title: "Create your account",
+    };
+  }
+
+  if (mode === "forgot") {
+    return {
+      description: "Enter your email and we will send a reset link.",
+      eyebrow: "Back in one step",
+      feature: "Reset your password and return to your watchlist.",
+      switchAction: "Sign in",
+      switchLabel: "Remembered your password?",
+      switchMode: "login",
+      title: "Forgot password",
+    };
+  }
+
+  return {
+    description: "Sign in to keep watching.",
+    eyebrow: "Your next obsession starts here",
+    feature: "Sign in and keep discovering unforgettable stories.",
+    switchAction: "Create account",
+    switchLabel: "New here?",
+    switchMode: "register",
+    title: "Welcome back",
+  };
 }
 
 function buildPosterRows(shows) {
@@ -264,7 +305,7 @@ function RegisterForm({ email, onEmailChange, onRegister }) {
   );
 }
 
-function LoginForm({ email, onEmailChange, onLogin }) {
+function LoginForm({ email, onEmailChange, onLogin, onModeChange }) {
   return (
     <form className="mt-6 space-y-4" onSubmit={onLogin}>
       <LoginField
@@ -286,16 +327,69 @@ function LoginForm({ email, onEmailChange, onLogin }) {
 
       <div className="flex items-center justify-between gap-4 text-sm">
         <Label />
-        <a
+        <button
           className="font-bold text-[#00c030] transition hover:text-[#32d85a]"
-          href="#login"
+          onClick={() => onModeChange("forgot")}
+          type="button"
         >
           Forgot password
-        </a>
+        </button>
       </div>
 
       <button className="min-h-12 w-full rounded-md bg-[#00c030] px-5 font-black text-[#ffffff] shadow-[0_0_28px_rgba(0,192,48,0.16)] transition hover:-translate-y-0.5 hover:bg-[#32d85a] hover:shadow-[0_14px_30px_rgba(0,192,48,0.22)]">
         Sign in
+      </button>
+    </form>
+  );
+}
+
+function ForgotPasswordForm({ email, onEmailChange, onModeChange }) {
+  const [isSent, setIsSent] = useState(false);
+
+  function handleResetRequest(event) {
+    event.preventDefault();
+    setIsSent(true);
+  }
+
+  return (
+    <form className="mt-6 space-y-4" onSubmit={handleResetRequest}>
+      <LoginField
+        Icon={Mail}
+        id="forgot-email"
+        label="Email"
+        onChange={(event) => {
+          onEmailChange(event.target.value);
+          setIsSent(false);
+        }}
+        placeholder="caio@email.com"
+        type="email"
+        value={email}
+      />
+
+      {isSent && (
+        <div className="flex items-start gap-3 rounded-md border border-[#00c030]/30 bg-[#00c030]/10 p-4 text-sm leading-6 text-slate-200">
+          <MailCheck
+            aria-hidden="true"
+            className="mt-0.5 h-5 w-5 flex-none text-[#00c030]"
+            strokeWidth={2.4}
+          />
+          <p>
+            If this email is registered, a reset link is on its way.
+          </p>
+        </div>
+      )}
+
+      <button className="flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-[#00c030] px-5 font-black text-[#ffffff] shadow-[0_0_28px_rgba(0,192,48,0.16)] transition hover:-translate-y-0.5 hover:bg-[#32d85a] hover:shadow-[0_14px_30px_rgba(0,192,48,0.22)]">
+        <KeyRound aria-hidden="true" className="h-4 w-4" strokeWidth={2.5} />
+        Send reset link
+      </button>
+
+      <button
+        className="min-h-12 w-full rounded-md border border-zinc-800 px-5 font-black text-slate-200 transition hover:border-[#00c030]/70 hover:text-white"
+        onClick={() => onModeChange("login")}
+        type="button"
+      >
+        Back to sign in
       </button>
     </form>
   );

@@ -1,4 +1,39 @@
+import { useEffect, useMemo, useState } from "react";
 import { fallbackPoster } from "../data/constants";
+
+const carouselInterval = 3200;
+const drumSlots = [
+  {
+    className:
+      "pointer-events-none -left-[34%] top-[24%] z-0 w-[32%] rotate-[-18deg] opacity-0",
+    imageClassName: "border-slate-800",
+    offset: -2,
+  },
+  {
+    className:
+      "left-[4%] top-[18%] z-10 w-[34%] rotate-[-10deg] opacity-85",
+    imageClassName: "border-slate-700",
+    offset: -1,
+  },
+  {
+    className:
+      "left-[30%] top-0 z-20 w-[40%] rotate-0 opacity-100 shadow-emerald-950/40",
+    imageClassName: "border-emerald-500/70",
+    offset: 0,
+  },
+  {
+    className:
+      "left-[62%] top-[18%] z-10 w-[34%] rotate-[10deg] opacity-85",
+    imageClassName: "border-slate-700",
+    offset: 1,
+  },
+  {
+    className:
+      "pointer-events-none left-[102%] top-[24%] z-0 w-[32%] rotate-[18deg] opacity-0",
+    imageClassName: "border-slate-800",
+    offset: 2,
+  },
+];
 
 export default function Hero({
   isLoading,
@@ -49,36 +84,8 @@ export default function Hero({
           </form>
         </div>
 
-        <div className="relative min-h-[360px] self-center lg:min-h-[560px]">
-          {isLoading ? (
-            <>
-              <PosterSkeleton className="absolute left-0 top-8 w-[38%] rotate-[-8deg] opacity-85 sm:left-8 lg:left-0 lg:top-16" />
-              <PosterSkeleton
-                className="absolute left-[28%] top-0 z-10 w-[44%]"
-                highlight
-              />
-              <PosterSkeleton className="absolute right-0 top-12 w-[34%] rotate-[7deg] opacity-85 sm:right-8 lg:right-0 lg:top-24" />
-            </>
-          ) : (
-            <>
-              <PosterPreview
-                altName={series[1]?.name || "featured"}
-                className="absolute left-0 top-8 w-[38%] rotate-[-8deg] opacity-85 sm:left-8 lg:left-0 lg:top-16"
-                poster={series[1]?.image?.medium}
-              />
-              <PosterPreview
-                altName={series[0]?.name || "main"}
-                className="absolute left-[28%] top-0 z-10 w-[44%]"
-                imageClassName="border-emerald-500/70 shadow-emerald-950/40"
-                poster={series[0]?.image?.medium}
-              />
-              <PosterPreview
-                altName={series[2]?.name || "recommended"}
-                className="absolute right-0 top-12 w-[34%] rotate-[7deg] opacity-85 sm:right-8 lg:right-0 lg:top-24"
-                poster={series[2]?.image?.medium}
-              />
-            </>
-          )}
+        <div className="relative min-h-[360px] self-center overflow-hidden lg:min-h-[560px]">
+          {isLoading ? <HeroPosterSkeleton /> : <HeroPosterCarousel series={series} />}
 
           <div className="absolute bottom-0 left-0 right-0 z-20 mx-auto grid max-w-md grid-cols-3 gap-3 rounded border border-slate-700 bg-slate-950/85 p-3 shadow-2xl shadow-black/40 backdrop-blur">
             <Metric label="Results" value={series.length} />
@@ -88,6 +95,98 @@ export default function Hero({
         </div>
       </div>
     </header>
+  );
+}
+
+function HeroPosterCarousel({ series }) {
+  const posterPool = useMemo(
+    () => {
+      const basePosters = series.length
+        ? series
+        : [
+            {
+              id: "fallback-1",
+              name: "Featured series",
+              image: { medium: fallbackPoster },
+            },
+            {
+              id: "fallback-2",
+              name: "Recommended series",
+              image: { medium: fallbackPoster },
+            },
+            {
+              id: "fallback-3",
+              name: "Popular series",
+              image: { medium: fallbackPoster },
+            },
+          ];
+
+      const carouselPosters =
+        basePosters.length >= drumSlots.length
+          ? basePosters
+          : Array.from(
+              { length: drumSlots.length },
+              (_, index) => basePosters[index % basePosters.length]
+            );
+
+      return carouselPosters.map((poster, index) => ({
+        ...poster,
+        carouselKey: `${poster.id || poster.name}-${index}`,
+      }));
+    },
+    [series]
+  );
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  useEffect(() => {
+    setActiveIndex(0);
+  }, [posterPool]);
+
+  useEffect(() => {
+    if (posterPool.length < 2) return undefined;
+
+    const interval = window.setInterval(() => {
+      setActiveIndex(
+        (currentIndex) => (currentIndex + 1) % posterPool.length
+      );
+    }, carouselInterval);
+
+    return () => window.clearInterval(interval);
+  }, [posterPool.length]);
+
+  return (
+    <div className="absolute inset-0">
+
+      {drumSlots.map((slot) => {
+        const poster =
+          posterPool[
+            (activeIndex + slot.offset + posterPool.length) % posterPool.length
+          ];
+
+        return (
+          <PosterPreview
+            altName={poster?.name || "featured"}
+            className={`absolute origin-center transition-all duration-700 ease-in-out ${slot.className}`}
+            imageClassName={`${slot.imageClassName} bg-slate-950 shadow-black/50`}
+            key={poster?.carouselKey}
+            poster={poster?.image?.medium}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+function HeroPosterSkeleton() {
+  return (
+    <div className="absolute inset-0">
+      <PosterSkeleton className="absolute left-0 top-8 w-[38%] rotate-[-8deg] opacity-85 sm:left-8 lg:left-0 lg:top-16" />
+      <PosterSkeleton
+        className="absolute left-[28%] top-0 z-10 w-[44%]"
+        highlight
+      />
+      <PosterSkeleton className="absolute right-0 top-12 w-[34%] rotate-[7deg] opacity-85 sm:right-8 lg:right-0 lg:top-24" />
+    </div>
   );
 }
 

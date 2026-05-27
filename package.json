@@ -12,5 +12,22 @@
     "react-dom": "latest",
     "tailwindcss": "latest",
     "vite": "latest"
-  }
+  },
+  "name": "projetointegradormorrissey2",
+  "version": "1.0.0",
+  "description": "<p align=\"center\">   <img src=\"public/assets/watchedlabel.png\" alt=\"Logo do Watchd\" width=\"120\" /> </p>",
+  "main": "vite.config.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CaioRenatoDot/ProjetoIntegradorMorrissey2.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/CaioRenatoDot/ProjetoIntegradorMorrissey2/issues"
+  },
+  "homepage": "https://github.com/CaioRenatoDot/ProjetoIntegradorMorrissey2#readme"
 }
