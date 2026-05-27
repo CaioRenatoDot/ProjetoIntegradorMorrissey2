@@ -154,7 +154,7 @@ export default function App() {
             <div className="mx-auto mb-8 h-[100px] w-full max-w-[950px] overflow-hidden rounded border border-slate-800 bg-slate-950">
               <img
                 className="h-full w-full object-cover"
-                src="/assets/banner.png"
+                src={`${import.meta.env.BASE_URL}assets/banner.png`}
                 alt="Watchd banner"
               />
             </div>

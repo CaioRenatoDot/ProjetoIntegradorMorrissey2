@@ -1,4 +1,6 @@
 export default function BrandLogo({ className = "", onClick }) {
+  const baseUrl = import.meta.env.BASE_URL;
+
   function handleClick(event) {
     if (!onClick) return;
 
@@ -9,13 +11,13 @@ export default function BrandLogo({ className = "", onClick }) {
   return (
     <a
       className={`flex flex-none items-center gap-2 ${className}`}
-      href="/"
+      href={baseUrl}
       onClick={handleClick}
       aria-label="Watchd"
     >
       <img
         className="h-7 w-auto flex-none"
-        src="/assets/watchedlabel.png"
+        src={`${baseUrl}assets/watchedlabel.png`}
         alt=""
         aria-hidden="true"
       />
