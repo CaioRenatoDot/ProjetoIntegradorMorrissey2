@@ -106,8 +106,8 @@ export default function SeriesDetailPage({ onBack, showId }) {
     <section className="py-8">
       <BackButton onBack={onBack} />
 
-      <div className="grid gap-8 md:grid-cols-[280px_1fr] lg:grid-cols-[340px_1fr]">
-        <div className="relative max-w-[340px] overflow-hidden rounded border border-slate-700 bg-slate-900 shadow-2xl shadow-black/30">
+      <div className="grid items-start gap-8 md:grid-cols-[280px_1fr] lg:grid-cols-[340px_1fr]">
+        <div className="relative mx-auto w-full max-w-56 self-start overflow-hidden rounded border border-slate-700 bg-slate-900 shadow-2xl shadow-black/30 sm:max-w-72 md:mx-0 md:max-w-[340px]">
           <img
             className="aspect-[2/3] w-full object-cover"
             src={show.image?.original || show.image?.medium || fallbackPoster}

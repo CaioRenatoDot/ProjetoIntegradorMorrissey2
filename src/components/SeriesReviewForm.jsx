@@ -32,16 +32,30 @@ export default function SeriesReviewForm({
             return (
               <button
                 aria-label={`${starValue} star${starValue === 1 ? "" : "s"}`}
-                className={`grid h-9 w-9 place-items-center transition hover:scale-110 ${
-                  isSelected
-                    ? "text-emerald-400"
-                    : "text-slate-600 hover:text-emerald-400"
-                }`}
+                className="group relative grid h-9 w-9 place-items-center text-slate-600 transition hover:scale-110 hover:text-emerald-400"
                 key={starValue}
                 onClick={() => onStarClick(starValue)}
                 type="button"
               >
-                <Star size={26} fill={isSelected ? "currentColor" : "none"} />
+                <Star
+                  aria-hidden="true"
+                  className="h-[26px] w-[26px]"
+                  strokeWidth={2.2}
+                />
+                <span
+                  className="absolute left-[5px] top-1/2 h-[26px] -translate-y-1/2 overflow-hidden text-emerald-400 transition-[width] duration-500 ease-out"
+                  style={{
+                    transitionDelay: isSelected ? `${index * 90}ms` : "0ms",
+                    width: isSelected ? "26px" : "0px",
+                  }}
+                >
+                  <Star
+                    aria-hidden="true"
+                    className="h-[26px] w-[26px] flex-none"
+                    fill="currentColor"
+                    strokeWidth={2.2}
+                  />
+                </span>
               </button>
             );
           })}
