@@ -7,10 +7,10 @@
   "dependencies": {
     "@tailwindcss/vite": "latest",
     "@vitejs/plugin-react": "latest",
-    "vite": "latest",
+    "lucide-react": "^1.16.0",
     "react": "latest",
     "react-dom": "latest",
-    "tailwindcss": "latest"
-  },
-  "devDependencies": {}
+    "tailwindcss": "latest",
+    "vite": "latest"
+  }
 }

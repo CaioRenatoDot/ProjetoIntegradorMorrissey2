@@ -10,16 +10,16 @@ export default function ResultsSection({
   return (
     <>
       <div
-        id="resultados"
+        id="results"
         className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
       >
         <h2 className="text-lg font-black text-white">
-          {hasSearched ? `Resultados para ${searchTerm}` : "Filmes aleatorios"}
+          {hasSearched ? `Results for ${searchTerm}` : "All Series"}
         </h2>
         <p className="text-sm font-bold text-slate-400">
           {isLoading
-            ? "Buscando..."
-            : `${series.length} resultado${series.length === 1 ? "" : "s"}`}
+            ? "Searching..."
+            : `${series.length} result${series.length === 1 ? "" : "s"}`}
         </p>
       </div>
 

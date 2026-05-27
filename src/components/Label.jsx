@@ -1,4 +1,4 @@
-export default function Label({ children = "Lembrar acesso" }) {
+export default function Label({ children = "Remember me" }) {
   return (
     <label className="group flex cursor-pointer items-center gap-3 font-semibold text-slate-400 transition hover:text-slate-200">
       <input className="peer sr-only" type="checkbox" />

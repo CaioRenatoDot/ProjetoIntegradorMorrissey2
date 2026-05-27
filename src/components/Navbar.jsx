@@ -1,41 +1,48 @@
+import BrandLogo from "./BrandLogo";
+
 export default function Navbar({
   isLoggedIn,
   isNavSearchOpen,
+  activePage,
   onLoginClick,
+  onNavigate,
+  onRegisterClick,
   onSearchOpen,
   onSearchSubmit,
   onSearchClose,
   query,
   setQuery,
 }) {
+  const linkClassName =
+    "flex h-full flex-none items-center border-b-2 border-transparent transition hover:border-[#00c030] hover:text-white";
+  const activeLinkClassName =
+    "flex h-full flex-none items-center border-b-2 border-[#00c030] text-white transition hover:border-[#00c030] hover:text-white";
+
   return (
     <nav className="sticky top-0 z-50 min-h-16 border-b border-[#2e2e2e] bg-[#1a1a1a]">
       <div className="mx-auto flex min-h-16 max-w-6xl flex-wrap items-center gap-x-6 gap-y-3 px-4 py-2 md:flex-nowrap md:py-0">
-        <a
-          className="flex-none font-serif text-2xl font-bold leading-none text-white"
-          href="/"
-        >
-          Watchd
-        </a>
+        <BrandLogo className="mr-3 md:mr-6" />
 
-        <div className="order-3 flex h-10 w-full items-center gap-5 overflow-x-auto text-[13px] font-semibold uppercase tracking-[0.13em] text-[#aaa] md:order-none md:h-16 md:w-auto md:overflow-visible">
+        <div className="order-3 flex h-10 w-full items-center justify-center gap-5 overflow-x-auto text-[13px] font-semibold uppercase tracking-[0.13em] text-[#aaa] md:order-none md:h-16 md:w-auto md:justify-start md:overflow-visible">
           <a
-            className="flex h-full flex-none items-center border-b-2 border-[#00c030] text-white transition hover:border-[#00c030] hover:text-white"
-            href="#catalogo"
+            className={activePage === "home" ? activeLinkClassName : linkClassName}
+            href="#catalog"
+            onClick={() => onNavigate("home")}
           >
-            Filmes
+            Series
           </a>
           <a
             className="flex h-full flex-none items-center border-b-2 border-transparent transition hover:border-[#00c030] hover:text-white"
-            href="#resultados"
+            href="#results"
           >
-            Diario
+            Diary
           </a>
           <a
-            className="flex h-full flex-none items-center border-b-2 border-transparent transition hover:border-[#00c030] hover:text-white"
-            href="#resultados"
+            className={activePage === "lists" ? activeLinkClassName : linkClassName}
+            href="#lists"
+            onClick={() => onNavigate("lists")}
           >
-            Listas
+            Lists
           </a>
         </div>
 
@@ -44,7 +51,7 @@ export default function Navbar({
           onSubmit={onSearchSubmit}
         >
           <label className="sr-only" htmlFor="nav-search">
-            Buscar serie
+            Search series
           </label>
           <button
             className={`grid h-9 w-9 place-items-center rounded border text-lg transition ${
@@ -52,7 +59,7 @@ export default function Navbar({
                 ? "border-zinc-700 bg-zinc-800 text-white"
                 : "border-transparent bg-transparent text-[#aaa] hover:border-zinc-700 hover:bg-zinc-800 hover:text-white"
             }`}
-            aria-label="Abrir busca"
+            aria-label="Open search"
             onClick={onSearchOpen}
             type="button"
           >
@@ -68,7 +75,7 @@ export default function Navbar({
             minLength="2"
             onBlur={onSearchClose}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Buscar"
+            placeholder="Search"
             required
             type="search"
             value={query}
@@ -89,15 +96,15 @@ export default function Navbar({
               onClick={onLoginClick}
               type="button"
             >
-              Entrar
+              Sign in
             </button>
           )}
           <button
-            className="inline-flex min-h-9 items-center justify-center rounded border border-[#00c030] bg-[#00c030] px-3 text-sm font-black text-[#111] transition hover:border-[#22d646] hover:bg-[#22d646]"
-            onClick={onLoginClick}
+            className="inline-flex min-h-9 items-center justify-center rounded border border-[#00c030] bg-[#00c030] px-3 text-sm font-black text-[#fff] transition hover:border-[#22d646] hover:bg-[#22d646]"
+            onClick={onRegisterClick}
             type="button"
           >
-            Criar conta
+            Create account
           </button>
         </div>
       </div>

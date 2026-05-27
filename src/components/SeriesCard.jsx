@@ -10,7 +10,7 @@ export default function SeriesCard({ show }) {
         <img
           className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
           src={show.image?.medium || fallbackPoster}
-          alt={`Poster da serie ${show.name}`}
+          alt={`Poster for ${show.name}`}
         />
         <div className="absolute right-2 top-2 rounded bg-slate-950/85 px-2 py-1 text-xs font-black text-emerald-400">
           {rating}

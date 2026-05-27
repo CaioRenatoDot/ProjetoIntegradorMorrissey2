@@ -1,21 +1,25 @@
 import { useEffect, useMemo, useState } from "react";
+import { Lock, Mail, User } from "lucide-react";
 import {
   fallbackPoster,
-  loginRowSearches,
   rowShiftLeft,
   rowShiftRight,
 } from "../data/constants";
-import { searchShows } from "../services/tvmaze";
+import { getMostPopularShows } from "../services/tvmaze";
+import BrandLogo from "./BrandLogo";
 import Label from "./Label";
 import SkeletonPosterRow from "./SkeletonPosterRow";
 
 export default function LoginScreen({
   email,
+  mode = "login",
   onBack,
   onEmailChange,
   onLogin,
+  onModeChange,
   series,
 }) {
+  const isRegisterMode = mode === "register";
   const fallbackShows = useMemo(
     () =>
       series.length
@@ -35,9 +39,8 @@ export default function LoginScreen({
           ],
     [series]
   );
-  const [posterRows, setPosterRows] = useState(
-    loginRowSearches.map((query) => ({ query, shows: fallbackShows }))
-  );
+  const fallbackRows = useMemo(() => buildPosterRows(fallbackShows), [fallbackShows]);
+  const [posterRows, setPosterRows] = useState(fallbackRows);
   const [isRowsLoading, setIsRowsLoading] = useState(true);
   const [rowStep, setRowStep] = useState(0);
 
@@ -45,28 +48,15 @@ export default function LoginScreen({
     let isMounted = true;
 
     async function fetchLoginRows() {
-      const usedIds = new Set();
       setIsRowsLoading(true);
 
       try {
-        const rows = await Promise.all(
-          loginRowSearches.map(async (query) => {
-            const shows = (await searchShows(query))
-              .filter((show) => show.image?.medium && !usedIds.has(show.id))
-              .slice(0, 8);
-
-            shows.forEach((show) => usedIds.add(show.id));
-            return { query, shows: shows.length ? shows : fallbackShows };
-          })
-        );
+        const popularShows = await getMostPopularShows({ limit: 24, pages: 6 });
+        const rows = buildPosterRows(popularShows);
 
         if (isMounted) setPosterRows(rows);
       } catch {
-        if (isMounted) {
-          setPosterRows(
-            loginRowSearches.map((query) => ({ query, shows: fallbackShows }))
-          );
-        }
+        if (isMounted) setPosterRows(fallbackRows);
       } finally {
         if (isMounted) setIsRowsLoading(false);
       }
@@ -77,7 +67,7 @@ export default function LoginScreen({
     return () => {
       isMounted = false;
     };
-  }, [fallbackShows]);
+  }, [fallbackRows]);
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -94,17 +84,17 @@ export default function LoginScreen({
 
         <div className="absolute left-6 top-8 z-20 sm:left-10">
           <p className="text-sm font-black uppercase tracking-wide text-[#00c030]">
-            Seu proximo vicio comeca aqui
+            Your next obsession starts here
           </p>
           <h2 className="mt-2 max-w-md text-2xl font-black text-white sm:text-3xl">
-            Entre e continue descobrindo historias memoraveis.
+            Sign in and keep discovering unforgettable stories.
           </h2>
         </div>
 
         <div className="relative z-10 mt-28 space-y-5 sm:mt-36">
           {isRowsLoading
-            ? loginRowSearches.map((query, index) => (
-                <SkeletonPosterRow key={query} reverse={index % 2 !== 0} />
+            ? fallbackRows.map((row, index) => (
+                <SkeletonPosterRow key={row.query} reverse={index % 2 !== 0} />
               ))
             : posterRows.map((row, index) => (
                 <PosterRow
@@ -123,33 +113,40 @@ export default function LoginScreen({
 
       <div className="flex items-center bg-[#0d0d0d] p-6 sm:p-10">
         <div className="w-full">
-          <button
-            className="mb-12 font-serif text-3xl font-bold text-white"
-            onClick={onBack}
-            type="button"
-          >
-            Watchd
-          </button>
+          <BrandLogo className="mb-12" onClick={onBack} />
 
-          <h1 className="text-4xl font-black text-white">Bem-vindo de volta</h1>
+          <h1 className="text-4xl font-black text-white">
+            {isRegisterMode ? "Create your account" : "Welcome back"}
+          </h1>
           <p className="mt-3 text-sm leading-6 text-slate-400">
-            Faca login para continuar assistindo
+            {isRegisterMode
+              ? "Build your profile and start saving your favorite series."
+              : "Sign in to keep watching."}
           </p>
 
-          <LoginForm
-            email={email}
-            onEmailChange={onEmailChange}
-            onLogin={onLogin}
-          />
+          {isRegisterMode ? (
+            <RegisterForm
+              email={email}
+              onEmailChange={onEmailChange}
+              onRegister={onLogin}
+            />
+          ) : (
+            <LoginForm
+              email={email}
+              onEmailChange={onEmailChange}
+              onLogin={onLogin}
+            />
+          )}
 
           <p className="mt-8 text-sm text-slate-500">
-            Novo por aqui?{" "}
-            <a
+            {isRegisterMode ? "Already have an account?" : "New here?"}{" "}
+            <button
               className="font-bold text-[#00c030] transition hover:text-[#32d85a]"
-              href="#login"
+              onClick={() => onModeChange(isRegisterMode ? "login" : "register")}
+              type="button"
             >
-              Criar conta
-            </a>
+              {isRegisterMode ? "Sign in" : "Create account"}
+            </button>
           </p>
         </div>
       </div>
@@ -157,11 +154,95 @@ export default function LoginScreen({
   );
 }
 
+function buildPosterRows(shows) {
+  const rowSize = Math.ceil(shows.length / 3);
+
+  return Array.from({ length: 3 }, (_, index) => {
+    const rowShows = shows.slice(index * rowSize, index * rowSize + rowSize);
+    return {
+      query: `top-rated-${index}`,
+      shows: rowShows.length ? rowShows : shows,
+    };
+  });
+}
+
+function RegisterForm({ email, onEmailChange, onRegister }) {
+  const [password, setPassword] = useState("");
+  const [passwordConfirmation, setPasswordConfirmation] = useState("");
+  const passwordsDoNotMatch =
+    passwordConfirmation.length > 0 && password !== passwordConfirmation;
+
+  function handleRegister(event) {
+    event.preventDefault();
+
+    if (passwordsDoNotMatch) return;
+
+    onRegister(event);
+  }
+
+  return (
+    <form className="mt-6 space-y-4" onSubmit={handleRegister}>
+      <LoginField
+        Icon={User}
+        id="register-name"
+        label="Name"
+        placeholder="Your name"
+        type="text"
+      />
+      <LoginField
+        Icon={Mail}
+        id="register-email"
+        label="Email"
+        onChange={(event) => onEmailChange(event.target.value)}
+        placeholder="caio@email.com"
+        type="email"
+        value={email}
+      />
+      <LoginField
+        Icon={Lock}
+        id="register-password"
+        label="Password"
+        minLength="6"
+        onChange={(event) => setPassword(event.target.value)}
+        placeholder="Create a password"
+        type="password"
+        value={password}
+      />
+      <LoginField
+        Icon={Lock}
+        id="register-confirm-password"
+        label="Confirm password"
+        minLength="6"
+        onChange={(event) => setPasswordConfirmation(event.target.value)}
+        placeholder="Repeat your password"
+        type="password"
+        value={passwordConfirmation}
+      />
+      {passwordsDoNotMatch && (
+        <p className="text-sm font-bold text-red-300">
+          Passwords need to match.
+        </p>
+      )}
+
+      <div className="text-sm">
+        <Label />
+      </div>
+
+      <button
+        className="min-h-12 w-full rounded-md bg-[#00c030] px-5 font-black text-[#ffffff] shadow-[0_0_28px_rgba(0,192,48,0.16)] transition hover:-translate-y-0.5 hover:bg-[#32d85a] hover:shadow-[0_14px_30px_rgba(0,192,48,0.22)] disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-400 disabled:shadow-none disabled:hover:translate-y-0"
+        disabled={passwordsDoNotMatch}
+      >
+        Create account
+      </button>
+    </form>
+  );
+}
+
 function LoginForm({ email, onEmailChange, onLogin }) {
   return (
     <form className="mt-6 space-y-4" onSubmit={onLogin}>
       <LoginField
-        icon="@"
+        Icon={Mail}
         id="login-email"
         label="Email"
         onChange={(event) => onEmailChange(event.target.value)}
@@ -170,10 +251,10 @@ function LoginForm({ email, onEmailChange, onLogin }) {
         value={email}
       />
       <LoginField
-        icon="#"
+        Icon={Lock}
         id="login-password"
-        label="Senha"
-        placeholder="Digite qualquer senha"
+        label="Password"
+        placeholder="Enter any password"
         type="password"
       />
 
@@ -183,27 +264,29 @@ function LoginForm({ email, onEmailChange, onLogin }) {
           className="font-bold text-[#00c030] transition hover:text-[#32d85a]"
           href="#login"
         >
-          Esqueci minha senha
+          Forgot password
         </a>
       </div>
 
-      <button className="min-h-12 w-full rounded-md bg-[#00c030] px-5 font-black text-[#0d0d0d] shadow-[0_0_28px_rgba(0,192,48,0.16)] transition hover:-translate-y-0.5 hover:bg-[#32d85a] hover:shadow-[0_14px_30px_rgba(0,192,48,0.22)]">
-        Entrar
+      <button className="min-h-12 w-full rounded-md bg-[#00c030] px-5 font-black text-[#ffffff] shadow-[0_0_28px_rgba(0,192,48,0.16)] transition hover:-translate-y-0.5 hover:bg-[#32d85a] hover:shadow-[0_14px_30px_rgba(0,192,48,0.22)]">
+        Sign in
       </button>
     </form>
   );
 }
 
-function LoginField({ icon, id, label, ...inputProps }) {
+function LoginField({ Icon, id, label, ...inputProps }) {
   return (
     <div>
       <label className="mb-2 block text-sm font-bold text-slate-300" htmlFor={id}>
         {label}
       </label>
       <div className="relative">
-        <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">
-          {icon}
-        </span>
+        <Icon
+          aria-hidden="true"
+          className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500"
+          strokeWidth={2.4}
+        />
         <input
           className="min-h-12 w-full rounded-md border border-zinc-800 bg-zinc-900 px-4 pl-11 text-slate-50 outline-none transition placeholder:text-slate-500 focus:border-[#00c030] focus:bg-black focus:ring-4 focus:ring-[#00c030]/15"
           id={id}
@@ -223,14 +306,19 @@ function PosterRow({ directionClass, query, shows }) {
       >
         {[...shows, ...shows].map((show, showIndex) => (
           <article
-            className="w-24 flex-none sm:w-32 lg:w-36"
+            className="relative w-24 flex-none sm:w-32 lg:w-36"
             key={`${query}-${show.id}-${showIndex}`}
           >
             <img
               className="aspect-[2/3] w-full rounded-lg border border-slate-500/30 object-cover shadow-2xl shadow-black/50"
               src={show.image?.medium || fallbackPoster}
-              alt={`Poster da serie ${show.name}`}
+              alt={`Poster for ${show.name}`}
             />
+            {show.weight && (
+              <span className="absolute right-1 top-1 rounded bg-black/80 px-1.5 py-0.5 text-[10px] font-black text-[#00c030]">
+                {show.weight}
+              </span>
+            )}
           </article>
         ))}
       </div>

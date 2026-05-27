@@ -1,5 +1,5 @@
 export const fallbackPoster =
-  "https://placehold.co/420x590/111827/f8fafc?text=Sem+imagem";
+  "https://placehold.co/420x590/111827/f8fafc?text=No+image";
 
 export const loginRowSearches = ["breaking bad", "dark", "the office"];
 

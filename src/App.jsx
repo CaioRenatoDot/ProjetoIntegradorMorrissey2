@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import Hero from "./components/Hero";
+import ListPage from "./components/ListPage";
 import LoginScreen from "./components/LoginScreen";
 import Navbar from "./components/Navbar";
 import ResultsSection from "./components/ResultsSection";
@@ -14,6 +15,8 @@ export default function App() {
   const [hasSearched, setHasSearched] = useState(false);
   const [isNavSearchOpen, setIsNavSearchOpen] = useState(false);
   const [isLoginVisible, setIsLoginVisible] = useState(false);
+  const [activePage, setActivePage] = useState("home");
+  const [authMode, setAuthMode] = useState("login");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loginEmail, setLoginEmail] = useState("caio@email.com");
   const [isLoading, setIsLoading] = useState(false);
@@ -58,13 +61,14 @@ export default function App() {
 
     const trimmedQuery = query.trim();
     if (!trimmedQuery) {
-      setError("Digite o nome de uma serie para pesquisar.");
+      setError("Enter a series name to search.");
       return;
     }
 
     setSearchTerm(trimmedQuery);
     setHasSearched(true);
     setIsLoginVisible(false);
+    setActivePage("home");
   }
 
   function handleMockLogin(event) {
@@ -73,13 +77,21 @@ export default function App() {
     setIsLoginVisible(false);
   }
 
+  function openAuthScreen(mode) {
+    setAuthMode(mode);
+    setIsLoginVisible(true);
+  }
+
   return (
     <main className="min-h-screen bg-[#14181c] text-slate-100">
       {!isLoginVisible && (
         <Navbar
           isLoggedIn={isLoggedIn}
           isNavSearchOpen={isNavSearchOpen}
-          onLoginClick={() => setIsLoginVisible(true)}
+          activePage={activePage}
+          onNavigate={setActivePage}
+          onLoginClick={() => openAuthScreen("login")}
+          onRegisterClick={() => openAuthScreen("register")}
           onSearchClose={() => setIsNavSearchOpen(false)}
           onSearchOpen={() => setIsNavSearchOpen(true)}
           onSearchSubmit={handleSubmit}
@@ -98,11 +110,15 @@ export default function App() {
         {isLoginVisible ? (
           <LoginScreen
             email={loginEmail}
+            mode={authMode}
             onBack={() => setIsLoginVisible(false)}
             onEmailChange={setLoginEmail}
             onLogin={handleMockLogin}
+            onModeChange={setAuthMode}
             series={series}
           />
+        ) : activePage === "lists" ? (
+          <ListPage />
         ) : (
           <>
             <Hero
