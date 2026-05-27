@@ -1,5 +1,3 @@
-import watchedLabel from "../../watchedlabel.png";
-
 export default function BrandLogo({ className = "", onClick }) {
   function handleClick(event) {
     if (!onClick) return;
@@ -17,7 +15,7 @@ export default function BrandLogo({ className = "", onClick }) {
     >
       <img
         className="h-7 w-auto flex-none"
-        src={watchedLabel}
+        src="/assets/watchedlabel.png"
         alt=""
         aria-hidden="true"
       />

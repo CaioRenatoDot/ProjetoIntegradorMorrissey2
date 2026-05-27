@@ -129,6 +129,14 @@ export default function App() {
               setQuery={setQuery}
             />
 
+            <div className="mx-auto mb-8 h-[100px] w-full max-w-[950px] overflow-hidden rounded border border-slate-800 bg-slate-950">
+              <img
+                className="h-full w-full object-cover"
+                src="/assets/banner.png"
+                alt="Watchd banner"
+              />
+            </div>
+
             {error && (
               <p className="mb-6 rounded border border-red-900 bg-red-950/50 px-4 py-3 text-sm font-bold text-red-200">
                 {error}

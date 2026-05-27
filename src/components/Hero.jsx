@@ -43,7 +43,7 @@ export default function Hero({
               type="search"
               value={query}
             />
-            <button className="min-h-11 rounded bg-emerald-500 px-6 font-black text-slate-950 transition hover:bg-emerald-400">
+            <button className="min-h-11 rounded bg-[#00c030] px-6 font-black text-white transition hover:bg-emerald-400">
               Search
             </button>
           </form>
@@ -81,9 +81,9 @@ export default function Hero({
           )}
 
           <div className="absolute bottom-0 left-0 right-0 z-20 mx-auto grid max-w-md grid-cols-3 gap-3 rounded border border-slate-700 bg-slate-950/85 p-3 shadow-2xl shadow-black/40 backdrop-blur">
-            <Metric label="results" value={series.length} />
-            <Metric label="data" value="TVMaze" />
-            <Metric label="search" value="Live" valueClassName="text-emerald-400" />
+            <Metric label="Results" value={series.length} />
+            <Metric label="Data" value="TVMaze" />
+            <Metric label="Search" value="Live" valueClassName="text-[#00c030]" />
           </div>
         </div>
       </div>

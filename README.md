@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="watchedlabel.png" alt="Logo do Watchd" width="120" />
+  <img src="public/assets/watchedlabel.png" alt="Logo do Watchd" width="120" />
 </p>
 
 # Watchd

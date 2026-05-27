@@ -20,6 +20,9 @@ export default function LoginScreen({
   series,
 }) {
   const isRegisterMode = mode === "register";
+  const [renderedMode, setRenderedMode] = useState(mode);
+  const [isModeVisible, setIsModeVisible] = useState(true);
+  const isRenderedRegisterMode = renderedMode === "register";
   const fallbackShows = useMemo(
     () =>
       series.length
@@ -77,6 +80,19 @@ export default function LoginScreen({
     return () => window.clearInterval(timer);
   }, []);
 
+  useEffect(() => {
+    if (mode === renderedMode) return undefined;
+
+    setIsModeVisible(false);
+
+    const swapTimer = window.setTimeout(() => {
+      setRenderedMode(mode);
+      window.requestAnimationFrame(() => setIsModeVisible(true));
+    }, 120);
+
+    return () => window.clearTimeout(swapTimer);
+  }, [mode, renderedMode]);
+
   return (
     <section className="grid min-h-screen w-full overflow-hidden bg-black lg:grid-cols-[3fr_2fr]">
       <div className="relative flex min-h-[440px] flex-col justify-center gap-5 overflow-hidden bg-[#050505] py-8 lg:min-h-[720px]">
@@ -115,39 +131,49 @@ export default function LoginScreen({
         <div className="w-full">
           <BrandLogo className="mb-12" onClick={onBack} />
 
-          <h1 className="text-4xl font-black text-white">
-            {isRegisterMode ? "Create your account" : "Welcome back"}
-          </h1>
-          <p className="mt-3 text-sm leading-6 text-slate-400">
-            {isRegisterMode
-              ? "Build your profile and start saving your favorite series."
-              : "Sign in to keep watching."}
-          </p>
+          <div
+            className={`transition duration-200 ease-out ${
+              isModeVisible
+                ? "translate-y-0 opacity-100"
+                : "translate-y-2 opacity-0"
+            }`}
+          >
+            <h1 className="text-4xl font-black text-white">
+              {isRenderedRegisterMode ? "Create your account" : "Welcome back"}
+            </h1>
+            <p className="mt-3 text-sm leading-6 text-slate-400">
+              {isRenderedRegisterMode
+                ? "Build your profile and start saving your favorite series."
+                : "Sign in to keep watching."}
+            </p>
 
-          {isRegisterMode ? (
-            <RegisterForm
-              email={email}
-              onEmailChange={onEmailChange}
-              onRegister={onLogin}
-            />
-          ) : (
-            <LoginForm
-              email={email}
-              onEmailChange={onEmailChange}
-              onLogin={onLogin}
-            />
-          )}
+            {isRenderedRegisterMode ? (
+              <RegisterForm
+                email={email}
+                onEmailChange={onEmailChange}
+                onRegister={onLogin}
+              />
+            ) : (
+              <LoginForm
+                email={email}
+                onEmailChange={onEmailChange}
+                onLogin={onLogin}
+              />
+            )}
 
-          <p className="mt-8 text-sm text-slate-500">
-            {isRegisterMode ? "Already have an account?" : "New here?"}{" "}
-            <button
-              className="font-bold text-[#00c030] transition hover:text-[#32d85a]"
-              onClick={() => onModeChange(isRegisterMode ? "login" : "register")}
-              type="button"
-            >
-              {isRegisterMode ? "Sign in" : "Create account"}
-            </button>
-          </p>
+            <p className="mt-8 text-sm text-slate-500">
+              {isRenderedRegisterMode ? "Already have an account?" : "New here?"}{" "}
+              <button
+                className="font-bold text-[#00c030] transition hover:text-[#32d85a]"
+                onClick={() =>
+                  onModeChange(isRenderedRegisterMode ? "login" : "register")
+                }
+                type="button"
+              >
+                {isRenderedRegisterMode ? "Sign in" : "Create account"}
+              </button>
+            </p>
+          </div>
         </div>
       </div>
     </section>
@@ -314,11 +340,6 @@ function PosterRow({ directionClass, query, shows }) {
               src={show.image?.medium || fallbackPoster}
               alt={`Poster for ${show.name}`}
             />
-            {show.weight && (
-              <span className="absolute right-1 top-1 rounded bg-black/80 px-1.5 py-0.5 text-[10px] font-black text-[#00c030]">
-                {show.weight}
-              </span>
-            )}
           </article>
         ))}
       </div>
