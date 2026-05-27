@@ -15,9 +15,9 @@ const diaryLogs = [
     date: "May 26",
     user: "SamuelMorrissey",
     action: "reviewed",
-    title: "Dark",
+    title: "Rick and Morty",
     rating: 4,
-    note: "A série é bem confusa às vezes, mas isso faz parte da graça. Fiquei curioso para entender melhor a história.",
+    note: "A série é bem confusa às vezes, mas isso faz parte da graça. Tem muitos momentos engraçados e personagens interessantes, mesmo que a qualidade varie bastante entre os episódios.",
   },
   {
     id: 3,
