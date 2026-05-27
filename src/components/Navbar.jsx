@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import BrandLogo from "./BrandLogo";
 
 export default function Navbar({
@@ -13,17 +14,31 @@ export default function Navbar({
   query,
   setQuery,
 }) {
+  const [isSearchFieldExpanded, setIsSearchFieldExpanded] = useState(false);
   const linkClassName =
-    "flex h-full flex-none items-center border-b-2 border-transparent transition hover:border-[#00c030] hover:text-white";
+    "flex h-full flex-none items-center border-b-2 border-transparent px-2 transition hover:border-[#00c030] hover:text-white md:px-0";
   const activeLinkClassName =
-    "flex h-full flex-none items-center border-b-2 border-[#00c030] text-white transition hover:border-[#00c030] hover:text-white";
+    "flex h-full flex-none items-center border-b-2 border-[#00c030] px-2 text-white transition hover:border-[#00c030] hover:text-white md:px-0";
+
+  useEffect(() => {
+    if (!isNavSearchOpen) {
+      setIsSearchFieldExpanded(false);
+      return undefined;
+    }
+
+    const timer = window.setTimeout(() => {
+      setIsSearchFieldExpanded(true);
+    }, 180);
+
+    return () => window.clearTimeout(timer);
+  }, [isNavSearchOpen]);
 
   return (
     <nav className="sticky top-0 z-50 min-h-16 border-b border-[#2e2e2e] bg-[#1a1a1a]">
-      <div className="mx-auto flex min-h-16 max-w-6xl flex-wrap items-center gap-x-6 gap-y-3 px-4 py-2 md:flex-nowrap md:py-0">
-        <BrandLogo className="mr-3 md:mr-6" />
+      <div className="mx-auto flex min-h-16 max-w-6xl flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2 sm:gap-x-4 md:flex-nowrap md:gap-x-6 md:py-0">
+        <BrandLogo className="order-1 mr-auto md:order-none md:mr-6" />
 
-        <div className="order-3 flex h-10 w-full items-center justify-center gap-5 overflow-x-auto text-[13px] font-semibold uppercase tracking-[0.13em] text-[#aaa] md:order-none md:h-16 md:w-auto md:justify-start md:overflow-visible">
+        <div className="order-4 -mx-4 flex h-11 w-[calc(100%+2rem)] items-center justify-start gap-4 overflow-x-auto border-t border-[#2e2e2e] px-4 text-[12px] font-semibold uppercase tracking-[0.13em] text-[#aaa] sm:gap-5 sm:text-[13px] md:order-none md:mx-0 md:h-16 md:w-auto md:justify-start md:overflow-visible md:border-t-0 md:px-0">
           <a
             className={activePage === "home" ? activeLinkClassName : linkClassName}
             href="#catalog"
@@ -32,7 +47,7 @@ export default function Navbar({
             Series
           </a>
           <a
-            className="flex h-full flex-none items-center border-b-2 border-transparent transition hover:border-[#00c030] hover:text-white"
+            className={linkClassName}
             href="#results"
           >
             Diary
@@ -47,7 +62,11 @@ export default function Navbar({
         </div>
 
         <form
-          className="order-4 flex w-full items-center md:order-none md:ml-auto md:w-auto"
+          className={`flex items-center overflow-hidden transition-all duration-300 ease-out md:order-none md:ml-auto md:w-auto ${
+            isNavSearchOpen
+              ? "order-3 w-full translate-y-0 pt-1 opacity-100"
+              : "order-2 w-auto -translate-y-1 pt-0 opacity-100"
+          }`}
           onSubmit={onSearchSubmit}
         >
           <label className="sr-only" htmlFor="nav-search">
@@ -67,8 +86,8 @@ export default function Navbar({
           </button>
           <input
             id="nav-search"
-            className={`h-9 rounded border border-transparent bg-[#2a2a2a] text-sm text-white outline-none transition-all duration-200 placeholder:text-[#aaa] focus:border-[#00c030] ${
-              isNavSearchOpen
+            className={`h-9 rounded border border-transparent bg-[#2a2a2a] text-sm text-white outline-none transition-all duration-300 ease-out placeholder:text-[#aaa] focus:border-[#00c030] ${
+              isSearchFieldExpanded
                 ? "ml-2 w-[calc(100%-44px)] px-3 opacity-100 md:w-76"
                 : "w-0 p-0 opacity-0"
             }`}
@@ -82,7 +101,7 @@ export default function Navbar({
           />
         </form>
 
-        <div className="ml-auto flex items-center gap-2 md:ml-0">
+        <div className="order-2 flex items-center gap-2 md:order-none md:ml-0">
           {isLoggedIn ? (
             <button
               className="inline-flex min-h-9 items-center justify-center rounded border border-zinc-700 px-3 text-sm font-bold text-slate-200 transition hover:border-zinc-500 hover:bg-zinc-800 hover:text-white"
@@ -104,7 +123,8 @@ export default function Navbar({
             onClick={onRegisterClick}
             type="button"
           >
-            Create account
+            <span className="sm:hidden">Join</span>
+            <span className="hidden sm:inline">Create account</span>
           </button>
         </div>
       </div>

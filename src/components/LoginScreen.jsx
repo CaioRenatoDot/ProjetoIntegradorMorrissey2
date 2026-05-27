@@ -96,20 +96,20 @@ export default function LoginScreen({
   }, [mode, renderedMode]);
 
   return (
-    <section className="grid min-h-screen w-full overflow-hidden bg-black lg:grid-cols-[3fr_2fr]">
-      <div className="relative flex min-h-[440px] flex-col justify-center gap-5 overflow-hidden bg-[#050505] py-8 lg:min-h-[720px]">
+    <section className="grid min-h-dvh w-full overflow-hidden bg-black lg:min-h-screen lg:grid-cols-[3fr_2fr]">
+      <div className="relative hidden min-h-[720px] flex-col justify-center gap-5 overflow-hidden bg-[#050505] py-8 lg:flex">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(0,192,48,0.18),transparent_28%),linear-gradient(90deg,rgba(0,0,0,0.72),transparent_48%,rgba(0,0,0,0.72))]" />
 
-        <div className="absolute left-6 top-8 z-20 sm:left-10">
+        <div className="absolute left-10 top-8 z-20">
           <p className="text-sm font-black uppercase tracking-wide text-[#00c030]">
             {authCopy.eyebrow}
           </p>
-          <h2 className="mt-2 max-w-md text-2xl font-black text-white sm:text-3xl">
+          <h2 className="mt-2 max-w-md text-3xl font-black leading-tight text-white">
             {authCopy.feature}
           </h2>
         </div>
 
-        <div className="relative z-10 mt-28 space-y-5 sm:mt-36">
+        <div className="relative z-10 mt-36 space-y-5">
           {isRowsLoading
             ? fallbackRows.map((row, index) => (
                 <SkeletonPosterRow key={row.query} reverse={index % 2 !== 0} />
@@ -129,9 +129,9 @@ export default function LoginScreen({
         </div>
       </div>
 
-      <div className="flex items-center bg-[#0d0d0d] p-6 sm:p-10">
-        <div className="w-full">
-          <BrandLogo className="mb-12" onClick={onBack} />
+      <div className="flex min-h-dvh items-center bg-[radial-gradient(circle_at_top_left,rgba(0,192,48,0.14),transparent_34%),#0d0d0d] px-5 py-6 sm:p-10 lg:min-h-0 lg:bg-[#0d0d0d]">
+        <div className="mx-auto w-full max-w-md lg:max-w-none">
+          <BrandLogo className="mb-7 sm:mb-12" onClick={onBack} />
 
           <div
             className={`transition duration-200 ease-out ${
@@ -140,7 +140,16 @@ export default function LoginScreen({
                 : "translate-y-2 opacity-0"
             }`}
           >
-            <h1 className="text-4xl font-black text-white">
+            <div className="mb-6 lg:hidden">
+              <p className="text-xs font-black uppercase tracking-wide text-[#00c030]">
+                {authCopy.eyebrow}
+              </p>
+              <p className="mt-2 text-lg font-black leading-tight text-white">
+                {authCopy.feature}
+              </p>
+            </div>
+
+            <h1 className="text-3xl font-black leading-tight text-white sm:text-4xl">
               {authCopy.title}
             </h1>
             <p className="mt-3 text-sm leading-6 text-slate-400">
@@ -325,7 +334,7 @@ function LoginForm({ email, onEmailChange, onLogin, onModeChange }) {
         type="password"
       />
 
-      <div className="flex items-center justify-between gap-4 text-sm">
+      <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
         <Label />
         <button
           className="font-bold text-[#00c030] transition hover:text-[#32d85a]"
@@ -408,7 +417,7 @@ function LoginField({ Icon, id, label, ...inputProps }) {
           strokeWidth={2.4}
         />
         <input
-          className="min-h-12 w-full rounded-md border border-zinc-800 bg-zinc-900 px-4 pl-11 text-slate-50 outline-none transition placeholder:text-slate-500 focus:border-[#00c030] focus:bg-black focus:ring-4 focus:ring-[#00c030]/15"
+          className="min-h-12 w-full min-w-0 rounded-md border border-zinc-800 bg-zinc-900 px-4 pl-11 text-base text-slate-50 outline-none transition placeholder:text-slate-500 focus:border-[#00c030] focus:bg-black focus:ring-4 focus:ring-[#00c030]/15 sm:text-sm"
           id={id}
           required
           {...inputProps}
@@ -422,15 +431,15 @@ function PosterRow({ directionClass, query, shows }) {
   return (
     <div className="w-full overflow-hidden">
       <div
-        className={`flex w-max gap-3 transition-transform duration-[1900ms] ease-linear sm:gap-4 ${directionClass}`}
+        className={`flex w-max gap-2 transition-transform duration-[1900ms] ease-linear sm:gap-3 lg:gap-4 ${directionClass}`}
       >
         {[...shows, ...shows].map((show, showIndex) => (
           <article
-            className="relative w-24 flex-none sm:w-32 lg:w-36"
+            className="relative w-20 flex-none sm:w-28 md:w-32 lg:w-36"
             key={`${query}-${show.id}-${showIndex}`}
           >
             <img
-              className="aspect-[2/3] w-full rounded-lg border border-slate-500/30 object-cover shadow-2xl shadow-black/50"
+              className="aspect-[2/3] w-full rounded border border-slate-500/30 object-cover shadow-2xl shadow-black/50 sm:rounded-lg"
               src={show.image?.medium || fallbackPoster}
               alt={`Poster for ${show.name}`}
             />
