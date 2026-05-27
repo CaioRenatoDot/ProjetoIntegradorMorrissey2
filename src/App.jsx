@@ -157,9 +157,9 @@ export default function App() {
               setQuery={setQuery}
             />
 
-            <div className="mx-auto mb-8 h-[100px] w-full max-w-[950px] overflow-hidden rounded border border-slate-800 bg-slate-950">
+            <div className="mx-auto mb-8 hidden w-full max-w-[950px] overflow-hidden rounded border border-slate-800 bg-slate-950 sm:block sm:h-[100px]">
               <img
-                className="h-full w-full object-cover"
+                className="h-full w-full object-cover object-left"
                 src={`${import.meta.env.BASE_URL}assets/banner.png`}
                 alt="Watchd banner"
               />
