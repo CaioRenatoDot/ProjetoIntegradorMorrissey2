@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { fallbackPoster } from "../data/constants";
+import { getMostPopularShows } from "../services/tvmaze";
 
 const carouselInterval = 3200;
 const drumSlots = [
@@ -42,6 +43,39 @@ export default function Hero({
   series,
   setQuery,
 }) {
+  const [popularSeries, setPopularSeries] = useState([]);
+  const [isPopularLoading, setIsPopularLoading] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function fetchPopularSeries() {
+      try {
+        const shows = await getMostPopularShows({ limit: 12, pages: 6 });
+        if (isMounted) {
+          setPopularSeries(shows);
+        }
+      } catch {
+        if (isMounted) {
+          setPopularSeries([]);
+        }
+      } finally {
+        if (isMounted) {
+          setIsPopularLoading(false);
+        }
+      }
+    }
+
+    fetchPopularSeries();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const heroSeries = popularSeries.length ? popularSeries : series;
+  const isHeroLoading = !heroSeries.length && (isLoading || isPopularLoading);
+
   return (
     <header
       id="catalog"
@@ -85,7 +119,11 @@ export default function Hero({
         </div>
 
         <div className="relative min-h-[360px] self-center overflow-hidden lg:min-h-[560px]">
-          {isLoading ? <HeroPosterSkeleton /> : <HeroPosterCarousel series={series} />}
+          {isHeroLoading ? (
+            <HeroPosterSkeleton />
+          ) : (
+            <HeroPosterCarousel series={heroSeries} />
+          )}
 
           <div className="absolute bottom-0 left-0 right-0 z-20 mx-auto grid max-w-md grid-cols-3 gap-3 rounded border border-slate-700 bg-slate-950/85 p-3 shadow-2xl shadow-black/40 backdrop-blur">
             <Metric label="Results" value={series.length} />
