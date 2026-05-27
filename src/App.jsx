@@ -122,6 +122,7 @@ export default function App() {
         ) : (
           <>
             <Hero
+              isLoading={isLoading}
               onSearchSubmit={handleSubmit}
               query={query}
               series={series}
