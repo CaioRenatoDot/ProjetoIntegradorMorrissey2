@@ -126,9 +126,9 @@ export default function Hero({
           )}
 
           <div className="absolute bottom-0 left-0 right-0 z-20 mx-auto grid max-w-md grid-cols-3 gap-3 rounded border border-slate-700 bg-slate-950/85 p-3 shadow-2xl shadow-black/40 backdrop-blur">
-            <Metric label="Results" value={series.length} />
-            <Metric label="Data" value="TVMaze" />
-            <Metric label="Search" value="Live" valueClassName="text-[#00c030]" />
+            <Metric label="Series" value="10K+" />
+            <Metric label="Genres" value="80+" />
+            <Metric label="Discover" value="Now" valueClassName="text-[#00c030]" />
           </div>
         </div>
       </div>
@@ -142,30 +142,30 @@ function HeroPosterCarousel({ series }) {
       const basePosters = series.length
         ? series
         : [
-            {
-              id: "fallback-1",
-              name: "Featured series",
-              image: { medium: fallbackPoster },
-            },
-            {
-              id: "fallback-2",
-              name: "Recommended series",
-              image: { medium: fallbackPoster },
-            },
-            {
-              id: "fallback-3",
-              name: "Popular series",
-              image: { medium: fallbackPoster },
-            },
-          ];
+          {
+            id: "fallback-1",
+            name: "Featured series",
+            image: { medium: fallbackPoster },
+          },
+          {
+            id: "fallback-2",
+            name: "Recommended series",
+            image: { medium: fallbackPoster },
+          },
+          {
+            id: "fallback-3",
+            name: "Popular series",
+            image: { medium: fallbackPoster },
+          },
+        ];
 
       const carouselPosters =
         basePosters.length >= drumSlots.length
           ? basePosters
           : Array.from(
-              { length: drumSlots.length },
-              (_, index) => basePosters[index % basePosters.length]
-            );
+            { length: drumSlots.length },
+            (_, index) => basePosters[index % basePosters.length]
+          );
 
       return carouselPosters.map((poster, index) => ({
         ...poster,
@@ -198,7 +198,7 @@ function HeroPosterCarousel({ series }) {
       {drumSlots.map((slot) => {
         const poster =
           posterPool[
-            (activeIndex + slot.offset + posterPool.length) % posterPool.length
+          (activeIndex + slot.offset + posterPool.length) % posterPool.length
           ];
 
         return (
@@ -229,23 +229,104 @@ function HeroPosterSkeleton() {
 }
 
 function Metric({ label, value, valueClassName = "text-white" }) {
+  const animatedValue = useAnimatedMetric(value);
+
   return (
-    <div>
-      <p className={`text-xl font-black ${valueClassName}`}>{value}</p>
+    <div className="text-center">
+      <p className={`text-xl font-black ${valueClassName}`}>{animatedValue}</p>
       <p className="text-xs font-bold text-slate-500">{label}</p>
     </div>
   );
+}
+
+function useAnimatedMetric(value) {
+  const metric = useMemo(() => parseMetricValue(value), [value]);
+  const [displayValue, setDisplayValue] = useState(metric.initialValue);
+
+  useEffect(() => {
+    setDisplayValue(metric.initialValue);
+
+    if (!metric.canAnimate) {
+      setDisplayValue(metric.finalValue);
+      return undefined;
+    }
+
+    const prefersReducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches;
+
+    if (prefersReducedMotion) {
+      setDisplayValue(metric.finalValue);
+      return undefined;
+    }
+
+    const duration = 2400;
+    let animationFrame;
+    let startTime;
+
+    function animate(timestamp) {
+      if (!startTime) {
+        startTime = timestamp;
+      }
+
+      const progress = Math.min((timestamp - startTime) / duration, 1);
+      const easedProgress = 1 - Math.pow(1 - progress, 3);
+      const currentValue = Math.round(metric.number * easedProgress);
+
+      setDisplayValue(`${currentValue}${metric.suffix}`);
+
+      if (progress < 1) {
+        animationFrame = window.requestAnimationFrame(animate);
+      }
+    }
+
+    animationFrame = window.requestAnimationFrame(animate);
+
+    return () => window.cancelAnimationFrame(animationFrame);
+  }, [metric]);
+
+  return displayValue;
+}
+
+function parseMetricValue(value) {
+  if (typeof value !== "string") {
+    return {
+      canAnimate: false,
+      finalValue: value,
+      initialValue: value,
+    };
+  }
+
+  const match = value.match(/^(\d+)(.*)$/);
+
+  if (!match) {
+    return {
+      canAnimate: false,
+      finalValue: value,
+      initialValue: value,
+    };
+  }
+
+  const number = Number(match[1]);
+  const suffix = match[2];
+
+  return {
+    canAnimate: Number.isFinite(number),
+    finalValue: value,
+    initialValue: `0${suffix}`,
+    number,
+    suffix,
+  };
 }
 
 function PosterSkeleton({ className, highlight = false }) {
   return (
     <div className={className} aria-hidden="true">
       <div
-        className={`aspect-[2/3] w-full animate-pulse rounded border bg-slate-800/90 shadow-2xl ${
-          highlight
+        className={`aspect-[2/3] w-full animate-pulse rounded border bg-slate-800/90 shadow-2xl ${highlight
             ? "border-emerald-500/40 shadow-emerald-950/30"
             : "border-slate-700 shadow-black/50"
-        }`}
+          }`}
       />
     </div>
   );

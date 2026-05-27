@@ -69,7 +69,7 @@ export default function Navbar({
             id="nav-search"
             className={`h-9 rounded border border-transparent bg-[#2a2a2a] text-sm text-white outline-none transition-all duration-200 placeholder:text-[#aaa] focus:border-[#00c030] ${
               isNavSearchOpen
-                ? "ml-2 w-[calc(100%-44px)] px-3 opacity-100 md:w-56"
+                ? "ml-2 w-[calc(100%-44px)] px-3 opacity-100 md:w-76"
                 : "w-0 p-0 opacity-0"
             }`}
             minLength="2"
