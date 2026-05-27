@@ -19,7 +19,7 @@ export default function App() {
   const [activePage, setActivePage] = useState("home");
   const [authMode, setAuthMode] = useState("login");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [loginEmail, setLoginEmail] = useState("caio@email.com");
+  const [loginEmail, setLoginEmail] = useState("");
   const [currentUserName, setCurrentUserName] = useState("");
   const [selectedShowId, setSelectedShowId] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
