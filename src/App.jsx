@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
+import DiaryPage from "./components/DiaryPage";
 import Hero from "./components/Hero";
 import ListPage from "./components/ListPage";
 import LoginScreen from "./components/LoginScreen";
 import Navbar from "./components/Navbar";
 import ResultsSection from "./components/ResultsSection";
-import { randomFilmSearches } from "./data/constants";
-import { searchShows } from "./services/tvmaze";
-import { getRandomItems, shuffleItems } from "./utils/arrays";
+import SeriesDetailPage from "./components/SeriesDetailPage";
+import { getMostPopularShows, searchShows } from "./services/tvmaze";
+import { shuffleItems } from "./utils/arrays";
 
 export default function App() {
   const [query, setQuery] = useState("");
@@ -19,6 +20,8 @@ export default function App() {
   const [authMode, setAuthMode] = useState("login");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loginEmail, setLoginEmail] = useState("caio@email.com");
+  const [currentUserName, setCurrentUserName] = useState("");
+  const [selectedShowId, setSelectedShowId] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -29,18 +32,12 @@ export default function App() {
 
       try {
         if (!hasSearched) {
-          const selectedSearches = getRandomItems(randomFilmSearches, 4);
-          const responses = await Promise.all(
-            selectedSearches.map((term) => searchShows(term))
-          );
+          const popularShows = await getMostPopularShows({
+            limit: 60,
+            pages: 6,
+          });
 
-          const uniqueShows = new Map();
-          responses
-            .flat()
-            .filter((show) => show.image?.medium)
-            .forEach((show) => uniqueShows.set(show.id, show));
-
-          setSeries(shuffleItems([...uniqueShows.values()]).slice(0, 18));
+          setSeries(shuffleItems(popularShows).slice(0, 18));
           return;
         }
 
@@ -69,10 +66,11 @@ export default function App() {
     setHasSearched(true);
     setIsLoginVisible(false);
     setActivePage("home");
+    setSelectedShowId(null);
   }
 
-  function handleMockLogin(event) {
-    event.preventDefault();
+  function handleMockLogin(account) {
+    setCurrentUserName(account.displayName);
     setIsLoggedIn(true);
     setIsLoginVisible(false);
   }
@@ -82,6 +80,17 @@ export default function App() {
     setIsLoginVisible(true);
   }
 
+  function handleNavigate(page) {
+    setSelectedShowId(null);
+    setActivePage(page);
+  }
+
+  function handleSeriesSelect(showId) {
+    setSelectedShowId(showId);
+    setActivePage("details");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   return (
     <main className="min-h-screen bg-[#14181c] text-slate-100">
       {!isLoginVisible && (
@@ -89,7 +98,8 @@ export default function App() {
           isLoggedIn={isLoggedIn}
           isNavSearchOpen={isNavSearchOpen}
           activePage={activePage}
-          onNavigate={setActivePage}
+          currentUserName={currentUserName}
+          onNavigate={handleNavigate}
           onLoginClick={() => openAuthScreen("login")}
           onRegisterClick={() => openAuthScreen("register")}
           onSearchClose={() => setIsNavSearchOpen(false)}
@@ -115,10 +125,22 @@ export default function App() {
             onEmailChange={setLoginEmail}
             onLogin={handleMockLogin}
             onModeChange={setAuthMode}
-            series={series}
           />
         ) : activePage === "lists" ? (
           <ListPage />
+        ) : activePage === "diary" ? (
+          <DiaryPage
+            currentUserName={currentUserName}
+            isLoggedIn={isLoggedIn}
+          />
+        ) : activePage === "details" && selectedShowId ? (
+          <SeriesDetailPage
+            onBack={() => {
+              setSelectedShowId(null);
+              setActivePage("home");
+            }}
+            showId={selectedShowId}
+          />
         ) : (
           <>
             <Hero
@@ -146,6 +168,7 @@ export default function App() {
             <ResultsSection
               hasSearched={hasSearched}
               isLoading={isLoading}
+              onSeriesSelect={handleSeriesSelect}
               searchTerm={searchTerm}
               series={series}
             />

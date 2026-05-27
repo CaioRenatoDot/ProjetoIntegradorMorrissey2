@@ -14,6 +14,16 @@ export async function searchShows(term) {
   return data.map((item) => item.show);
 }
 
+export async function getShowById(showId) {
+  const response = await fetch(`${apiBaseUrl}/shows/${showId}`);
+
+  if (!response.ok) {
+    throw new Error("Could not load series details.");
+  }
+
+  return response.json();
+}
+
 export async function getMostPopularShows({ limit = 24, pages = 6 } = {}) {
   if (!mostPopularShowsCache) {
     mostPopularShowsCache = Promise.all(
