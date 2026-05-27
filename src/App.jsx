@@ -75,6 +75,11 @@ export default function App() {
     setIsLoginVisible(false);
   }
 
+  function handleLogout() {
+    setCurrentUserName("");
+    setIsLoggedIn(false);
+  }
+
   function openAuthScreen(mode) {
     setAuthMode(mode);
     setIsLoginVisible(true);
@@ -101,6 +106,7 @@ export default function App() {
           currentUserName={currentUserName}
           onNavigate={handleNavigate}
           onLoginClick={() => openAuthScreen("login")}
+          onLogout={handleLogout}
           onRegisterClick={() => openAuthScreen("register")}
           onSearchClose={() => setIsNavSearchOpen(false)}
           onSearchOpen={() => setIsNavSearchOpen(true)}
