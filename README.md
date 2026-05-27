@@ -10,7 +10,7 @@ Watchd é até então um protótipo interativo desenvolvido em React + Vite para
 
 ## Por que "Watchd"?
 
-Basicamente a minha razão de ter escolhido o Watchd, foi o prazer que tenho de usar uma outra plataforma de filmes chamada "Letterboxd" a qual é muito legal e bem estruturada, não tinha ciência de alguma outra plataforma dessa voltada para series, então criei a minha própria. 
+Basicamente a minha razão de ter escolhido o Watchd, foi o prazer que tenho de usar uma outra plataforma de filmes chamada "Letterboxd" a qual é muito legal e bem estruturada, não tinha ciência de alguma outra plataforma dessa voltada para series, então criei a minha própria. Todos os visuais foram criados por mim, logo, banners e favicon. (Criei pelo Canva)
 
 ## Escopo
 
