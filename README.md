@@ -1,8 +1,5 @@
-<p align="center">
-  <img src="public/assets/watchedlabel.png" alt="Logo do Watchd" width="120" />
-</p>
+<img width="1200" height="1200" alt="Image" src="https://github.com/user-attachments/assets/081326e1-63e0-4561-b6ae-91acdb91b838" />
 
-# Watchd
 
 Watchd é um projeto em React + Vite para descobrir séries, explorar listas da comunidade e visualizar títulos populares usando a API do TVMaze.
 
