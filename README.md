@@ -44,3 +44,4 @@ npm run build
 
 - [Arquitetura](docs/ARCHITECTURE.md)
 - [Componentes](docs/COMPONENTS.md)
+- [Imagens de Design](docs/DESIGN_IMAGES.md)
