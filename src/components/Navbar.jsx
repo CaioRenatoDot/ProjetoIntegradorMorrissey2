@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import BrandLogo from "./BrandLogo";
 
 export default function Navbar({
+  currentUserName,
   isLoggedIn,
   isNavSearchOpen,
   activePage,
@@ -47,8 +48,9 @@ export default function Navbar({
             Series
           </a>
           <a
-            className={linkClassName}
-            href="#results"
+            className={activePage === "diary" ? activeLinkClassName : linkClassName}
+            href="#diary"
+            onClick={() => onNavigate("diary")}
           >
             Diary
           </a>
@@ -107,7 +109,7 @@ export default function Navbar({
               className="inline-flex min-h-9 items-center justify-center rounded border border-zinc-700 px-3 text-sm font-bold text-slate-200 transition hover:border-zinc-500 hover:bg-zinc-800 hover:text-white"
               type="button"
             >
-              Caio
+              {currentUserName}
             </button>
           ) : (
             <button

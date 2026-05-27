@@ -1,14 +1,25 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { KeyRound, Lock, Mail, MailCheck, User } from "lucide-react";
-import {
-  fallbackPoster,
-  rowShiftLeft,
-  rowShiftRight,
-} from "../data/constants";
+import { fallbackPoster, rowShiftLeft, rowShiftRight } from "../data/constants";
 import { getMostPopularShows } from "../services/tvmaze";
 import BrandLogo from "./BrandLogo";
 import Label from "./Label";
 import SkeletonPosterRow from "./SkeletonPosterRow";
+
+const demoAccounts = [
+  {
+    displayName: "Caio",
+    identifier: "caio@email.com",
+    label: "Caio",
+    password: "123456",
+  },
+  {
+    displayName: "SamuelMorrissey",
+    identifier: "SamuelMorrissey",
+    label: "Samuel",
+    password: "123456",
+  },
+];
 
 export default function LoginScreen({
   email,
@@ -17,35 +28,13 @@ export default function LoginScreen({
   onEmailChange,
   onLogin,
   onModeChange,
-  series,
 }) {
-  const isRegisterMode = mode === "register";
   const [renderedMode, setRenderedMode] = useState(mode);
   const [isModeVisible, setIsModeVisible] = useState(true);
   const isRenderedRegisterMode = renderedMode === "register";
   const isRenderedForgotMode = renderedMode === "forgot";
   const authCopy = getAuthCopy(renderedMode);
-  const fallbackShows = useMemo(
-    () =>
-      series.length
-        ? series.slice(0, 8)
-        : [
-            {
-              id: "mock-1",
-              name: "Breaking Bad",
-              image: { medium: fallbackPoster },
-            },
-            { id: "mock-2", name: "Dark", image: { medium: fallbackPoster } },
-            {
-              id: "mock-3",
-              name: "The Office",
-              image: { medium: fallbackPoster },
-            },
-          ],
-    [series]
-  );
-  const fallbackRows = useMemo(() => buildPosterRows(fallbackShows), [fallbackShows]);
-  const [posterRows, setPosterRows] = useState(fallbackRows);
+  const [posterRows, setPosterRows] = useState([]);
   const [isRowsLoading, setIsRowsLoading] = useState(true);
   const [rowStep, setRowStep] = useState(0);
 
@@ -61,7 +50,7 @@ export default function LoginScreen({
 
         if (isMounted) setPosterRows(rows);
       } catch {
-        if (isMounted) setPosterRows(fallbackRows);
+        if (isMounted) setPosterRows([]);
       } finally {
         if (isMounted) setIsRowsLoading(false);
       }
@@ -72,7 +61,7 @@ export default function LoginScreen({
     return () => {
       isMounted = false;
     };
-  }, [fallbackRows]);
+  }, []);
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -110,9 +99,9 @@ export default function LoginScreen({
         </div>
 
         <div className="relative z-10 mt-36 space-y-5">
-          {isRowsLoading
-            ? fallbackRows.map((row, index) => (
-                <SkeletonPosterRow key={row.query} reverse={index % 2 !== 0} />
+          {isRowsLoading || !posterRows.length
+            ? Array.from({ length: 3 }, (_, index) => (
+                <SkeletonPosterRow key={index} reverse={index % 2 !== 0} />
               ))
             : posterRows.map((row, index) => (
                 <PosterRow
@@ -243,6 +232,7 @@ function buildPosterRows(shows) {
 }
 
 function RegisterForm({ email, onEmailChange, onRegister }) {
+  const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirmation, setPasswordConfirmation] = useState("");
   const passwordsDoNotMatch =
@@ -253,7 +243,9 @@ function RegisterForm({ email, onEmailChange, onRegister }) {
 
     if (passwordsDoNotMatch) return;
 
-    onRegister(event);
+    onRegister({
+      displayName: name.trim() || email.split("@")[0] || "User",
+    });
   }
 
   return (
@@ -262,8 +254,10 @@ function RegisterForm({ email, onEmailChange, onRegister }) {
         Icon={User}
         id="register-name"
         label="Name"
+        onChange={(event) => setName(event.target.value)}
         placeholder="Your name"
         type="text"
+        value={name}
       />
       <LoginField
         Icon={Mail}
@@ -315,24 +309,54 @@ function RegisterForm({ email, onEmailChange, onRegister }) {
 }
 
 function LoginForm({ email, onEmailChange, onLogin, onModeChange }) {
+  const [password, setPassword] = useState("");
+  const [loginError, setLoginError] = useState("");
+
+  function handleLogin(event) {
+    event.preventDefault();
+
+    const account = demoAccounts.find((demoAccount) => {
+      return (
+        demoAccount.identifier.toLowerCase() === email.trim().toLowerCase() &&
+        demoAccount.password === password
+      );
+    });
+
+    if (!account) {
+      setLoginError("Use one of the demo accounts below.");
+      return;
+    }
+
+    setLoginError("");
+    onLogin(account);
+  }
+
   return (
-    <form className="mt-6 space-y-4" onSubmit={onLogin}>
+    <form className="mt-6 space-y-4" onSubmit={handleLogin}>
       <LoginField
-        Icon={Mail}
-        id="login-email"
-        label="Email"
+        Icon={User}
+        id="login-identifier"
+        label="Email or username"
         onChange={(event) => onEmailChange(event.target.value)}
-        placeholder="caio@email.com"
-        type="email"
+        placeholder="Email or username"
+        type="text"
         value={email}
       />
       <LoginField
         Icon={Lock}
         id="login-password"
         label="Password"
-        placeholder="Enter any password"
+        onChange={(event) => {
+          setPassword(event.target.value);
+          setLoginError("");
+        }}
+        placeholder="Password"
         type="password"
+        value={password}
       />
+      {loginError && (
+        <p className="text-sm font-bold text-red-300">{loginError}</p>
+      )}
 
       <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
         <Label />

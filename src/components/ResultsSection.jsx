@@ -4,6 +4,7 @@ import SkeletonCard from "./SkeletonCard";
 export default function ResultsSection({
   hasSearched,
   isLoading,
+  onSeriesSelect,
   searchTerm,
   series,
 }) {
@@ -32,7 +33,7 @@ export default function ResultsSection({
       ) : (
         <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
           {series.map((show) => (
-            <SeriesCard key={show.id} show={show} />
+            <SeriesCard key={show.id} onSelect={onSeriesSelect} show={show} />
           ))}
         </section>
       )}
