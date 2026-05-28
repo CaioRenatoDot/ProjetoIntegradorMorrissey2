@@ -41,7 +41,7 @@ export default function Navbar({
       <div className="mx-auto flex min-h-16 max-w-6xl flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2 sm:gap-x-4 md:flex-nowrap md:gap-x-6 md:py-0">
         <BrandLogo className="order-1 mr-auto md:order-none md:mr-6" />
 
-        <div className="order-4 -mx-4 flex h-11 w-[calc(100%+2rem)] items-center justify-start gap-4 overflow-x-auto border-t border-[#2e2e2e] px-4 text-[12px] font-semibold uppercase tracking-[0.13em] text-[#aaa] sm:gap-5 sm:text-[13px] md:order-none md:mx-0 md:h-16 md:w-auto md:justify-start md:overflow-visible md:border-t-0 md:px-0">
+        <div className="order-4 -mx-4 flex h-11 w-[calc(100%+2rem)] items-center justify-center gap-4 overflow-x-auto border-t border-[#2e2e2e] px-4 text-[12px] font-semibold uppercase tracking-[0.13em] text-[#aaa] sm:gap-5 sm:text-[13px] md:order-none md:mx-0 md:h-16 md:w-auto md:justify-start md:overflow-visible md:border-t-0 md:px-0">
           <a
             className={activePage === "home" ? activeLinkClassName : linkClassName}
             href="#catalog"
