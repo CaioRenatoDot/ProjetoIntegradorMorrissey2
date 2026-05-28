@@ -11,7 +11,7 @@ export default function SeriesCard({ onSelect, show }) {
         onClick={() => onSelect(show.id)}
         type="button"
       >
-        <div className="relative aspect-[2/3] overflow-hidden bg-slate-800">
+        <div className="relative h-56 overflow-hidden bg-slate-800 sm:h-64 lg:h-72">
           <img
             className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
             src={show.image?.medium || fallbackPoster}
@@ -22,7 +22,7 @@ export default function SeriesCard({ onSelect, show }) {
           </div>
         </div>
 
-        <div className="space-y-2 p-3">
+        <div className="flex min-h-36 flex-col gap-2 p-4">
           <h2 className="line-clamp-1 text-sm font-black text-slate-50">
             {show.name}
           </h2>

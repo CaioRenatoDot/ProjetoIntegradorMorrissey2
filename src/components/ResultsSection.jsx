@@ -12,12 +12,12 @@ export default function ResultsSection({
     <>
       <div
         id="results"
-        className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
+        className="mb-6 flex items-center justify-between gap-4 border-b border-slate-800 pb-4"
       >
-        <h2 className="text-lg font-black text-white">
+        <h2 className="text-xl font-black text-white sm:text-2xl">
           {hasSearched ? `Results for ${searchTerm}` : "All Series"}
         </h2>
-        <p className="text-sm font-bold text-slate-400">
+        <p className="flex-none text-right text-sm font-bold text-slate-400">
           {isLoading
             ? "Searching..."
             : `${series.length} result${series.length === 1 ? "" : "s"}`}
@@ -25,13 +25,13 @@ export default function ResultsSection({
       </div>
 
       {isLoading ? (
-        <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+        <section className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-4 sm:grid-cols-[repeat(auto-fill,minmax(180px,1fr))] lg:gap-5">
           {Array.from({ length: 12 }, (_, index) => (
             <SkeletonCard key={index} />
           ))}
         </section>
       ) : (
-        <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+        <section className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-4 sm:grid-cols-[repeat(auto-fill,minmax(180px,1fr))] lg:gap-5">
           {series.map((show) => (
             <SeriesCard key={show.id} onSelect={onSeriesSelect} show={show} />
           ))}

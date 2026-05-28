@@ -79,10 +79,10 @@ export default function Hero({
   return (
     <header
       id="catalog"
-      className="relative left-1/2 mb-10 min-h-[calc(100vh-64px)] w-screen -translate-x-1/2 overflow-hidden border-b border-slate-800 bg-[radial-gradient(circle_at_80%_20%,rgba(16,185,129,0.16),transparent_28%),linear-gradient(180deg,#10151a_0%,#14181c_78%)] px-4 pb-10"
+      className="relative left-1/2 mb-6 flex min-h-[calc(100vh-64px)] w-[100dvw] -translate-x-1/2 items-center overflow-hidden border-b border-slate-800 bg-[radial-gradient(circle_at_80%_20%,rgba(16,185,129,0.16),transparent_28%),linear-gradient(180deg,#10151a_0%,#14181c_78%)] px-4 py-8 pb-8 sm:py-10 sm:pb-10 lg:py-0 lg:pb-8"
     >
-      <div className="mx-auto grid min-h-[calc(100vh-64px)] max-w-6xl gap-10 lg:grid-cols-[1.05fr_0.95fr]">
-        <div className="flex flex-col justify-center py-10">
+      <div className="mx-auto grid w-full max-w-6xl gap-10 lg:grid-cols-[1.05fr_0.95fr]">
+        <div className="flex flex-col">
           <p className="text-sm font-black uppercase tracking-wide text-emerald-400">
             Series catalog
           </p>
@@ -96,7 +96,7 @@ export default function Hero({
 
           <form
             id="search"
-            className="mt-8 flex flex-col gap-3 rounded border border-slate-700 bg-slate-950/80 p-3 shadow-2xl shadow-black/30 backdrop-blur sm:max-w-2xl sm:flex-row"
+            className="mt-8 flex w-full max-w-2xl items-center gap-2 rounded-lg border border-slate-700 bg-slate-950/85 p-2 shadow-2xl shadow-black/30 backdrop-blur transition focus-within:border-[#00c030] focus-within:ring-4 focus-within:ring-[#00c030]/15"
             onSubmit={onSearchSubmit}
           >
             <label className="sr-only" htmlFor="series-search">
@@ -104,7 +104,7 @@ export default function Hero({
             </label>
             <input
               id="series-search"
-              className="min-h-11 flex-1 rounded border border-slate-700 bg-slate-950 px-4 text-slate-100 outline-none placeholder:text-slate-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+              className="min-h-11 min-w-0 flex-1 border-0 bg-transparent px-3 text-sm text-slate-100 outline-none placeholder:text-slate-500 sm:text-base"
               minLength="2"
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Ex: The Office, Dark, Friends..."
@@ -112,7 +112,7 @@ export default function Hero({
               type="search"
               value={query}
             />
-            <button className="min-h-11 rounded bg-[#00c030] px-6 font-black text-white transition hover:bg-emerald-400">
+            <button className="min-h-11 flex-none rounded-md bg-[#00c030] px-4 text-sm font-black text-white transition hover:bg-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-300 sm:px-6 sm:text-base">
               Search
             </button>
           </form>
@@ -324,8 +324,8 @@ function PosterSkeleton({ className, highlight = false }) {
     <div className={className} aria-hidden="true">
       <div
         className={`aspect-[2/3] w-full animate-pulse rounded border bg-slate-800/90 shadow-2xl ${highlight
-            ? "border-emerald-500/40 shadow-emerald-950/30"
-            : "border-slate-700 shadow-black/50"
+          ? "border-emerald-500/40 shadow-emerald-950/30"
+          : "border-slate-700 shadow-black/50"
           }`}
       />
     </div>

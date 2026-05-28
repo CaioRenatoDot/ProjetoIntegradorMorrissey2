@@ -97,7 +97,7 @@ export default function App() {
   }
 
   return (
-    <main className="min-h-screen bg-[#14181c] text-slate-100">
+    <main className="min-h-screen overflow-x-clip bg-[#14181c] text-slate-100">
       {!isLoginVisible && (
         <Navbar
           isLoggedIn={isLoggedIn}
@@ -120,7 +120,7 @@ export default function App() {
         className={
           isLoginVisible
             ? "w-full overflow-hidden"
-            : "mx-auto max-w-6xl px-4 pb-8"
+            : "mx-auto w-full max-w-[1360px] px-4 pb-10 sm:px-6 lg:px-8"
         }
       >
         {isLoginVisible ? (
@@ -157,7 +157,7 @@ export default function App() {
               setQuery={setQuery}
             />
 
-            <div className="mx-auto mb-8 hidden w-full max-w-[950px] overflow-hidden rounded border border-slate-800 bg-slate-950 sm:block sm:h-[100px]">
+            <div className="mx-auto mb-10 hidden w-full overflow-hidden rounded border border-slate-800 bg-slate-950 sm:block sm:h-[110px] lg:h-[120px]">
               <img
                 className="h-full w-full object-cover object-left"
                 src={`${import.meta.env.BASE_URL}assets/banner.png`}
