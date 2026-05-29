@@ -1,84 +1,10 @@
 import { Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { fallbackPoster } from "../data/constants";
+import { communityLists } from "../data/communityLists";
 import { searchShows } from "../services/tvmaze";
 
-const communityLists = [
-  {
-    id: 1,
-    title: "Series to Watch at Night",
-    creator: "Marina Lopes",
-    category: "Suspense",
-    items: [
-      { name: "Dark", search: "Dark" },
-      { name: "Mindhunter", search: "Mindhunter" },
-      { name: "The Night Of", search: "The Night Of" },
-      { name: "True Detective", search: "True Detective" },
-    ],
-  },
-  {
-    id: 2,
-    title: "Horror Series for the Weekend",
-    creator: "Rafael Costa",
-    category: "Horror",
-    items: [
-      { name: "The Haunting of Hill House", search: "The Haunting of Hill House" },
-      { name: "Marianne", search: "Marianne" },
-      { name: "Archive 81", search: "Archive 81" },
-      { name: "Penny Dreadful", search: "Penny Dreadful" },
-    ],
-  },
-  {
-    id: 3,
-    title: "Short Series to Binge",
-    creator: "Bianca Nunes",
-    category: "Miniseries",
-    items: [
-      { name: "Chernobyl", search: "Chernobyl" },
-      { name: "When They See Us", search: "When They See Us" },
-      { name: "Maid", search: "Maid" },
-      { name: "The Queen's Gambit", search: "The Queen's Gambit" },
-    ],
-  },
-  {
-    id: 4,
-    title: "TV Classics to Watch at Least Once",
-    creator: "Andre Silva",
-    category: "Classics",
-    items: [
-      { name: "Breaking Bad", search: "Breaking Bad" },
-      { name: "The Sopranos", search: "The Sopranos" },
-      { name: "The Wire", search: "The Wire" },
-      { name: "Mad Men", search: "Mad Men" },
-    ],
-  },
-  {
-    id: 5,
-    title: "Light Comedies to Relax",
-    creator: "Luiza Martins",
-    category: "Comedy",
-    items: [
-      { name: "The Office", search: "The Office" },
-      { name: "Brooklyn Nine-Nine", search: "Brooklyn Nine-Nine" },
-      { name: "Parks and Recreation", search: "Parks and Recreation" },
-      { name: "Modern Family", search: "Modern Family" },
-    ],
-  },
-  {
-    id: 6,
-    title: "Animated Series with Great Stories",
-    creator: "Caio Henrique",
-    category: "Animation",
-    items: [
-      { name: "Arcane", search: "Arcane" },
-      { name: "Avatar: The Last Airbender", search: "Avatar: The Last Airbender" },
-      { name: "BoJack Horseman", search: "BoJack Horseman" },
-      { name: "Castlevania", search: "Castlevania" },
-    ],
-  },
-];
-
-export default function ListPage() {
+export default function ListPage({ onListSelect }) {
   const [listSearch, setListSearch] = useState("");
 
   const filteredLists = useMemo(() => {
@@ -128,7 +54,7 @@ export default function ListPage() {
       {filteredLists.length ? (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {filteredLists.map((list) => (
-            <ListCard key={list.id} list={list} />
+            <ListCard key={list.id} list={list} onSelect={onListSelect} />
           ))}
         </div>
       ) : (
@@ -143,7 +69,7 @@ export default function ListPage() {
   );
 }
 
-function ListCard({ list }) {
+function ListCard({ list, onSelect }) {
   const previewItems = useMemo(() => list.items.slice(0, 3), [list.items]);
   const [isLoadingPreview, setIsLoadingPreview] = useState(true);
   const [previewShows, setPreviewShows] = useState(
@@ -186,6 +112,7 @@ function ListCard({ list }) {
   return (
     <button
       type="button"
+      onClick={() => onSelect?.(list.id)}
       className="flex min-h-72 w-full cursor-pointer flex-col rounded border border-slate-800 bg-slate-950 p-5 text-left shadow-xl shadow-black/20 transition hover:-translate-y-1 hover:border-[#00c030]/70 hover:shadow-[#00c030]/10 focus:outline-none focus:ring-4 focus:ring-[#00c030]/20"
       aria-label={`View full list: ${list.title}`}
     >

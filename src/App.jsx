@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import DiaryPage from "./components/DiaryPage";
 import Hero from "./components/Hero";
 import HomeFooter from "./components/HomeFooter";
+import ListDetailPage from "./components/ListDetailPage";
 import ListPage from "./components/ListPage";
 import LoginScreen from "./components/LoginScreen";
 import Navbar from "./components/Navbar";
@@ -9,6 +10,17 @@ import ResultsSection from "./components/ResultsSection";
 import SeriesDetailPage from "./components/SeriesDetailPage";
 import { getMostPopularShows, searchShows } from "./services/tvmaze";
 import { shuffleItems } from "./utils/arrays";
+
+function getAuthModeFromHistoryState(state) {
+  if (!state || typeof state !== "object") return null;
+
+  const mode = state.watchdAuthMode;
+  if (mode === "login" || mode === "register" || mode === "forgot") {
+    return mode;
+  }
+
+  return null;
+}
 
 export default function App() {
   const [query, setQuery] = useState("");
@@ -23,6 +35,8 @@ export default function App() {
   const [loginEmail, setLoginEmail] = useState("");
   const [currentUserName, setCurrentUserName] = useState("");
   const [selectedShowId, setSelectedShowId] = useState(null);
+  const [selectedListId, setSelectedListId] = useState(null);
+  const [detailReturnPage, setDetailReturnPage] = useState("home");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -54,6 +68,23 @@ export default function App() {
     fetchSeries();
   }, [hasSearched, searchTerm]);
 
+  useEffect(() => {
+    function handlePopState(event) {
+      const historyMode = getAuthModeFromHistoryState(event.state);
+
+      if (historyMode) {
+        setAuthMode(historyMode);
+        setIsLoginVisible(true);
+        return;
+      }
+
+      setIsLoginVisible(false);
+    }
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
   function handleSubmit(event) {
     event.preventDefault();
 
@@ -68,12 +99,13 @@ export default function App() {
     setIsLoginVisible(false);
     setActivePage("home");
     setSelectedShowId(null);
+    setSelectedListId(null);
   }
 
   function handleMockLogin(account) {
     setCurrentUserName(account.displayName);
     setIsLoggedIn(true);
-    setIsLoginVisible(false);
+    closeAuthScreen();
   }
 
   function handleLogout() {
@@ -84,15 +116,54 @@ export default function App() {
   function openAuthScreen(mode) {
     setAuthMode(mode);
     setIsLoginVisible(true);
+
+    const currentHistoryMode = getAuthModeFromHistoryState(window.history.state);
+    if (currentHistoryMode === mode) return;
+
+    const currentState =
+      window.history.state && typeof window.history.state === "object"
+        ? window.history.state
+        : {};
+
+    window.history.pushState(
+      {
+        ...currentState,
+        watchdAuthMode: mode,
+      },
+      "",
+      window.location.href
+    );
+  }
+
+  function handleAuthModeChange(mode) {
+    openAuthScreen(mode);
+  }
+
+  function closeAuthScreen() {
+    if (getAuthModeFromHistoryState(window.history.state)) {
+      window.history.back();
+      return;
+    }
+
+    setIsLoginVisible(false);
   }
 
   function handleNavigate(page) {
     setSelectedShowId(null);
+    setSelectedListId(null);
     setActivePage(page);
   }
 
-  function handleSeriesSelect(showId) {
+  function handleListSelect(listId) {
+    setSelectedShowId(null);
+    setSelectedListId(listId);
+    setActivePage("listDetails");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function handleSeriesSelect(showId, returnPage = "home") {
     setSelectedShowId(showId);
+    setDetailReturnPage(returnPage);
     setActivePage("details");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -128,13 +199,19 @@ export default function App() {
           <LoginScreen
             email={loginEmail}
             mode={authMode}
-            onBack={() => setIsLoginVisible(false)}
+            onBack={closeAuthScreen}
             onEmailChange={setLoginEmail}
             onLogin={handleMockLogin}
-            onModeChange={setAuthMode}
+            onModeChange={handleAuthModeChange}
           />
         ) : activePage === "lists" ? (
-          <ListPage />
+          <ListPage onListSelect={handleListSelect} />
+        ) : activePage === "listDetails" && selectedListId ? (
+          <ListDetailPage
+            listId={selectedListId}
+            onBack={() => setActivePage("lists")}
+            onSeriesSelect={(showId) => handleSeriesSelect(showId, "listDetails")}
+          />
         ) : activePage === "diary" ? (
           <DiaryPage
             currentUserName={currentUserName}
@@ -144,6 +221,11 @@ export default function App() {
           <SeriesDetailPage
             onBack={() => {
               setSelectedShowId(null);
+              if (detailReturnPage === "listDetails" && selectedListId) {
+                setActivePage("listDetails");
+                return;
+              }
+
               setActivePage("home");
             }}
             showId={selectedShowId}
@@ -158,7 +240,7 @@ export default function App() {
               setQuery={setQuery}
             />
 
-            <div className="mx-auto mb-10 hidden w-full max-w-[950px] overflow-hidden rounded border border-slate-800 bg-slate-950 sm:block">
+            <div className="mx-auto mb-10 hidden w-full max-w-[950px] overflow-hidden rounded border border-slate-700 bg-slate-950 shadow-[0_18px_46px_rgba(0,0,0,0.5)] sm:block">
               <img
                 className="block h-auto w-full"
                 src={`${import.meta.env.BASE_URL}assets/banner.png`}
