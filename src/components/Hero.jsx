@@ -6,31 +6,31 @@ const carouselInterval = 3200;
 const drumSlots = [
   {
     className:
-      "pointer-events-none -left-[34%] top-[24%] z-0 w-[32%] rotate-[-18deg] opacity-0",
+      "pointer-events-none -left-[34%] top-[24%] z-0 w-[32%] rotate-[-18deg] opacity-0 md:-left-[22%] md:top-[26%] md:w-[24%]",
     imageClassName: "border-slate-800",
     offset: -2,
   },
   {
     className:
-      "left-[4%] top-[18%] z-10 w-[34%] rotate-[-10deg] opacity-85",
+      "left-[4%] top-[18%] z-10 w-[34%] rotate-[-10deg] opacity-85 md:left-[12%] md:top-[20%] md:w-[26%]",
     imageClassName: "border-slate-700",
     offset: -1,
   },
   {
     className:
-      "left-[30%] top-0 z-20 w-[40%] rotate-0 opacity-100 shadow-emerald-950/40",
+      "left-[30%] top-0 z-20 w-[40%] rotate-0 opacity-100 shadow-emerald-950/40 md:left-[34%] md:top-[3%] md:w-[32%]",
     imageClassName: "border-emerald-500/70",
     offset: 0,
   },
   {
     className:
-      "left-[62%] top-[18%] z-10 w-[34%] rotate-[10deg] opacity-85",
+      "left-[62%] top-[18%] z-10 w-[34%] rotate-[10deg] opacity-85 md:left-[62%] md:top-[20%] md:w-[26%]",
     imageClassName: "border-slate-700",
     offset: 1,
   },
   {
     className:
-      "pointer-events-none left-[102%] top-[24%] z-0 w-[32%] rotate-[18deg] opacity-0",
+      "pointer-events-none left-[102%] top-[24%] z-0 w-[32%] rotate-[18deg] opacity-0 md:left-[98%] md:top-[26%] md:w-[24%]",
     imageClassName: "border-slate-800",
     offset: 2,
   },
@@ -81,22 +81,22 @@ export default function Hero({
       id="catalog"
       className="relative left-1/2 mb-6 flex min-h-[calc(100vh-64px)] w-[100dvw] -translate-x-1/2 items-center overflow-hidden border-b border-slate-800 bg-[radial-gradient(circle_at_80%_20%,rgba(16,185,129,0.16),transparent_28%),linear-gradient(180deg,#10151a_0%,#14181c_78%)] px-4 py-8 pb-8 sm:py-10 sm:pb-10 lg:py-0 lg:pb-8"
     >
-      <div className="mx-auto grid w-full max-w-6xl gap-10 lg:grid-cols-[1.05fr_0.95fr]">
-        <div className="flex flex-col">
-          <p className="text-sm font-black uppercase tracking-wide text-emerald-400">
+      <div className="mx-auto grid w-full max-w-6xl gap-10 md:justify-items-center lg:grid-cols-[1.05fr_0.95fr] lg:justify-items-stretch">
+        <div className="flex flex-col md:items-center lg:items-start">
+          <p className="text-sm font-black uppercase tracking-wide text-emerald-400 md:text-center lg:text-left">
             Series catalog
           </p>
-          <h1 className="mt-4 max-w-3xl text-5xl font-black tracking-tight text-white sm:text-6xl lg:text-7xl">
+          <h1 className="mt-4 max-w-3xl text-5xl font-black tracking-tight text-white sm:text-6xl md:text-center lg:text-left lg:text-7xl">
             Find something to watch
           </h1>
-          <p className="mt-5 max-w-2xl text-base leading-7 text-slate-400 sm:text-lg">
+          <p className="mt-5 max-w-2xl text-base leading-7 text-slate-400 sm:text-lg md:text-center lg:text-left">
             Explore a random selection of titles or search by name to find a
             specific result.
           </p>
 
           <form
             id="search"
-            className="mt-8 flex w-full max-w-2xl items-center gap-2 rounded-lg border border-slate-700 bg-slate-950/85 p-2 shadow-2xl shadow-black/30 backdrop-blur transition focus-within:border-[#00c030] focus-within:ring-4 focus-within:ring-[#00c030]/15"
+            className="mt-8 flex w-full max-w-2xl items-center gap-2 rounded-lg border border-slate-700 bg-slate-950/85 p-2 shadow-2xl shadow-black/30 backdrop-blur transition focus-within:border-[#00c030] focus-within:ring-4 focus-within:ring-[#00c030]/15 md:mx-auto lg:mx-0"
             onSubmit={onSearchSubmit}
           >
             <label className="sr-only" htmlFor="series-search">
@@ -118,7 +118,7 @@ export default function Hero({
           </form>
         </div>
 
-        <div className="relative min-h-[360px] self-center overflow-hidden lg:min-h-[560px]">
+        <div className="relative min-h-[360px] w-full max-w-[560px] self-center overflow-hidden md:mx-auto md:min-h-[420px] md:max-w-[620px] lg:min-h-[560px] lg:max-w-none">
           {isHeroLoading ? (
             <HeroPosterSkeleton />
           ) : (
