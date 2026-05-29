@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import DiaryPage from "./components/DiaryPage";
 import Hero from "./components/Hero";
+import HomeFooter from "./components/HomeFooter";
 import ListPage from "./components/ListPage";
 import LoginScreen from "./components/LoginScreen";
 import Navbar from "./components/Navbar";
@@ -181,6 +182,10 @@ export default function App() {
           </>
         )}
       </div>
+
+      {!isLoginVisible && activePage === "home" && !selectedShowId && (
+        <HomeFooter />
+      )}
     </main>
   );
 }

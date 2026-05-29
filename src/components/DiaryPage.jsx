@@ -1,4 +1,5 @@
 import { CalendarDays, Star } from "lucide-react";
+import HomeFooter from "./HomeFooter";
 
 const diaryLogs = [
   {
