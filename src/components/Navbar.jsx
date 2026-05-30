@@ -92,7 +92,10 @@ export default function Navbar({
                 activePage === "home" ? activeLinkClassName : linkClassName
               }
               href="#catalog"
-              onClick={() => onNavigate("home")}
+              onClick={(event) => {
+                event.preventDefault();
+                onNavigate("home");
+              }}
             >
               Series
             </a>
@@ -101,7 +104,10 @@ export default function Navbar({
                 activePage === "diary" ? activeLinkClassName : linkClassName
               }
               href="#diary"
-              onClick={() => onNavigate("diary")}
+              onClick={(event) => {
+                event.preventDefault();
+                onNavigate("diary");
+              }}
             >
               Diary
             </a>
@@ -110,7 +116,10 @@ export default function Navbar({
                 activePage === "lists" ? activeLinkClassName : linkClassName
               }
               href="#lists"
-              onClick={() => onNavigate("lists")}
+              onClick={(event) => {
+                event.preventDefault();
+                onNavigate("lists");
+              }}
             >
               Lists
             </a>

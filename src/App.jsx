@@ -22,6 +22,18 @@ function getAuthModeFromHistoryState(state) {
   return null;
 }
 
+function getPageFromHash(hash) {
+  if (hash === "#diary") return "diary";
+  if (hash === "#lists") return "lists";
+  return "home";
+}
+
+function getHashFromPage(page) {
+  if (page === "diary") return "#diary";
+  if (page === "lists") return "#lists";
+  return "#catalog";
+}
+
 export default function App() {
   const [query, setQuery] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
@@ -29,7 +41,9 @@ export default function App() {
   const [hasSearched, setHasSearched] = useState(false);
   const [isNavSearchOpen, setIsNavSearchOpen] = useState(false);
   const [isLoginVisible, setIsLoginVisible] = useState(false);
-  const [activePage, setActivePage] = useState("home");
+  const [activePage, setActivePage] = useState(() =>
+    typeof window === "undefined" ? "home" : getPageFromHash(window.location.hash)
+  );
   const [authMode, setAuthMode] = useState("login");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loginEmail, setLoginEmail] = useState("");
@@ -83,6 +97,17 @@ export default function App() {
 
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
+  useEffect(() => {
+    function handleHashChange() {
+      setSelectedShowId(null);
+      setSelectedListId(null);
+      setActivePage(getPageFromHash(window.location.hash));
+    }
+
+    window.addEventListener("hashchange", handleHashChange);
+    return () => window.removeEventListener("hashchange", handleHashChange);
   }, []);
 
   function handleSubmit(event) {
@@ -152,6 +177,11 @@ export default function App() {
     setSelectedShowId(null);
     setSelectedListId(null);
     setActivePage(page);
+
+    const nextHash = getHashFromPage(page);
+    if (window.location.hash !== nextHash) {
+      window.location.hash = nextHash;
+    }
   }
 
   function handleListSelect(listId) {
