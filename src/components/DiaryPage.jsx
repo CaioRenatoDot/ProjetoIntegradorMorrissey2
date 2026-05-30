@@ -63,7 +63,7 @@ export default function DiaryPage({ currentUserName, isLoggedIn }) {
           User Activity Log
         </h1>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-400 sm:text-base">
-          A mocked timeline showing recent actions from the signed-in user.
+          Recent actions from the users.
         </p>
       </header>
 
