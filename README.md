@@ -4,7 +4,7 @@
 
 ---
 
-<p align="center"># Watchd </p>
+<p align="center"> Watchd </p>
 
 Watchd é até então um protótipo interativo desenvolvido em React + Vite para descobrir séries, avaliar, fazer reviews, explorar listas da comunidade e visualizar títulos populares usando a API pública do TVMaze.
 
@@ -58,6 +58,7 @@ Senha: 123456
 - Vite foi escolhido pela configuração simples e pelo carregamento rápido em desenvolvimento.
 - Tailwind CSS foi usado para criar um layout responsivo sem escrever CSS manual extenso.
 - A API do TVMaze foi escolhida por ser pública e fornecer dados de séries, imagens, datas, gêneros e notas do IMDB.
+- O projeto está em inglês, porque a API é americana, ou seja se a busca é feita em português, as series não são encontradas.
 
 ## Como Executar
 
