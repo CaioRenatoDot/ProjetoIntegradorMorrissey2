@@ -2,51 +2,51 @@
 
 ## `BackButton`
 
-Botao reutilizavel de retorno, usado em paginas internas para voltar ao fluxo anterior.
+Botão reutilizável de retorno, usado em páginas internas para voltar ao fluxo anterior.
 
 ## `BrandLogo`
 
-Renderiza a marca Watchd com imagem e texto. Pode receber acao de clique em telas como login.
+Renderiza a marca Watchd com imagem e texto. Pode receber uma ação de clique em telas como a de login.
 
 ## `Navbar`
 
-Renderiza a navegacao principal, busca recolhida/expandida e botoes de entrada, criacao de conta e logout. Tambem indica a pagina ativa e dispara eventos de navegacao.
+Renderiza a navegação principal, a busca recolhida/expandida e os botões de entrada, criação de conta e logout. Também indica a página ativa e dispara eventos de navegação.
 
 ## `Hero`
 
-Renderiza a hero da pagina inicial com formulario de busca, posters destacados, metricas e estados visuais baseados nos dados carregados.
+Renderiza a hero da página inicial com formulário de busca, pôsteres destacados, métricas e estados visuais baseados nos dados carregados.
 
 ## `ResultsSection`
 
-Controla o titulo da lista, estado de carregamento, estado vazio e grid de resultados.
+Controla o título da lista, o estado de carregamento, o estado vazio e o grid de resultados.
 
 ## `SeriesCard`
 
-Card compacto de cada titulo, com poster, nota, generos e sinopse resumida.
+Card compacto de cada título, com pôster, nota, gêneros e sinopse resumida.
 
 ## `SeriesDetailPage`
 
-Pagina de detalhes de uma serie selecionada. Busca os dados da serie, mostra poster, generos, nota, resumo e inclui o formulario de avaliacao.
+Página de detalhes de uma série selecionada. Busca os dados da série, mostra pôster, gêneros, nota e resumo, além de incluir o formulário de avaliação.
 
 ## `SeriesReviewForm`
 
-Formulario de review da serie. Permite selecionar estrelas, escrever um comentario, acompanhar limite de caracteres e receber feedback apos salvar.
+Formulário de review da série. Permite selecionar estrelas, escrever um comentário, acompanhar o limite de caracteres e receber feedback após salvar.
 
 ## `ListPage`
 
-Renderiza listas da comunidade a partir de dados locais. Funciona como uma vitrine de colecoes e permite abrir os detalhes de cada lista.
+Renderiza listas da comunidade a partir de dados locais. Funciona como uma vitrine de coleções e permite abrir os detalhes de cada lista.
 
 ## `ListDetailPage`
 
-Mostra os detalhes de uma lista selecionada, com cards das series relacionadas e acao para abrir a pagina de detalhes de cada titulo.
+Mostra os detalhes de uma lista selecionada, com cards das séries relacionadas e uma ação para abrir a página de detalhes de cada título.
 
 ## `DiaryPage`
 
-Exibe as avaliacoes salvas pelo usuario no `localStorage`. Tambem mostra estados diferentes para usuario logado, usuario deslogado e diario vazio.
+Exibe as avaliações salvas pelo usuário no `localStorage`. Também mostra estados diferentes para usuário logado, usuário deslogado e diário vazio.
 
 ## `HomeFooter`
 
-Rodape simples da pagina inicial com informacoes basicas do projeto.
+Rodapé simples da página inicial com informações básicas do projeto.
 
 ## `SkeletonCard`
 
@@ -54,16 +54,29 @@ Skeleton de carregamento usado na grade de resultados enquanto a API responde.
 
 ## `LoginScreen`
 
-Tela full-screen de autenticacao mock. Possui rows de posters em movimento e alterna entre login, cadastro e recuperacao de senha.
+Tela full-screen de autenticação mock. Possui fileiras de pôsteres em movimento e alterna entre login, cadastro e recuperação de senha.
 
 ## `SkeletonPosterRow`
 
-Skeleton das rows de posters da tela de login enquanto as buscas iniciais carregam.
+Skeleton das fileiras de pôsteres da tela de login enquanto as buscas iniciais carregam.
 
 ## `Label`
 
-Label reutilizavel com checkbox customizado para opcoes booleanas, usado nos formularios de autenticacao.
+Label reutilizável com checkbox customizado para opções booleanas, usado nos formulários de autenticação.
 
+## Dados e serviços relacionados
+
+## `services/tvmaze.js`
+
+Centraliza o consumo da API pública do TVMaze com `fetch`, incluindo busca de séries, detalhes por ID e lista de séries populares.
+
+## `data/communityLists.js`
+
+Mantém os dados locais das listas da comunidade exibidas nas páginas de listas.
+
+## `utils/seriesReviews.js`
+
+Centraliza a leitura e gravação das reviews no `localStorage`.
 
 ```css
 @import "tailwindcss";
