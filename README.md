@@ -4,9 +4,9 @@
 
 ---
 
-# Watchd
+<p align="center"># Watchd </p>
 
-Watchd é até então um protótipo interativo desenvolvido em React + Vite para descobrir séries, explorar listas da comunidade e visualizar títulos populares usando a API pública do TVMaze.
+Watchd é até então um protótipo interativo desenvolvido em React + Vite para descobrir séries, avaliar, fazer reviews, explorar listas da comunidade e visualizar títulos populares usando a API pública do TVMaze.
 
 ## Por que "Watchd"?
 
@@ -27,7 +27,7 @@ O projeto foi criado como uma experiência web responsiva para consulta e avalia
 - Login mock com validação dinâmica.
 - Telas de login, cadastro e recuperação de senha.
 - Feedback visual com skeleton loading, mensagens de erro e confirmação.
-- Layout responsivo estilizado com Tailwind CSS.
+- Layout responsivo estilizado com Tailwind CSS. (Celular, Tablet e PC)
 
 ## Login de Demonstração
 
@@ -48,7 +48,8 @@ Senha: 123456
 - React
 - Vite
 - Tailwind CSS
-- Lucide React
+- React
+- Lucide Icons
 - API do TVMaze
 
 ## Decisões Técnicas
@@ -57,7 +58,6 @@ Senha: 123456
 - Vite foi escolhido pela configuração simples e pelo carregamento rápido em desenvolvimento.
 - Tailwind CSS foi usado para criar um layout responsivo sem escrever CSS manual extenso.
 - A API do TVMaze foi escolhida por ser pública e fornecer dados de séries, imagens, datas, gêneros e notas do IMDB.
-- O sistema de review usa `localStorage`, pois o projeto é um protótipo sem backend ainda.
 
 ## Como Executar
 
