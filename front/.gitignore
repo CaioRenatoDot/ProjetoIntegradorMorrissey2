@@ -1,11 +1,7 @@
-.env
-.env.*
-!.env.example
 node_modules/
 dist/
-src/generated/prisma/
-**/src/generated/prisma/
-*.db
+.env
+.env.local
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

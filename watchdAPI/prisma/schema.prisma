@@ -1,0 +1,34 @@
+generator client {
+  provider = "prisma-client-js"
+
+}
+
+datasource db {
+  provider = "sqlite"
+
+}
+
+model User {
+  id String @id @default(uuid())
+  name String
+  email String @unique
+  password String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  watchlist WatchListItem[]
+}
+
+model WatchListItem{
+  id String @id @default(uuid())
+  userId String
+  movieId String
+  title String
+  posterUrl String?
+  releaseYear String?
+  type String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+}
