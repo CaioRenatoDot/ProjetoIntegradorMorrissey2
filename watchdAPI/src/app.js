@@ -13,6 +13,15 @@ app.get("/", (req, res) => {
   });
 });
 
+app.get("/health", (req, res) => {
+  return res.json({
+    status: "ok",
+    message: "A API esta funcionando!",
+    service: "Watchd API",
+    timestamp: new Date().toISOString()
+  });
+});
+
 app.use("/auth", authRoutes);
 app.use("/watchlist", watchlistRoutes);
 

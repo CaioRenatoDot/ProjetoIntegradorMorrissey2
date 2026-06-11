@@ -10,6 +10,7 @@ import ResultsSection from "./components/ResultsSection";
 import SeriesDetailPage from "./components/SeriesDetailPage";
 import { getMostPopularShows, searchShows } from "./services/tvmaze";
 import { shuffleItems } from "./utils/arrays";
+import {login, register, getMe} from "./services/api";
 
 function getAuthModeFromHistoryState(state) {
   if (!state || typeof state !== "object") return null;
@@ -53,6 +54,29 @@ export default function App() {
   const [detailReturnPage, setDetailReturnPage] = useState("home");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    async function restoreSession(){
+      const token = localStorage.getItem("watchd_token");
+
+      if(!token){
+        return;
+      }
+
+      try {
+        const data = await getMe(token);
+
+        setCurrentUserName("");
+        setIsLoggedIn(false);
+      } catch (error){
+        localStorage.removeItem("watchd_token");
+        setCurrentUserName("")
+        setIsLoggedIn(false)
+      }
+    }
+
+    restoreSession();
+  },[]);
 
   useEffect(() => {
     async function fetchSeries() {
@@ -127,13 +151,30 @@ export default function App() {
     setSelectedListId(null);
   }
 
-  function handleMockLogin(account) {
-    setCurrentUserName(account.displayName);
+ async function handleLogin(credentials) {
+    const data = await login(credentials.email, credentials.password);
+
+    localStorage.setItem("watchd_token", data.token);
+
+    setCurrentUserName(data.user.name);
     setIsLoggedIn(true);
     closeAuthScreen();
   }
 
+  async function handleRegister(credentials){
+    await register(credentials.name, credentials.email, credentials.password);
+
+    const data = await login(credentials.email, credentials.password);
+
+    localStorage.setItem("watchd_token", data.token);
+
+    setCurrentUserName(data.user.name);
+    setIsLoggedIn(true);
+    closeAuthScreen();    
+  }
+
   function handleLogout() {
+    localStorage.removeItem("watchd_token")
     setCurrentUserName("");
     setIsLoggedIn(false);
   }
@@ -222,7 +263,7 @@ export default function App() {
         className={
           isLoginVisible
             ? "w-full overflow-hidden"
-            : "mx-auto w-full max-w-[1360px] px-4 pb-10 sm:px-6 lg:px-8"
+            : "mx-auto w-full max-w-1360px px-4 pb-10 sm:px-6 lg:px-8"
         }
       >
         {isLoginVisible ? (
@@ -231,7 +272,8 @@ export default function App() {
             mode={authMode}
             onBack={closeAuthScreen}
             onEmailChange={setLoginEmail}
-            onLogin={handleMockLogin}
+            onLogin={handleLogin}
+            onRegister={handleRegister}
             onModeChange={handleAuthModeChange}
           />
         ) : activePage === "lists" ? (
@@ -270,7 +312,7 @@ export default function App() {
               setQuery={setQuery}
             />
 
-            <div className="mx-auto mb-10 hidden w-full max-w-[950px] overflow-hidden rounded border border-slate-700 bg-slate-950 shadow-[0_18px_46px_rgba(0,0,0,0.5)] sm:block">
+            <div className="mx-auto mb-10 hidden w-full max-w-950px overflow-hidden rounded border border-slate-700 bg-slate-950 shadow-[0_18px_46px_rgba(0,0,0,0.5)] sm:block">
               <img
                 className="block h-auto w-full"
                 src={`${import.meta.env.BASE_URL}assets/banner.png`}

@@ -6,27 +6,13 @@ import BrandLogo from "./BrandLogo";
 import Label from "./Label";
 import SkeletonPosterRow from "./SkeletonPosterRow";
 
-const demoAccounts = [
-  {
-    displayName: "Caio",
-    identifier: "caio@email.com",
-    label: "Caio",
-    password: "123456",
-  },
-  {
-    displayName: "SamuelMorrissey",
-    identifier: "SamuelMorrissey",
-    label: "Samuel",
-    password: "123456",
-  },
-];
-
 export default function LoginScreen({
   email,
   mode = "login",
   onBack,
   onEmailChange,
   onLogin,
+  onRegister,
   onModeChange,
 }) {
   const [renderedMode, setRenderedMode] = useState(mode);
@@ -101,20 +87,20 @@ export default function LoginScreen({
         <div className="relative z-10 mt-36 space-y-5">
           {isRowsLoading || !posterRows.length
             ? Array.from({ length: 3 }, (_, index) => (
-                <SkeletonPosterRow key={index} reverse={index % 2 !== 0} />
-              ))
+              <SkeletonPosterRow key={index} reverse={index % 2 !== 0} />
+            ))
             : posterRows.map((row, index) => (
-                <PosterRow
-                  directionClass={
-                    index % 2 === 0
-                      ? rowShiftRight[rowStep]
-                      : rowShiftLeft[rowStep]
-                  }
-                  key={row.query}
-                  query={row.query}
-                  shows={row.shows}
-                />
-              ))}
+              <PosterRow
+                directionClass={
+                  index % 2 === 0
+                    ? rowShiftRight[rowStep]
+                    : rowShiftLeft[rowStep]
+                }
+                key={row.query}
+                query={row.query}
+                shows={row.shows}
+              />
+            ))}
         </div>
       </div>
 
@@ -123,11 +109,10 @@ export default function LoginScreen({
           <BrandLogo className="mb-7 sm:mb-12" onClick={onBack} />
 
           <div
-            className={`transition duration-200 ease-out ${
-              isModeVisible
+            className={`transition duration-200 ease-out ${isModeVisible
                 ? "translate-y-0 opacity-100"
                 : "translate-y-2 opacity-0"
-            }`}
+              }`}
           >
             <div className="mb-6 lg:hidden">
               <p className="text-xs font-black uppercase tracking-wide text-[#00c030]">
@@ -155,7 +140,7 @@ export default function LoginScreen({
               <RegisterForm
                 email={email}
                 onEmailChange={onEmailChange}
-                onRegister={onLogin}
+                onRegister={onRegister}
               />
             ) : (
               <LoginForm
@@ -244,7 +229,9 @@ function RegisterForm({ email, onEmailChange, onRegister }) {
     if (passwordsDoNotMatch) return;
 
     onRegister({
-      displayName: name.trim() || email.split("@")[0] || "User",
+      name: name.trim(),
+      email: email.trim(),
+      password,
     });
   }
 
@@ -315,20 +302,14 @@ function LoginForm({ email, onEmailChange, onLogin, onModeChange }) {
   function handleLogin(event) {
     event.preventDefault();
 
-    const account = demoAccounts.find((demoAccount) => {
-      return (
-        demoAccount.identifier.toLowerCase() === email.trim().toLowerCase() &&
-        demoAccount.password === password
-      );
-    });
-
-    if (!account) {
-      setLoginError("Use one of the demo accounts below.");
-      return;
-    }
 
     setLoginError("");
-    onLogin(account);
+
+    onLogin({
+      email: email.trim(),
+      password,
+
+    });
   }
 
   return (

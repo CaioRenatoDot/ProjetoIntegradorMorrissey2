@@ -60,7 +60,7 @@ async function login(req, res) {
 
     if (!user) {
         return res.status(400).json({
-            message: "Email ou senha errados."
+            message: "Email nao encontrado."
         });
     }
 
