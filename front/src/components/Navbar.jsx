@@ -50,11 +50,16 @@ export default function Navbar({
             {isLoggedIn ? (
               <>
                 <button
-                  className="inline-flex min-h-9 max-w-24 items-center justify-center truncate rounded border border-zinc-700 px-3 text-sm font-bold text-slate-200 transition hover:border-[#00c030] hover:bg-zinc-800 hover:text-white sm:max-w-44"
+                  className="inline-flex h-9 max-w-40 items-center gap-2 rounded-full border border-zinc-700/80 bg-zinc-900/70 py-1 pl-1 pr-3 text-sm font-bold text-slate-200 shadow-sm shadow-black/20 transition hover:border-[#00c030]/80 hover:bg-zinc-800 hover:text-white sm:max-w-56"
                   onClick={onProfileClick}
                   type="button"
                 >
-                  {currentUserName}
+                  <UserAvatar
+                    className="ring-1 ring-white/15 shadow-none"
+                    name={currentUserName}
+                    size="nav"
+                  />
+                  <span className="min-w-0 truncate leading-none">{currentUserName}</span>
                 </button>
                 <button
                   aria-label="Log out"
@@ -180,6 +185,9 @@ export default function Navbar({
     </nav>
   );
 }
+
+
+
 
 
 

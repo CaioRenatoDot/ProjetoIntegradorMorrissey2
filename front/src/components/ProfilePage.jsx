@@ -1,39 +1,56 @@
-import { Bookmark, GripVertical, Heart, ListChecks, Star, Trash2 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { Bookmark, Clipboard, GripVertical, Heart, Link, ListChecks, MapPin, Star, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { communityLists } from "../data/communityLists";
+import { fallbackPoster } from "../data/constants";
 import {
   getFavorites,
   getWatchlist,
   removeFromWatchlist,
   reorderFavorites,
 } from "../services/api";
+import { getShowById } from "../services/tvmaze";
 import { getSavedSeriesReviews } from "../utils/seriesReviews";
 import UserAvatar from "./UserAvatar";
 
 const favoriteLimit = 4;
 const watchlistPreviewLimit = 8;
+const recentActivityLimit = 4;
 
 function normalizeText(value) {
   return value.trim().toLowerCase();
 }
 
+function getReviewEntries() {
+  return Object.entries(getSavedSeriesReviews()).sort(([, firstReview], [, secondReview]) => {
+    return new Date(secondReview.updatedAt || 0) - new Date(firstReview.updatedAt || 0);
+  });
+}
+
 export default function ProfilePage({
   currentUserName,
   isLoggedIn,
+  onEditProfileClick,
   onListSelect,
   onSeriesSelect,
+  profileDetails,
 }) {
   const [watchlistItems, setWatchlistItems] = useState([]);
   const [favoriteItems, setFavoriteItems] = useState([]);
+  const [recentActivityItems, setRecentActivityItems] = useState([]);
   const [isWatchlistLoading, setIsWatchlistLoading] = useState(false);
   const [isFavoritesLoading, setIsFavoritesLoading] = useState(false);
+  const [isRecentActivityLoading, setIsRecentActivityLoading] = useState(false);
   const [watchlistError, setWatchlistError] = useState("");
   const [favoriteError, setFavoriteError] = useState("");
+  const [recentActivityError, setRecentActivityError] = useState("");
   const [watchlistStatus, setWatchlistStatus] = useState("");
   const [isWatchlistExpanded, setIsWatchlistExpanded] = useState(false);
   const [removingWatchlistItemId, setRemovingWatchlistItemId] = useState(null);
   const [isAdjustingFavoriteOrder, setIsAdjustingFavoriteOrder] = useState(false);
   const [draggedFavoriteId, setDraggedFavoriteId] = useState(null);
+  const [profileUrlStatus, setProfileUrlStatus] = useState("");
+  const [isProfileActionsOpen, setIsProfileActionsOpen] = useState(false);
+  const profileActionsRef = useRef(null);
 
   const userLists = useMemo(() => {
     const normalizedUserName = normalizeText(currentUserName || "");
@@ -47,8 +64,27 @@ export default function ProfilePage({
     });
   }, [currentUserName]);
 
-  const reviewedSeriesCount = Object.keys(getSavedSeriesReviews()).length;
+  const reviewedSeriesCount = getReviewEntries().length;
+  useEffect(() => {
+    if (!isProfileActionsOpen) return undefined;
 
+    function handleDocumentPointerDown(event) {
+      if (profileActionsRef.current?.contains(event.target)) return;
+      setIsProfileActionsOpen(false);
+    }
+
+    function handleDocumentKeyDown(event) {
+      if (event.key === "Escape") setIsProfileActionsOpen(false);
+    }
+
+    document.addEventListener("pointerdown", handleDocumentPointerDown);
+    document.addEventListener("keydown", handleDocumentKeyDown);
+
+    return () => {
+      document.removeEventListener("pointerdown", handleDocumentPointerDown);
+      document.removeEventListener("keydown", handleDocumentKeyDown);
+    };
+  }, [isProfileActionsOpen]);
   useEffect(() => {
     let isMounted = true;
 
@@ -85,6 +121,60 @@ export default function ProfilePage({
     }
 
     fetchFavorites();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isLoggedIn]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function fetchRecentActivity() {
+      if (!isLoggedIn) {
+        setRecentActivityItems([]);
+        setRecentActivityError("");
+        return;
+      }
+
+      const recentReviews = getReviewEntries().slice(0, recentActivityLimit);
+
+      if (!recentReviews.length) {
+        setRecentActivityItems([]);
+        setRecentActivityError("");
+        return;
+      }
+
+      setIsRecentActivityLoading(true);
+      setRecentActivityError("");
+
+      try {
+        const items = await Promise.all(
+          recentReviews.map(async ([showId, review]) => {
+            const show = await getShowById(showId);
+            return {
+              movieId: String(show.id),
+              title: show.name,
+              posterUrl: show.image?.medium || show.image?.original || "",
+              rating: review.rating || 0,
+              review: review.review || "",
+              updatedAt: review.updatedAt,
+            };
+          })
+        );
+
+        if (isMounted) setRecentActivityItems(items);
+      } catch (error) {
+        if (isMounted) {
+          setRecentActivityItems([]);
+          setRecentActivityError(error.message);
+        }
+      } finally {
+        if (isMounted) setIsRecentActivityLoading(false);
+      }
+    }
+
+    fetchRecentActivity();
 
     return () => {
       isMounted = false;
@@ -200,46 +290,120 @@ export default function ProfilePage({
     }
   }
 
+
+  async function handleCopyProfileUrl() {
+    const profileUrl = `${window.location.origin}${window.location.pathname}#profile`;
+
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(profileUrl);
+      } else {
+        const textarea = document.createElement("textarea");
+        textarea.value = profileUrl;
+        textarea.setAttribute("readonly", "");
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textarea);
+      }
+
+      setProfileUrlStatus("Copied");
+      setIsProfileActionsOpen(false);
+    } catch (error) {
+      setProfileUrlStatus("Could not copy");
+    }
+
+    window.setTimeout(() => setProfileUrlStatus(""), 1800);
+  }
   const stats = [
     { icon: Heart, label: "Favorites", value: favoriteItems.length },
     { icon: Bookmark, label: "Watchlist", value: watchlistItems.length },
     { icon: Star, label: "Watched", value: reviewedSeriesCount },
     { icon: ListChecks, label: "Lists", value: userLists.length },
   ];
+  const profileName = profileDetails?.displayName || currentUserName;
 
   return (
-    <section className="py-8 sm:py-12">
-      <header className="border-b border-slate-800 pb-8">
-        <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-          <div className="flex flex-col gap-5 sm:flex-row sm:items-end">
+    <section className="mx-auto max-w-6xl py-7 sm:py-10">
+      <header className="pb-5">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center gap-5">
             <UserAvatar
-              className="ring-4 ring-slate-900"
-              name={isLoggedIn ? currentUserName : "Guest"}
+              className="ring-2 ring-slate-700/70"
+              name={isLoggedIn ? profileName : "Guest"}
               size="lg"
             />
-            <div>
-              <p className="text-xs font-black uppercase tracking-[0.22em] text-[#00c030]">
-                Watchd member
-              </p>
-              <h1 className="mt-2 text-4xl font-black leading-none text-white sm:text-6xl">
-                {isLoggedIn ? currentUserName : "Guest"}
+            <div className="min-w-0">
+              <h1 className="truncate text-2xl font-black leading-none text-white sm:text-3xl">
+                {isLoggedIn ? profileName : "Guest"}
               </h1>
-              <p className="mt-3 max-w-2xl text-sm font-semibold leading-6 text-slate-400">
-                {isLoggedIn
-                  ? "A personal shelf for favorite series, titles to watch, reviews, and curated lists."
-                  : "Sign in to build your personal Watchd shelf."}
-              </p>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                {isLoggedIn && (
+                  <>
+                    <button
+                      className="min-h-8 rounded border border-slate-600 bg-slate-700/80 px-3 text-xs font-black uppercase tracking-wide text-slate-100 transition hover:border-[#00c030] hover:bg-slate-600"
+                      onClick={onEditProfileClick}
+                      type="button"
+                    >
+                      EDIT PROFILE
+                    </button>
+
+                    <div className="relative" ref={profileActionsRef}>
+                      <button
+                        aria-expanded={isProfileActionsOpen}
+                        aria-label="Open profile actions"
+                        className="grid h-8 w-8 place-items-center rounded-full border border-slate-600 bg-slate-800 text-sm font-black leading-none text-slate-200 transition hover:border-[#00c030] hover:bg-slate-700 hover:text-white"
+                        onClick={() => setIsProfileActionsOpen((currentValue) => !currentValue)}
+                        title="Profile actions"
+                        type="button"
+                      >
+                        <span className="-mt-1">...</span>
+                      </button>
+
+                      {isProfileActionsOpen && (
+                        <div className="absolute left-0 top-10 z-20 w-48 overflow-hidden rounded border border-slate-600/70 bg-slate-800 py-1 shadow-xl shadow-black/30 sm:left-auto sm:right-0">
+                          <button
+                            className="flex min-h-10 w-full items-center gap-2 px-3 text-left text-xs font-black uppercase tracking-wide text-slate-200 transition hover:bg-slate-700 hover:text-white"
+                            onClick={handleCopyProfileUrl}
+                            type="button"
+                          >
+                            <Clipboard aria-hidden="true" className="h-4 w-4 text-[#00c030]" />
+                            Copy profile URL
+                          </button>
+                        </div>
+                      )}
+
+                      {profileUrlStatus && (
+                        <span className="absolute left-1/2 top-10 z-30 -translate-x-1/2 whitespace-nowrap rounded bg-slate-700 px-2 py-1 text-[11px] font-bold text-slate-100 shadow-lg shadow-black/25">
+                          {profileUrlStatus}
+                        </span>
+                      )}
+                    </div>
+                  </>
+                )}
+                <span className="rounded-full bg-slate-800/80 px-3 py-1 text-xs font-bold text-slate-400">
+                  Watchd member
+                </span>
+              </div>
             </div>
           </div>
 
           {isLoggedIn && (
-            <div className="grid grid-cols-4 overflow-hidden rounded border border-slate-800 bg-slate-950 shadow-xl shadow-black/20">
-              {stats.map((stat) => (
-                <StatCell key={stat.label} stat={stat} />
+            <div className="flex flex-wrap items-center gap-y-3 text-left sm:justify-end">
+              {stats.map((stat, index) => (
+                <StatCell
+                  isFirst={index === 0}
+                  key={stat.label}
+                  stat={stat}
+                />
               ))}
             </div>
           )}
         </div>
+
+        {isLoggedIn && <ProfileTabs />}
       </header>
 
       {!isLoggedIn ? (
@@ -248,110 +412,218 @@ export default function ProfilePage({
           description="After signing in, this page will show your favorite series, Watchlist, and created lists."
         />
       ) : (
-        <div className="mt-5 space-y-10">
-          <FavoriteShelf
-            draggedFavoriteId={draggedFavoriteId}
-            error={favoriteError}
-            favoriteItems={favoriteItems}
-            isAdjusting={isAdjustingFavoriteOrder}
-            isLoading={isFavoritesLoading}
-            onAdjustToggle={() => {
-              setIsAdjustingFavoriteOrder((currentValue) => !currentValue);
-              setDraggedFavoriteId(null);
-            }}
-            onDragEnd={() => setDraggedFavoriteId(null)}
-            onDragStart={setDraggedFavoriteId}
-            onDrop={handleFavoriteDrop}
-            onSeriesSelect={onSeriesSelect}
-          />
-
-          <section>
-            <ShelfHeader
-              action={isWatchlistExpanded ? "Show preview" : null}
-              eyebrow="Default list"
-              title={isWatchlistExpanded ? "Full Watchlist" : "Watchlist"}
-              description="A permanent list in every profile for titles you want to watch later."
-              count={`${watchlistItems.length} saved`}
-              onActionClick={() => setIsWatchlistExpanded(false)}
+        <div className="mt-7 grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="space-y-9">
+            <FavoriteShelf
+              draggedFavoriteId={draggedFavoriteId}
+              error={favoriteError}
+              favoriteItems={favoriteItems}
+              isAdjusting={isAdjustingFavoriteOrder}
+              isLoading={isFavoritesLoading}
+              onAdjustToggle={() => {
+                setIsAdjustingFavoriteOrder((currentValue) => !currentValue);
+                setDraggedFavoriteId(null);
+              }}
+              onDragEnd={() => setDraggedFavoriteId(null)}
+              onDragStart={setDraggedFavoriteId}
+              onDrop={handleFavoriteDrop}
+              onSeriesSelect={onSeriesSelect}
             />
 
-            {watchlistError && (
-              <p className="mb-4 rounded border border-red-900 bg-red-950/50 px-4 py-3 text-sm font-bold text-red-200">
-                {watchlistError}
-              </p>
-            )}
+            <RecentActivityShelf
+              error={recentActivityError}
+              isLoading={isRecentActivityLoading}
+              items={recentActivityItems}
+              onSeriesSelect={onSeriesSelect}
+            />
 
-            {watchlistStatus && (
-              <p className="mb-4 rounded border border-[#00c030]/30 bg-[#00c030]/10 px-4 py-3 text-sm font-bold text-[#32d85a]">
-                {watchlistStatus}
-              </p>
-            )}
-
-            {isWatchlistLoading ? (
-              <PosterSkeletonGrid />
-            ) : (
-              <PosterGrid
-                emptyDescription="Open a series detail page and add it to your Watchlist for later."
-                emptyTitle="Your Watchlist is empty"
-                isExpanded={isWatchlistExpanded}
-                items={watchlistItems}
-                onExpand={() => setIsWatchlistExpanded(true)}
-                onRemoveItem={handleRemoveWatchlistItem}
-                onSeriesSelect={onSeriesSelect}
-                previewLimit={watchlistPreviewLimit}
-                removingItemId={removingWatchlistItemId}
+            <section>
+              <ShelfHeader
+                action={isWatchlistExpanded ? "Show preview" : null}
+                eyebrow="Default list"
+                title={isWatchlistExpanded ? "Full Watchlist" : "Watchlist"}
+                description="A permanent list in every profile for titles you want to watch later."
+                count={`${watchlistItems.length} saved`}
+                onActionClick={() => setIsWatchlistExpanded(false)}
               />
-            )}
-          </section>
 
-          <section>
-            <ShelfHeader
-              eyebrow="User shelves"
-              title="Created Lists"
-              description="Collections created by this profile. Frontend-only for now."
-              count={`${userLists.length} lists`}
-            />
+              {watchlistError && (
+                <p className="mb-4 rounded border border-red-900 bg-red-950/50 px-4 py-3 text-sm font-bold text-red-200">
+                  {watchlistError}
+                </p>
+              )}
 
-            {userLists.length ? (
-              <div className="divide-y divide-slate-800 overflow-hidden rounded border border-slate-800 bg-slate-950 shadow-xl shadow-black/20">
-                {userLists.map((list) => (
-                  <button
-                    aria-label={`Open list ${list.title}`}
-                    className="grid w-full gap-4 p-5 text-left transition hover:bg-slate-900/70 sm:grid-cols-[1fr_auto] sm:items-center"
-                    key={list.id}
-                    onClick={() => onListSelect(list.id)}
-                    type="button"
-                  >
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="rounded bg-[#00c030]/10 px-2 py-1 text-xs font-black uppercase tracking-wide text-[#32d85a]">
-                          {list.category}
-                        </span>
-                        <span className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                          {list.items.length} titles
-                        </span>
+              {watchlistStatus && (
+                <p className="mb-4 rounded border border-[#00c030]/30 bg-[#00c030]/10 px-4 py-3 text-sm font-bold text-[#32d85a]">
+                  {watchlistStatus}
+                </p>
+              )}
+
+              {isWatchlistLoading ? (
+                <PosterSkeletonGrid />
+              ) : (
+                <PosterGrid
+                  emptyDescription="Open a series detail page and add it to your Watchlist for later."
+                  emptyTitle="Your Watchlist is empty"
+                  isExpanded={isWatchlistExpanded}
+                  items={watchlistItems}
+                  onExpand={() => setIsWatchlistExpanded(true)}
+                  onRemoveItem={handleRemoveWatchlistItem}
+                  onSeriesSelect={onSeriesSelect}
+                  previewLimit={watchlistPreviewLimit}
+                  removingItemId={removingWatchlistItemId}
+                />
+              )}
+            </section>
+
+            <section>
+              <ShelfHeader
+                eyebrow="User shelves"
+                title="Created Lists"
+                description="Collections created by this profile. Frontend-only for now."
+                count={`${userLists.length} lists`}
+              />
+
+              {userLists.length ? (
+                <div className="divide-y divide-slate-800 overflow-hidden rounded border border-slate-800 bg-slate-950/60">
+                  {userLists.map((list) => (
+                    <button
+                      aria-label={`Open list ${list.title}`}
+                      className="grid w-full gap-4 p-4 text-left transition hover:bg-slate-900/70 sm:grid-cols-[1fr_auto] sm:items-center"
+                      key={list.id}
+                      onClick={() => onListSelect(list.id)}
+                      type="button"
+                    >
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="rounded bg-[#00c030]/10 px-2 py-1 text-[11px] font-black uppercase tracking-wide text-[#32d85a]">
+                            {list.category}
+                          </span>
+                          <span className="text-[11px] font-bold uppercase tracking-wide text-slate-500">
+                            {list.items.length} titles
+                          </span>
+                        </div>
+                        <h3 className="mt-2 text-base font-black text-white">
+                          {list.title}
+                        </h3>
+                        <p className="mt-1 line-clamp-1 text-sm font-semibold text-slate-400">
+                          {list.items.map((item) => item.name).join(" / ")}
+                        </p>
                       </div>
-                      <h3 className="mt-3 text-lg font-black text-white">
-                        {list.title}
-                      </h3>
-                      <p className="mt-2 line-clamp-1 text-sm font-semibold text-slate-400">
-                        {list.items.map((item) => item.name).join(" / ")}
+                      <p className="text-xs font-black uppercase tracking-wide text-[#00c030]">
+                        Open list
                       </p>
-                    </div>
-                    <p className="text-sm font-black text-[#00c030]">Open list</p>
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <EmptyState
-                title="No created lists yet"
-                description="This profile does not have created lists in the frontend mock data yet."
-              />
-            )}
-          </section>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <EmptyState
+                  title="No created lists yet"
+                  description="This profile does not have created lists in the frontend mock data yet."
+                />
+              )}
+            </section>
+          </div>
+
+          <ProfileBioPanel currentUserName={profileName} profileDetails={profileDetails} stats={stats} />
         </div>
       )}
     </section>
+  );
+}
+
+function ProfileShelfHeader({ action, title }) {
+  return (
+    <header className="mb-4 flex items-center justify-between gap-4 border-b border-slate-700 pb-2">
+      <h2 className="text-sm font-medium uppercase tracking-[0.22em] text-[#9abbd1]">
+        {title}
+      </h2>
+      {action}
+    </header>
+  );
+}
+
+function ProfileTabs() {
+  const tabs = [
+    "Profile",
+    "Activity",
+    "Series",
+    "Diary",
+    "Reviews",
+    "Watchlist",
+    "Lists",
+  ];
+
+  return (
+    <nav className="mt-7 overflow-x-auto rounded border border-slate-800 bg-slate-950/30 px-4" aria-label="Profile sections">
+      <div className="mx-auto flex w-max min-w-max items-center justify-center gap-6">
+        {tabs.map((tab) => (
+          <button
+            className={`relative min-h-12 text-sm font-semibold transition hover:text-white ${
+              tab === "Profile" ? "text-white" : "text-slate-400"
+            }`}
+            key={tab}
+            type="button"
+          >
+            {tab}
+            {tab === "Profile" && (
+              <span className="absolute bottom-0 left-0 h-0.5 w-full bg-[#00c030]" />
+            )}
+          </button>
+        ))}
+      </div>
+    </nav>
+  );
+}
+
+function ProfileBioPanel({ currentUserName, profileDetails, stats }) {
+  const bio =
+    profileDetails?.bio ||
+    `${currentUserName} is building a shelf of favorite series, recent ratings, and titles saved for later.`;
+  const location = profileDetails?.location || "";
+  const website = profileDetails?.website || "";
+
+  return (
+    <aside className="space-y-8 lg:pt-[76px]">
+      <section>
+        <ProfileShelfHeader title="Bio" />
+        <div className="space-y-4 text-sm font-semibold leading-6 text-slate-400">
+          {(location || website) && (
+            <div className="space-y-2">
+              {location && (
+                <p className="flex items-center gap-2">
+                  <MapPin aria-hidden="true" className="h-4 w-4 text-slate-500" />
+                  {location}
+                </p>
+              )}
+              {website && (
+                <p className="flex min-w-0 items-center gap-2">
+                  <Link aria-hidden="true" className="h-4 w-4 flex-none text-slate-500" />
+                  <span className="truncate">{website}</span>
+                </p>
+              )}
+            </div>
+          )}
+          <p>{bio}</p>
+        </div>
+      </section>
+
+      <section>
+        <ProfileShelfHeader title="Profile Stats" />
+        <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+          {stats.map((stat) => (
+            <div key={stat.label}>
+              <p className="text-2xl font-black leading-none text-white">
+                {stat.value}
+              </p>
+              <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">
+                {stat.label}
+              </p>
+            </div>
+          ))}
+        </div>
+      </section>
+    </aside>
   );
 }
 
@@ -367,45 +639,36 @@ function FavoriteShelf({
   onDrop,
   onSeriesSelect,
 }) {
-  const emptySlotCount = Math.max(favoriteLimit - favoriteItems.length, 0);
+  const visibleFavoriteItems = favoriteItems.slice(0, favoriteLimit);
+  const emptySlotCount = Math.max(favoriteLimit - visibleFavoriteItems.length, 0);
 
   return (
-    <section className="relative overflow-hidden border-y border-slate-800 bg-[#101318] px-4 py-5 shadow-2xl shadow-black/20 sm:px-6">
-      <header className="mx-auto mb-5 flex max-w-4xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-3xl font-black text-white">Favorite Series</h2>
-          <p className="mt-1 text-xs font-black uppercase tracking-wide text-slate-500">
-            {favoriteItems.length}/{favoriteLimit} selected
-          </p>
-        </div>
-        <button
-          className="inline-flex min-h-9 w-fit items-center rounded border border-[#00c030]/60 bg-[#00c030]/10 px-4 text-sm font-black text-[#32d85a] transition hover:bg-[#00c030]/20 disabled:cursor-not-allowed disabled:border-slate-700 disabled:bg-transparent disabled:text-slate-600"
-          disabled={favoriteItems.length < 2 || isLoading}
-          onClick={onAdjustToggle}
-          type="button"
-        >
-          {isAdjusting ? "Done" : "Adjust order"}
-        </button>
-      </header>
+    <section>
+      <ProfileShelfHeader
+        action={
+          <button
+            className="min-h-8 rounded border border-slate-700 px-3 text-xs font-black uppercase tracking-wide text-slate-300 transition hover:border-[#00c030] hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={favoriteItems.length < 2 || isLoading}
+            onClick={onAdjustToggle}
+            type="button"
+          >
+            {isAdjusting ? "DONE" : "ADJUST ORDER"}
+          </button>
+        }
+        title="Favorite Series"
+      />
 
       {error && (
-        <p className="mx-auto mb-4 max-w-3xl rounded border border-red-900 bg-red-950/50 px-4 py-3 text-sm font-bold text-red-200">
+        <p className="mb-4 rounded border border-red-900 bg-red-950/50 px-4 py-3 text-sm font-bold text-red-200">
           {error}
         </p>
       )}
 
       {isLoading ? (
-        <div className="mx-auto grid max-w-3xl grid-cols-2 gap-3 sm:grid-cols-4">
-          {Array.from({ length: 4 }, (_, index) => (
-            <div key={index}>
-              <div className="aspect-[2/3] animate-pulse rounded border border-slate-800 bg-slate-900" />
-              <div className="mt-2 h-3 w-4/5 animate-pulse rounded bg-slate-800" />
-            </div>
-          ))}
-        </div>
-      ) : favoriteItems.length ? (
-        <div className="mx-auto grid max-w-3xl grid-cols-2 gap-3 sm:grid-cols-4">
-          {favoriteItems.map((item) => (
+        <PosterSkeletonGrid count={4} variant="large" />
+      ) : visibleFavoriteItems.length ? (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {visibleFavoriteItems.map((item) => (
             <button
               aria-label={`Open details for ${item.title}`}
               className={`group min-w-0 text-left ${
@@ -431,7 +694,7 @@ function FavoriteShelf({
               type="button"
             >
               <div
-                className={`relative overflow-hidden rounded border bg-slate-950 shadow-lg shadow-black/30 transition group-hover:-translate-y-1 group-hover:border-[#00c030] group-hover:shadow-[#00c030]/10 ${
+                className={`relative overflow-hidden rounded border bg-slate-950 shadow-lg shadow-black/30 transition group-hover:-translate-y-1 group-hover:border-[#00c030] ${
                   draggedFavoriteId === item.movieId
                     ? "border-[#00c030] opacity-60"
                     : "border-slate-700"
@@ -445,12 +708,9 @@ function FavoriteShelf({
                 <img
                   alt={`Poster for ${item.title}`}
                   className="aspect-[2/3] w-full object-cover"
-                  src={item.posterUrl || `${import.meta.env.BASE_URL}assets/W.png`}
+                  src={item.posterUrl || fallbackPoster}
                 />
               </div>
-              <h3 className="mt-2 line-clamp-2 text-xs font-black leading-5 text-slate-100">
-                {item.title}
-              </h3>
             </button>
           ))}
 
@@ -475,6 +735,96 @@ function FavoriteShelf({
   );
 }
 
+function RecentActivityShelf({ error, isLoading, items, onSeriesSelect }) {
+  return (
+    <section>
+      <ProfileShelfHeader
+        action={
+          <span className="text-xs font-medium uppercase tracking-[0.22em] text-slate-400">
+            All
+          </span>
+        }
+        title="Recent Activity"
+      />
+
+      {error && (
+        <p className="mb-4 rounded border border-red-900 bg-red-950/50 px-4 py-3 text-sm font-bold text-red-200">
+          {error}
+        </p>
+      )}
+
+      {isLoading ? (
+        <PosterSkeletonGrid count={4} variant="large" />
+      ) : items.length ? (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {items.map((item) => (
+            <ActivityCard
+              item={item}
+              key={item.movieId}
+              onSeriesSelect={onSeriesSelect}
+            />
+          ))}
+        </div>
+      ) : (
+        <EmptyState
+          title="No recent activity yet"
+          description="Rate or review a series to make it appear here."
+        />
+      )}
+    </section>
+  );
+}
+
+function ActivityCard({ item, onSeriesSelect }) {
+  return (
+    <article className="group min-w-0">
+      <button
+        aria-label={`Open details for ${item.title}`}
+        className="block w-full text-left"
+        onClick={() => onSeriesSelect?.(Number(item.movieId), "profile")}
+        type="button"
+      >
+        <div className="overflow-hidden rounded border border-slate-700 bg-slate-950 shadow-lg shadow-black/30 transition group-hover:-translate-y-1 group-hover:border-[#00c030]">
+          <img
+            alt={`Poster for ${item.title}`}
+            className="aspect-[2/3] w-full object-cover"
+            src={item.posterUrl || fallbackPoster}
+          />
+        </div>
+        <div className="mt-2 flex items-center gap-1 text-slate-500">
+          <RatingStars rating={item.rating} />
+          {item.review && (
+            <Heart
+              aria-hidden="true"
+              className="ml-1 h-3.5 w-3.5"
+              fill="currentColor"
+            />
+          )}
+          <ListChecks aria-hidden="true" className="h-3.5 w-3.5" />
+        </div>
+      </button>
+    </article>
+  );
+}
+
+function RatingStars({ rating }) {
+  return (
+    <span className="inline-flex items-center gap-0.5" aria-label={`${rating} star rating`}>
+      {Array.from({ length: 5 }, (_, index) => {
+        const isFilled = index + 1 <= rating;
+        return (
+          <Star
+            aria-hidden="true"
+            className={`h-3.5 w-3.5 ${isFilled ? "text-slate-400" : "text-slate-700"}`}
+            fill={isFilled ? "currentColor" : "none"}
+            key={index}
+          />
+        );
+      })}
+    </span>
+  );
+}
+
 function PosterGrid({
   emptyDescription,
   emptyTitle,
@@ -495,7 +845,7 @@ function PosterGrid({
   const hiddenItemsCount = Math.max(items.length - visibleItems.length, 0);
 
   return (
-    <div className="grid grid-cols-[repeat(auto-fill,minmax(92px,1fr))] gap-4 sm:grid-cols-[repeat(auto-fill,minmax(118px,1fr))]">
+    <div className="grid grid-cols-[repeat(auto-fill,minmax(82px,1fr))] gap-4 sm:grid-cols-[repeat(auto-fill,minmax(104px,1fr))]">
       {visibleItems.map((item) => (
         <div className="group min-w-0" key={item.id || item.movieId}>
           <div className="relative">
@@ -509,7 +859,7 @@ function PosterGrid({
                 <img
                   alt={`Poster for ${item.title}`}
                   className="aspect-[2/3] w-full object-cover"
-                  src={item.posterUrl || `${import.meta.env.BASE_URL}assets/W.png`}
+                  src={item.posterUrl || fallbackPoster}
                 />
               </div>
             </button>
@@ -559,41 +909,41 @@ function PosterGrid({
   );
 }
 
-function StatCell({ stat }) {
-  const Icon = stat.icon;
-
+function StatCell({ isFirst, stat }) {
   return (
-    <div className="min-w-20 border-r border-slate-800 px-4 py-3 text-center last:border-r-0">
-      <div className="mx-auto grid h-6 w-6 place-items-center text-[#00c030]">
-        <Icon aria-hidden="true" className="h-4 w-4" />
-      </div>
-      <p className="mt-1 text-2xl font-black text-white">{stat.value}</p>
-      <p className="text-[11px] font-black uppercase tracking-wide text-slate-500">
+    <div
+      className={`px-4 text-center sm:px-5 ${
+        isFirst ? "" : "border-l border-slate-700/60"
+      }`}
+    >
+      <p className="text-2xl font-black leading-none text-white sm:text-3xl">
+        {stat.value}
+      </p>
+      <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">
         {stat.label}
       </p>
     </div>
   );
 }
 
-function ShelfHeader({ action, count, description, eyebrow, onActionClick, title }) {
+function ShelfHeader({ action, count, eyebrow, onActionClick, title }) {
   return (
-    <header className="mb-4 flex flex-col gap-3 border-b border-slate-800 pb-4 sm:flex-row sm:items-end sm:justify-between">
-      <div>
-        <p className="text-xs font-black uppercase tracking-[0.18em] text-[#00c030]">
+    <header className="mb-4 flex items-center justify-between gap-4 border-b border-slate-700 pb-2">
+      <div className="min-w-0">
+        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
           {eyebrow}
         </p>
-        <h2 className="mt-2 text-2xl font-black text-white">{title}</h2>
-        <p className="mt-2 max-w-2xl text-sm font-semibold leading-6 text-slate-400">
-          {description}
-        </p>
+        <h2 className="mt-1 text-sm font-medium uppercase tracking-[0.22em] text-[#9abbd1]">
+          {title}
+        </h2>
       </div>
-      <div className="flex flex-wrap items-center gap-3">
-        <p className="text-sm font-black uppercase tracking-wide text-slate-500">
+      <div className="flex flex-wrap items-center justify-end gap-3">
+        <p className="text-[11px] font-black uppercase tracking-wide text-slate-500">
           {count}
         </p>
         {action && (
           <button
-            className="min-h-9 rounded border border-slate-700 px-3 text-sm font-black text-slate-200 transition hover:border-[#00c030] hover:text-white"
+            className="min-h-8 rounded border border-slate-700 px-3 text-xs font-black uppercase tracking-wide text-slate-300 transition hover:border-[#00c030] hover:text-white"
             onClick={onActionClick}
             type="button"
           >
@@ -605,10 +955,15 @@ function ShelfHeader({ action, count, description, eyebrow, onActionClick, title
   );
 }
 
-function PosterSkeletonGrid() {
+function PosterSkeletonGrid({ count = 8, variant = "default" }) {
+  const gridClassName =
+    variant === "large"
+      ? "grid grid-cols-2 gap-3 sm:grid-cols-4"
+      : "grid grid-cols-[repeat(auto-fill,minmax(82px,1fr))] gap-4 sm:grid-cols-[repeat(auto-fill,minmax(104px,1fr))]";
+
   return (
-    <div className="grid grid-cols-[repeat(auto-fill,minmax(92px,1fr))] gap-4 sm:grid-cols-[repeat(auto-fill,minmax(118px,1fr))]">
-      {Array.from({ length: 8 }, (_, index) => (
+    <div className={gridClassName}>
+      {Array.from({ length: count }, (_, index) => (
         <div key={index}>
           <div className="aspect-[2/3] animate-pulse rounded border border-slate-800 bg-slate-900" />
           <div className="mt-2 h-3 w-4/5 animate-pulse rounded bg-slate-800" />
@@ -620,9 +975,17 @@ function PosterSkeletonGrid() {
 
 function EmptyState({ description, title }) {
   return (
-    <div className="rounded border border-slate-800 bg-slate-950 px-5 py-10 text-center">
+    <div className="rounded border border-slate-800 bg-slate-950/60 px-5 py-8 text-center">
       <h2 className="text-lg font-black text-white">{title}</h2>
       <p className="mt-2 text-sm text-slate-400">{description}</p>
     </div>
   );
 }
+
+
+
+
+
+
+
+

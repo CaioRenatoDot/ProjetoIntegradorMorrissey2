@@ -30,7 +30,7 @@ export function getUserAvatarColor(name) {
 }
 
 export default function UserAvatar({ className = "", name, size = "md" }) {
-  const sizeClassName = size === "lg" ? "h-24 w-24 text-3xl" : "h-8 w-8 text-xs";
+  const sizeClassName = size === "lg" ? "h-24 w-24 text-3xl" : size === "nav" ? "h-7 w-7 text-[10px]" : size === "sm" ? "h-6 w-6 text-[10px]" : "h-8 w-8 text-xs";
   const initials = getUserInitials(name || "");
   const backgroundColor = getUserAvatarColor(name || "");
 
@@ -44,3 +44,5 @@ export default function UserAvatar({ className = "", name, size = "md" }) {
     </span>
   );
 }
+
+
