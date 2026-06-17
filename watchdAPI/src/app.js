@@ -2,6 +2,7 @@ const express = require('express');
 
 const authRoutes = require('./routes/auth.routes');
 const watchlistRoutes = require("./routes/watchlist.routes");
+const favoriteRoutes = require("./routes/favorite.routes")
 
 const app = express();
 
@@ -22,6 +23,7 @@ app.get("/health", (req, res) => {
   });
 });
 
+app.use("/favorites", favoriteRoutes);
 app.use("/auth", authRoutes);
 app.use("/watchlist", watchlistRoutes);
 

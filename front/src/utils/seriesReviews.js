@@ -15,7 +15,7 @@ export function saveSeriesReview(showId, reviewData) {
   localStorage.setItem(reviewStorageKey, JSON.stringify(savedReviews));
 }
 
-function getSavedSeriesReviews() {
+export function getSavedSeriesReviews() {
   try {
     const savedReviews = localStorage.getItem(reviewStorageKey);
     return savedReviews ? JSON.parse(savedReviews) : {};
@@ -23,3 +23,4 @@ function getSavedSeriesReviews() {
     return {};
   }
 }
+

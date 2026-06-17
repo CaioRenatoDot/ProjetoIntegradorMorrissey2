@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { DoorOpen, Search } from "lucide-react";
 import BrandLogo from "./BrandLogo";
+import UserAvatar from "./UserAvatar";
 
 export default function Navbar({
   currentUserName,
@@ -10,6 +11,7 @@ export default function Navbar({
   onLoginClick,
   onLogout,
   onNavigate,
+  onProfileClick,
   onRegisterClick,
   onSearchOpen,
   onSearchSubmit,
@@ -47,9 +49,13 @@ export default function Navbar({
           <div className="order-2 ml-auto flex flex-none items-center gap-2 md:order-4 md:ml-0">
             {isLoggedIn ? (
               <>
-                <span className="inline-flex min-h-9 max-w-24 items-center justify-center truncate rounded border border-zinc-700 px-3 text-sm font-bold text-slate-200 sm:max-w-44">
+                <button
+                  className="inline-flex min-h-9 max-w-24 items-center justify-center truncate rounded border border-zinc-700 px-3 text-sm font-bold text-slate-200 transition hover:border-[#00c030] hover:bg-zinc-800 hover:text-white sm:max-w-44"
+                  onClick={onProfileClick}
+                  type="button"
+                >
                   {currentUserName}
-                </span>
+                </button>
                 <button
                   aria-label="Log out"
                   className="grid h-9 w-9 place-items-center rounded border border-red-500/70 text-red-400 transition hover:border-red-400 hover:bg-red-500/10 hover:text-red-300"
@@ -174,3 +180,7 @@ export default function Navbar({
     </nav>
   );
 }
+
+
+
+

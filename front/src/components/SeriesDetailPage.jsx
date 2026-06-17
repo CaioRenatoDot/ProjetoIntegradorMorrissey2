@@ -1,8 +1,9 @@
-import { Calendar, Star } from "lucide-react";
+import { Calendar, Heart, Star } from "lucide-react";
 import { useEffect, useState } from "react";
 import BackButton from "./BackButton";
 import SeriesReviewForm from "./SeriesReviewForm";
 import { fallbackPoster } from "../data/constants";
+import { addFavorite, addToWatchlist, getFavorites, removeFavorite } from "../services/api";
 import { getShowById } from "../services/tvmaze";
 import { cleanSummary, getGenres } from "../utils/format";
 import { getSeriesReview, saveSeriesReview } from "../utils/seriesReviews";
@@ -14,6 +15,12 @@ export default function SeriesDetailPage({ onBack, showId }) {
   const [userRating, setUserRating] = useState(0);
   const [review, setReview] = useState("");
   const [reviewStatus, setReviewStatus] = useState("");
+  const [watchlistStatus, setWatchlistStatus] = useState("");
+  const [isAddingToWatchlist, setIsAddingToWatchlist] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [favoriteItemId, setFavoriteItemId] = useState(null);
+  const [favoriteStatus, setFavoriteStatus] = useState("");
+  const [isFavoriteLoading, setIsFavoriteLoading] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -52,7 +59,55 @@ export default function SeriesDetailPage({ onBack, showId }) {
     setUserRating(savedReview?.rating || 0);
     setReview(savedReview?.review || "");
     setReviewStatus("");
+    setFavoriteStatus("");
   }, [showId]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function fetchFavoriteState() {
+      const token = localStorage.getItem("watchd_token");
+
+      setIsFavorite(false);
+      setFavoriteItemId(null);
+
+      if (!token) {
+        return;
+      }
+
+      try {
+        const data = await getFavorites(token);
+        const favoriteItem = data.items.find((item) => {
+          return item.movieId === String(showId);
+        });
+
+        if (isMounted) {
+          setIsFavorite(Boolean(favoriteItem));
+          setFavoriteItemId(favoriteItem?.id || null);
+        }
+      } catch (error) {
+        if (isMounted) {
+          setFavoriteStatus(error.message);
+        }
+      }
+    }
+
+    fetchFavoriteState();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [showId]);
+
+  function buildSeriesPayload() {
+    return {
+      movieId: String(show.id),
+      title: show.name,
+      posterUrl: show.image?.medium || show.image?.original || "",
+      releaseYear: show.premiered || "",
+      type: "series",
+    };
+  }
 
   function handleSaveReview(event) {
     event.preventDefault();
@@ -65,6 +120,58 @@ export default function SeriesDetailPage({ onBack, showId }) {
     });
     setReview(trimmedReview);
     setReviewStatus("Review saved.");
+  }
+
+  async function handleAddToWatchlist() {
+    const token = localStorage.getItem("watchd_token");
+
+    if (!token) {
+      setWatchlistStatus("You need to be signed in to add this series.");
+      return;
+    }
+
+    setIsAddingToWatchlist(true);
+    setWatchlistStatus("");
+
+    try {
+      await addToWatchlist(token, buildSeriesPayload());
+      setWatchlistStatus("Series added to your watchlist.");
+    } catch (error) {
+      setWatchlistStatus(error.message);
+    } finally {
+      setIsAddingToWatchlist(false);
+    }
+  }
+
+  async function handleToggleFavorite() {
+    const token = localStorage.getItem("watchd_token");
+
+    if (!token) {
+      setFavoriteStatus("You need to be signed in to favorite this series.");
+      return;
+    }
+
+    setIsFavoriteLoading(true);
+    setFavoriteStatus("");
+
+    try {
+      if (isFavorite && favoriteItemId) {
+        await removeFavorite(token, favoriteItemId);
+        setIsFavorite(false);
+        setFavoriteItemId(null);
+        setFavoriteStatus("Series removed from your favorites.");
+        return;
+      }
+
+      const data = await addFavorite(token, buildSeriesPayload());
+      setIsFavorite(true);
+      setFavoriteItemId(data.item.id);
+      setFavoriteStatus("Series added to your favorites.");
+    } catch (error) {
+      setFavoriteStatus(error.message);
+    } finally {
+      setIsFavoriteLoading(false);
+    }
   }
 
   if (isLoading) {
@@ -146,6 +253,41 @@ export default function SeriesDetailPage({ onBack, showId }) {
               </a>
             )}
           </div>
+
+          <div className="mt-6 flex flex-wrap gap-3">
+            <button
+              className="min-h-11 rounded bg-[#00c030] px-5 font-black text-white transition hover:bg-[#32d85a] disabled:cursor-not-allowed disabled:bg-zinc-700"
+              disabled={isAddingToWatchlist}
+              onClick={handleAddToWatchlist}
+              type="button"
+            >
+              {isAddingToWatchlist ? "Adding..." : "Add to Watchlist"}
+            </button>
+            <button
+              className={`inline-flex min-h-11 items-center gap-2 rounded border px-5 font-black transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                isFavorite
+                  ? "border-[#00c030] bg-[#00c030]/10 text-[#00c030] hover:bg-[#00c030]/20"
+                  : "border-slate-700 text-slate-200 hover:border-[#00c030] hover:text-white"
+              }`}
+              disabled={isFavoriteLoading}
+              onClick={handleToggleFavorite}
+              type="button"
+            >
+              <Heart
+                aria-hidden="true"
+                className="h-4 w-4"
+                fill={isFavorite ? "currentColor" : "none"}
+              />
+              {isFavoriteLoading ? "Saving..." : isFavorite ? "Favorited" : "Favorite"}
+            </button>
+          </div>
+
+          {(watchlistStatus || favoriteStatus) && (
+            <div className="mt-3 space-y-1 text-sm font-bold text-slate-300">
+              {watchlistStatus && <p>{watchlistStatus}</p>}
+              {favoriteStatus && <p>{favoriteStatus}</p>}
+            </div>
+          )}
 
           <p className="mt-6 max-w-3xl text-base leading-8 text-slate-400">
             {cleanSummary(show.summary)}

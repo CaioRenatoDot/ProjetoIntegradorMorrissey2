@@ -15,8 +15,25 @@ model User {
   password String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  favoriteSeries FavoriteSeries[]
 
   watchlist WatchListItem[]
+}
+
+model FavoriteSeries{
+  id String @id @default(uuid())
+  userId String
+  movieId String
+  title String
+  posterUrl String?
+  releaseYear String?
+  type String
+  position Int @default(0)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, movieId])
 }
 
 model WatchListItem{

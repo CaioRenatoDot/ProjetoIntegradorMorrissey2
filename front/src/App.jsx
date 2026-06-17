@@ -6,11 +6,12 @@ import ListDetailPage from "./components/ListDetailPage";
 import ListPage from "./components/ListPage";
 import LoginScreen from "./components/LoginScreen";
 import Navbar from "./components/Navbar";
+import ProfilePage from "./components/ProfilePage";
 import ResultsSection from "./components/ResultsSection";
 import SeriesDetailPage from "./components/SeriesDetailPage";
 import { getMostPopularShows, searchShows } from "./services/tvmaze";
 import { shuffleItems } from "./utils/arrays";
-import {login, register, getMe} from "./services/api";
+import { login, register, getMe } from "./services/api";
 
 function getAuthModeFromHistoryState(state) {
   if (!state || typeof state !== "object") return null;
@@ -26,12 +27,14 @@ function getAuthModeFromHistoryState(state) {
 function getPageFromHash(hash) {
   if (hash === "#diary") return "diary";
   if (hash === "#lists") return "lists";
+  if (hash === "#profile") return "profile";
   return "home";
 }
 
 function getHashFromPage(page) {
   if (page === "diary") return "#diary";
   if (page === "lists") return "#lists";
+  if (page === "profile") return "#profile";
   return "#catalog";
 }
 
@@ -56,19 +59,20 @@ export default function App() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    async function restoreSession(){
+    async function restoreSession() {
       const token = localStorage.getItem("watchd_token");
 
-      if(!token){
+      if (!token) {
         return;
       }
 
       try {
         const data = await getMe(token);
 
-        setCurrentUserName("");
-        setIsLoggedIn(false);
-      } catch (error){
+        setCurrentUserName(data.user.name);
+        setIsLoggedIn(true);
+
+      } catch (error) {
         localStorage.removeItem("watchd_token");
         setCurrentUserName("")
         setIsLoggedIn(false)
@@ -76,7 +80,7 @@ export default function App() {
     }
 
     restoreSession();
-  },[]);
+  }, []);
 
   useEffect(() => {
     async function fetchSeries() {
@@ -151,7 +155,7 @@ export default function App() {
     setSelectedListId(null);
   }
 
- async function handleLogin(credentials) {
+  async function handleLogin(credentials) {
     const data = await login(credentials.email, credentials.password);
 
     localStorage.setItem("watchd_token", data.token);
@@ -161,7 +165,7 @@ export default function App() {
     closeAuthScreen();
   }
 
-  async function handleRegister(credentials){
+  async function handleRegister(credentials) {
     await register(credentials.name, credentials.email, credentials.password);
 
     const data = await login(credentials.email, credentials.password);
@@ -170,7 +174,7 @@ export default function App() {
 
     setCurrentUserName(data.user.name);
     setIsLoggedIn(true);
-    closeAuthScreen();    
+    closeAuthScreen();
   }
 
   function handleLogout() {
@@ -248,6 +252,7 @@ export default function App() {
           activePage={activePage}
           currentUserName={currentUserName}
           onNavigate={handleNavigate}
+          onProfileClick={() => handleNavigate("profile")}
           onLoginClick={() => openAuthScreen("login")}
           onLogout={handleLogout}
           onRegisterClick={() => openAuthScreen("register")}
@@ -276,6 +281,13 @@ export default function App() {
             onRegister={handleRegister}
             onModeChange={handleAuthModeChange}
           />
+        ) : activePage === "profile" ? (
+          <ProfilePage
+            currentUserName={currentUserName}
+            isLoggedIn={isLoggedIn}
+            onListSelect={handleListSelect}
+            onSeriesSelect={handleSeriesSelect}
+          />
         ) : activePage === "lists" ? (
           <ListPage onListSelect={handleListSelect} />
         ) : activePage === "listDetails" && selectedListId ? (
@@ -295,6 +307,11 @@ export default function App() {
               setSelectedShowId(null);
               if (detailReturnPage === "listDetails" && selectedListId) {
                 setActivePage("listDetails");
+                return;
+              }
+
+              if (detailReturnPage === "profile") {
+                setActivePage("profile");
                 return;
               }
 
@@ -343,3 +360,8 @@ export default function App() {
     </main>
   );
 }
+
+
+
+
+
