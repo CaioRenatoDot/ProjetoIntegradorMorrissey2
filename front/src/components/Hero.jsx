@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Search } from "lucide-react";
 import { fallbackPoster } from "../data/constants";
 import { getMostPopularShows } from "../services/tvmaze";
 
@@ -112,7 +113,12 @@ export default function Hero({
               type="search"
               value={query}
             />
-            <button className="min-h-11 flex-none rounded-md bg-[#00c030] px-4 text-sm font-black text-white transition hover:bg-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-300 sm:px-6 sm:text-base">
+            <button className="inline-flex min-h-11 flex-none items-center justify-center gap-2 rounded-md border border-[#00c030]/70 bg-[#00c030]/10 px-4 text-sm font-medium text-[#9af2aa] transition hover:border-[#00c030] hover:bg-[#00c030]/15 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00c030]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 sm:px-6 sm:text-base">
+              <Search
+                aria-hidden="true"
+                className="h-4 w-4"
+                strokeWidth={2.4}
+              />
               Search
             </button>
           </form>

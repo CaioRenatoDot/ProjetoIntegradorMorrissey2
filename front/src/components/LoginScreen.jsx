@@ -154,7 +154,7 @@ export default function LoginScreen({
             <p className="mt-8 text-sm text-slate-500">
               {authCopy.switchLabel}{" "}
               <button
-                className="font-bold text-[#00c030] transition hover:text-[#32d85a]"
+                className="font-medium text-[#9af2aa] transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00c030]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d0d0d]"
                 onClick={() => onModeChange(authCopy.switchMode)}
                 type="button"
               >
@@ -286,7 +286,7 @@ function RegisterForm({ email, onEmailChange, onRegister }) {
       </div>
 
       <button
-        className="min-h-12 w-full rounded-md bg-[#00c030] px-5 font-black text-[#ffffff] shadow-[0_0_28px_rgba(0,192,48,0.16)] transition hover:-translate-y-0.5 hover:bg-[#32d85a] hover:shadow-[0_14px_30px_rgba(0,192,48,0.22)] disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-400 disabled:shadow-none disabled:hover:translate-y-0"
+        className="min-h-12 w-full rounded-md border border-[#00c030]/70 bg-[#00c030]/10 px-5 font-medium text-[#9af2aa] transition hover:border-[#00c030] hover:bg-[#00c030]/15 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00c030]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d0d0d] disabled:cursor-not-allowed disabled:border-zinc-700 disabled:bg-zinc-900 disabled:text-zinc-500 disabled:hover:bg-zinc-900 disabled:hover:text-zinc-500"
         disabled={passwordsDoNotMatch}
       >
         Create account
@@ -342,7 +342,7 @@ function LoginForm({ email, onEmailChange, onLogin, onModeChange }) {
       <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
         <Label />
         <button
-          className="font-bold text-[#00c030] transition hover:text-[#32d85a]"
+          className="font-medium text-[#9af2aa] transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00c030]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d0d0d]"
           onClick={() => onModeChange("forgot")}
           type="button"
         >
@@ -350,7 +350,7 @@ function LoginForm({ email, onEmailChange, onLogin, onModeChange }) {
         </button>
       </div>
 
-      <button className="min-h-12 w-full rounded-md bg-[#00c030] px-5 font-black text-[#ffffff] shadow-[0_0_28px_rgba(0,192,48,0.16)] transition hover:-translate-y-0.5 hover:bg-[#32d85a] hover:shadow-[0_14px_30px_rgba(0,192,48,0.22)]">
+      <button className="min-h-12 w-full rounded-md border border-[#00c030]/70 bg-[#00c030]/10 px-5 font-medium text-[#9af2aa] transition hover:border-[#00c030] hover:bg-[#00c030]/15 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00c030]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d0d0d]">
         Sign in
       </button>
     </form>
@@ -393,13 +393,13 @@ function ForgotPasswordForm({ email, onEmailChange, onModeChange }) {
         </div>
       )}
 
-      <button className="flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-[#00c030] px-5 font-black text-[#ffffff] shadow-[0_0_28px_rgba(0,192,48,0.16)] transition hover:-translate-y-0.5 hover:bg-[#32d85a] hover:shadow-[0_14px_30px_rgba(0,192,48,0.22)]">
+      <button className="flex min-h-12 w-full items-center justify-center gap-2 rounded-md border border-[#00c030]/70 bg-[#00c030]/10 px-5 font-medium text-[#9af2aa] transition hover:border-[#00c030] hover:bg-[#00c030]/15 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00c030]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d0d0d]">
         <KeyRound aria-hidden="true" className="h-4 w-4" strokeWidth={2.5} />
         Send reset link
       </button>
 
       <button
-        className="min-h-12 w-full rounded-md border border-zinc-800 px-5 font-black text-slate-200 transition hover:border-[#00c030]/70 hover:text-white"
+        className="min-h-12 w-full rounded-md border border-zinc-800 px-5 font-medium text-slate-300 transition hover:border-zinc-600 hover:bg-zinc-900/70 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d0d0d]"
         onClick={() => onModeChange("login")}
         type="button"
       >

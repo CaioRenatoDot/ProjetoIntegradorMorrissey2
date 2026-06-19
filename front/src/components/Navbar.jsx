@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { DoorOpen, Search } from "lucide-react";
+import { DoorOpen, LogIn, Search } from "lucide-react";
 import BrandLogo from "./BrandLogo";
 import UserAvatar from "./UserAvatar";
 
@@ -77,14 +77,19 @@ export default function Navbar({
             ) : (
               <>
                 <button
-                  className="inline-flex min-h-9 items-center justify-center rounded border border-zinc-700 px-2.5 text-sm font-bold text-slate-200 transition hover:border-zinc-500 hover:bg-zinc-800 hover:text-white sm:px-3"
+                  className="group inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-white/10 bg-zinc-900/80 px-2.5 text-sm font-medium text-slate-200 shadow-sm shadow-black/20 transition hover:border-zinc-500/80 hover:bg-zinc-800 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00c030]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a] sm:px-3"
                   onClick={onLoginClick}
                   type="button"
                 >
+                  <LogIn
+                    aria-hidden="true"
+                    className="h-3.5 w-3.5 text-slate-400 transition group-hover:text-white"
+                    strokeWidth={2.5}
+                  />
                   Sign in
                 </button>
                 <button
-                  className="inline-flex min-h-9 items-center justify-center rounded border border-[#00c030] bg-[#00c030] px-2.5 text-sm font-black text-white transition hover:border-[#22d646] hover:bg-[#22d646] sm:px-3"
+                  className="inline-flex h-9 items-center justify-center rounded-md border border-[#00c030]/70 bg-transparent px-2.5 text-sm font-medium text-[#7ee895] transition hover:border-[#00c030] hover:bg-[#00c030]/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00c030]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a] sm:px-3"
                   onClick={onRegisterClick}
                   type="button"
                 >
