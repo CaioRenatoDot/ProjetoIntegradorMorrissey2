@@ -13,7 +13,6 @@ import ResultsSection from "./components/ResultsSection";
 import SearchResultsPage from "./components/SearchResultsPage";
 import SeriesDetailPage from "./components/SeriesDetailPage";
 import { getMostPopularShows, searchShows } from "./services/tvmaze";
-import { shuffleItems } from "./utils/arrays";
 import { login, register, getMe, updateProfile } from "./services/api";
 
 function getAuthModeFromHistoryState(state) {
@@ -84,6 +83,9 @@ function slideToElement(elementId, { duration = 1100, offset = 86 } = {}) {
   };
 }
 
+const popularSeriesStep = 18;
+const maxPopularSeriesLimit = popularSeriesStep * 4;
+
 function getDefaultProfileDetails(displayName = "") {
   return {
     displayName,
@@ -129,6 +131,7 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [shouldScrollToResults, setShouldScrollToResults] = useState(false);
+  const [popularSeriesLimit, setPopularSeriesLimit] = useState(popularSeriesStep);
 
   useEffect(() => {
     async function restoreSession() {
@@ -164,11 +167,11 @@ export default function App() {
       try {
         if (!hasSearched) {
           const popularShows = await getMostPopularShows({
-            limit: 60,
+            limit: popularSeriesLimit,
             pages: 6,
           });
 
-          setSeries(shuffleItems(popularShows).slice(0, 18));
+          setSeries(popularShows);
           return;
         }
 
@@ -182,7 +185,13 @@ export default function App() {
     }
 
     fetchSeries();
-  }, [hasSearched, searchTerm]);
+  }, [hasSearched, searchTerm, popularSeriesLimit]);
+
+  function handleShowMorePopularSeries() {
+    setPopularSeriesLimit((currentLimit) =>
+      Math.min(currentLimit + popularSeriesStep, maxPopularSeriesLimit)
+    );
+  }
 
   useEffect(() => {
     if (!shouldScrollToResults || isLoading || error || activePage !== "home") {
@@ -549,9 +558,11 @@ export default function App() {
             )}
 
             <ResultsSection
+              hasMore={popularSeriesLimit < maxPopularSeriesLimit}
               hasSearched={hasSearched}
               isLoading={isLoading}
               onSeriesSelect={handleSeriesSelect}
+              onShowMore={handleShowMorePopularSeries}
               searchTerm={searchTerm}
               series={series}
             />
