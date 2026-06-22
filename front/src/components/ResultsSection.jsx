@@ -25,13 +25,13 @@ export default function ResultsSection({
       </div>
 
       {isLoading ? (
-        <section className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-4 sm:grid-cols-[repeat(auto-fill,minmax(180px,1fr))] lg:gap-5">
+        <section className="grid grid-cols-4 gap-3 sm:grid-cols-5 sm:gap-4 lg:grid-cols-6">
           {Array.from({ length: 12 }, (_, index) => (
             <SkeletonCard key={index} />
           ))}
         </section>
       ) : (
-        <section className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-4 sm:grid-cols-[repeat(auto-fill,minmax(180px,1fr))] lg:gap-5">
+        <section className="grid grid-cols-4 gap-3 sm:grid-cols-5 sm:gap-4 lg:grid-cols-6">
           {series.map((show) => (
             <SeriesCard key={show.id} onSelect={onSeriesSelect} show={show} />
           ))}

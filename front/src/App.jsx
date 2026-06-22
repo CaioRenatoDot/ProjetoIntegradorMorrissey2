@@ -472,9 +472,8 @@ export default function App() {
           <ListPage onListSelect={handleListSelect} />
         ) : activePage === "myLists" ? (
           <MyListsPage
-            currentUserName={currentUserName}
+            isLoggedIn={isLoggedIn}
             onBack={() => handleNavigate("profile")}
-            onListSelect={(listId) => handleListSelect(listId, "myLists")}
           />
         ) : activePage === "listDetails" && selectedListId ? (
           <ListDetailPage
@@ -529,6 +528,7 @@ export default function App() {
             <Hero
               isLoading={isLoading}
               onSearchSubmit={handleHomeSearchSubmit}
+              onSeriesSelect={handleSeriesSelect}
               query={query}
               series={series}
               setQuery={setQuery}

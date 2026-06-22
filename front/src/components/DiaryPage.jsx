@@ -1,8 +1,9 @@
-import { CalendarDays, MessageSquareQuote, Star } from "lucide-react";
+import { CalendarDays, MessageSquareQuote } from "lucide-react";
 import { useEffect, useState } from "react";
 import { fallbackPoster } from "../data/constants";
 import { getMyReviews } from "../services/api";
 import Modal from "./Modal";
+import RatingStars from "./RatingStars";
 import UserAvatar from "./UserAvatar";
 
 export default function DiaryPage({ currentUserName, isLoggedIn, onSeriesSelect }) {
@@ -174,7 +175,7 @@ function DiaryEntry({ currentUserName, onSeriesSelect, review }) {
           >
             {review.title}
           </button>
-          <StarRating rating={review.rating} />
+          <RatingStars rating={review.rating} />
         </div>
 
         {review.text && (
@@ -207,7 +208,7 @@ function DiaryEntry({ currentUserName, onSeriesSelect, review }) {
                 </p>
               </div>
               <div className="mt-4">
-                <StarRating rating={review.rating} size={24} />
+                <RatingStars rating={review.rating} size={24} />
               </div>
             </div>
           </div>
@@ -220,24 +221,6 @@ function DiaryEntry({ currentUserName, onSeriesSelect, review }) {
         </Modal>
       )}
     </article>
-  );
-}
-
-function StarRating({ rating, size = 18 }) {
-  return (
-    <div className="flex gap-0.5 text-[#00c030]" aria-label={`${rating} stars`}>
-      {Array.from({ length: 5 }, (_, index) => {
-        const isSelected = index < rating;
-
-        return (
-          <Star
-            fill={isSelected ? "currentColor" : "none"}
-            key={index}
-            size={size}
-          />
-        );
-      })}
-    </div>
   );
 }
 

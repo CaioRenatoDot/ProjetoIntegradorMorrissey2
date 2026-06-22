@@ -1,38 +1,34 @@
+import { Star } from "lucide-react";
 import { fallbackPoster } from "../data/constants";
-import { cleanSummary, getGenres } from "../utils/format";
 
 export default function SeriesCard({ onSelect, show }) {
-  const rating = show.rating?.average ?? "N/A";
+  const rating = show.rating?.average;
 
   return (
-    <article className="group overflow-hidden rounded border border-slate-700 bg-slate-900 shadow-sm transition hover:-translate-y-1 hover:border-emerald-500 hover:shadow-xl hover:shadow-emerald-950/30">
+    <article className="group min-w-0">
       <button
-        className="block h-full w-full text-left"
+        className="block w-full text-left"
         onClick={() => onSelect(show.id)}
         type="button"
       >
-        <div className="relative h-56 overflow-hidden bg-slate-800 sm:h-64 lg:h-72">
+        <div className="relative overflow-hidden rounded border border-slate-700 bg-slate-900 shadow-lg shadow-black/30 transition group-hover:-translate-y-1 group-hover:border-emerald-500 group-hover:shadow-emerald-950/20">
           <img
-            className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
-            src={show.image?.medium || fallbackPoster}
             alt={`Poster for ${show.name}`}
+            className="aspect-2/3 w-full object-cover transition duration-300 group-hover:scale-105"
+            src={show.image?.medium || fallbackPoster}
           />
-          <div className="absolute right-2 top-2 rounded bg-slate-950/85 px-2 py-1 text-xs font-black text-emerald-400">
-            {rating}
-          </div>
+
+          {rating != null && (
+            <div className="absolute right-1.5 top-1.5 flex items-center gap-1 rounded bg-slate-950/85 px-1.5 py-1 text-[11px] font-black text-slate-200 backdrop-blur-sm">
+              <Star aria-hidden="true" className="h-3 w-3 text-amber-400" fill="currentColor" />
+              {rating}
+            </div>
+          )}
         </div>
 
-        <div className="flex min-h-36 flex-col gap-2 p-4">
-          <h2 className="line-clamp-1 text-sm font-black text-slate-50">
-            {show.name}
-          </h2>
-          <p className="line-clamp-1 text-xs font-bold text-slate-400">
-            {getGenres(show)}
-          </p>
-          <p className="line-clamp-2 text-xs leading-5 text-slate-500">
-            {cleanSummary(show.summary)}
-          </p>
-        </div>
+        <h2 className="mt-2 line-clamp-2 text-xs font-black leading-5 text-slate-100 sm:text-sm">
+          {show.name}
+        </h2>
       </button>
     </article>
   );

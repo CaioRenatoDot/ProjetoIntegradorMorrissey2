@@ -243,3 +243,55 @@ export async function saveReview(token, review) {
 
     return data;
 }
+
+export async function getMyLists(token) {
+    const response = await fetch(`${API_URL}/lists`, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.message || "Erro ao buscar listas.");
+    }
+
+    return data;
+}
+
+export async function createList(token, { title, category }) {
+    const response = await fetch(`${API_URL}/lists`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ title, category }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.message || "Erro ao criar lista.");
+    }
+
+    return data;
+}
+
+export async function deleteList(token, listId) {
+    const response = await fetch(`${API_URL}/lists/${listId}`, {
+        method: "DELETE",
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.message || "Erro ao remover lista.");
+    }
+
+    return data;
+}

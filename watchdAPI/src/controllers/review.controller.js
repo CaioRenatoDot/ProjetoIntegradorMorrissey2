@@ -64,9 +64,9 @@ async function upsert(req, res) {
         });
     }
 
-    if (rating < 1 || rating > 5) {
+    if (rating < 0.5 || rating > 5 || Math.round(rating * 2) !== rating * 2) {
         return res.status(400).json({
-            message: "rating precisa ser entre 1 e 5."
+            message: "rating precisa ser entre 0.5 e 5, em passos de 0.5."
         });
     }
 

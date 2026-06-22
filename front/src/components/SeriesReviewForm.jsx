@@ -1,7 +1,7 @@
-import { Save, Star } from "lucide-react";
+import { Save } from "lucide-react";
+import RatingStars from "./RatingStars";
 
 const maxReviewLength = 280;
-const starCount = 5;
 
 export default function SeriesReviewForm({
   isSaving,
@@ -25,42 +25,12 @@ export default function SeriesReviewForm({
           </p>
         </div>
 
-        <div className="flex gap-1" aria-label="Star rating">
-          {Array.from({ length: starCount }, (_, index) => {
-            const starValue = index + 1;
-            const isSelected = starValue <= userRating;
-
-            return (
-              <button
-                aria-label={`${starValue} star${starValue === 1 ? "" : "s"}`}
-                className="group relative grid h-9 w-9 place-items-center text-slate-600 transition hover:scale-110 hover:text-emerald-400"
-                key={starValue}
-                onClick={() => onStarClick(starValue)}
-                type="button"
-              >
-                <Star
-                  aria-hidden="true"
-                  className="h-[26px] w-[26px]"
-                  strokeWidth={2.2}
-                />
-                <span
-                  className="absolute left-[5px] top-1/2 h-[26px] -translate-y-1/2 overflow-hidden text-emerald-400 transition-[width] duration-500 ease-out"
-                  style={{
-                    transitionDelay: isSelected ? `${index * 90}ms` : "0ms",
-                    width: isSelected ? "26px" : "0px",
-                  }}
-                >
-                  <Star
-                    aria-hidden="true"
-                    className="h-[26px] w-[26px] flex-none"
-                    fill="currentColor"
-                    strokeWidth={2.2}
-                  />
-                </span>
-              </button>
-            );
-          })}
-        </div>
+        <RatingStars
+          interactive
+          onRate={onStarClick}
+          rating={userRating}
+          size={26}
+        />
       </div>
 
       <label

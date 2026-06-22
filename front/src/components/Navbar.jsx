@@ -42,11 +42,11 @@ export default function Navbar({
 
   return (
     <nav className="sticky top-0 z-50 border-b border-[#2e2e2e] bg-[#1a1a1a]">
-      <div className="mx-auto flex max-w-6xl flex-col px-3 sm:px-4 md:min-h-16 md:flex-row md:items-center md:gap-x-6 md:px-4 md:py-0">
-        <div className="flex min-h-14 w-full items-center justify-between gap-3 md:contents">
+      <div className="mx-auto flex max-w-6xl flex-col px-4 sm:px-5 md:min-h-16 md:flex-row md:items-center md:gap-x-6 md:px-4 md:py-0">
+        <div className="flex min-h-16 w-full items-center justify-between gap-3 md:min-h-14 md:contents">
           <BrandLogo className="order-1 min-w-0 md:mr-6" />
 
-          <div className="order-2 ml-auto flex flex-none items-center gap-2 md:order-4 md:ml-0">
+          <div className="order-2 ml-auto flex flex-none items-center gap-2.5 md:order-4 md:ml-0">
             {isLoggedIn ? (
               <>
                 <button
@@ -101,8 +101,8 @@ export default function Navbar({
           </div>
         </div>
 
-        <div className="flex w-full flex-wrap items-center gap-x-2 border-t border-[#2e2e2e] md:contents">
-          <div className="order-1 flex h-11 min-w-0 flex-1 items-center justify-start gap-2 overflow-x-auto text-[12px] font-semibold uppercase tracking-[0.13em] text-[#aaa] sm:gap-4 sm:text-[13px] md:order-2 md:h-16 md:w-auto md:flex-none md:justify-start md:overflow-visible">
+        <div className="flex w-full flex-wrap items-center gap-x-2 border-t border-[#2e2e2e] py-1.5 md:contents md:py-0">
+          <div className="order-1 flex h-11 min-w-0 flex-1 items-center justify-start gap-3 overflow-x-auto text-[12px] font-semibold uppercase tracking-[0.13em] text-[#aaa] sm:gap-4 sm:text-[13px] md:order-2 md:h-16 md:w-auto md:flex-none md:justify-start md:overflow-visible">
             <a
               className={
                 activePage === "home" ? activeLinkClassName : linkClassName

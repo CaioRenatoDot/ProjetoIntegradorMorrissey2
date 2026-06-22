@@ -1,6 +1,7 @@
 import { Calendar, Heart, Star } from "lucide-react";
 import { useEffect, useState } from "react";
 import BackButton from "./BackButton";
+import RatingStars from "./RatingStars";
 import SeriesReviewForm from "./SeriesReviewForm";
 import UserAvatar from "./UserAvatar";
 import { fallbackPoster } from "../data/constants";
@@ -436,27 +437,12 @@ function ReviewCard({ review }) {
             <p className="text-xs font-bold text-slate-500">{reviewDate}</p>
           </div>
         </div>
-        <StarRow rating={review.rating} />
+        <RatingStars rating={review.rating} size={14} />
       </div>
 
       {review.text && (
         <p className="mt-3 flex-1 text-sm leading-6 text-slate-300">{review.text}</p>
       )}
     </article>
-  );
-}
-
-function StarRow({ rating }) {
-  return (
-    <div aria-label={`${rating} star rating`} className="flex flex-none gap-0.5 text-emerald-400">
-      {Array.from({ length: 5 }, (_, index) => (
-        <Star
-          aria-hidden="true"
-          className="h-3.5 w-3.5"
-          fill={index < rating ? "currentColor" : "none"}
-          key={index}
-        />
-      ))}
-    </div>
   );
 }

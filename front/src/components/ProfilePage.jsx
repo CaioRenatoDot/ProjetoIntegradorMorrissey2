@@ -11,6 +11,7 @@ import {
 } from "../services/api";
 import { searchShows } from "../services/tvmaze";
 import ListPosterStrip from "./ListPosterStrip";
+import RatingStars from "./RatingStars";
 import UserAvatar from "./UserAvatar";
 
 const favoriteLimit = 4;
@@ -676,10 +677,30 @@ function ProfileBioPanel({
             )}
           </>
         ) : (
-          <p className="rounded border border-slate-800 bg-slate-950/60 px-4 py-6 text-center text-sm font-semibold text-slate-400">
-            No created lists yet.
-          </p>
+          <div className="group relative overflow-hidden rounded border border-slate-800 bg-slate-950/60 px-4 py-6 text-center">
+            <div className="relative mx-auto h-12 w-12">
+              <span
+                aria-hidden="true"
+                className="absolute inset-0 rounded-full bg-[#00c030] transition-transform duration-1250 ease-in-out group-hover:scale-[16]"
+              />
+              <button
+                aria-label="Create your own list"
+                className="relative z-10 grid h-12 w-12 place-items-center rounded-full text-white"
+                onClick={onViewAllLists}
+                type="button"
+              >
+                <Plus aria-hidden="true" className="h-5 w-5" strokeWidth={2.6} />
+              </button>
+            </div>
+            <p className="relative z-10 mt-3 text-xs font-black uppercase tracking-wide text-slate-300 transition-colors duration-500 group-hover:text-white">
+              Create your own list
+            </p>
+            <p className="relative z-10 mt-3 text-sm font-semibold text-slate-400 transition-colors duration-500 group-hover:text-white/80">
+              You don't have any lists yet
+            </p>
+          </div>
         )}
+
       </section>
     </aside>
   );
@@ -725,7 +746,7 @@ function FavoriteShelf({
       {isLoading ? (
         <PosterSkeletonGrid count={4} variant="large" />
       ) : visibleFavoriteItems.length ? (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="grid grid-cols-4 gap-2 sm:gap-4">
           {visibleFavoriteItems.map((item) => (
             <button
               aria-label={`Open details for ${item.title}`}
@@ -814,7 +835,7 @@ function RecentActivityShelf({ error, isLoading, items, onSeriesSelect }) {
       {isLoading ? (
         <PosterSkeletonGrid count={4} variant="large" />
       ) : items.length ? (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="grid grid-cols-4 gap-2 sm:gap-4">
           {items.map((item) => (
             <ActivityCard
               item={item}
@@ -850,7 +871,7 @@ function ActivityCard({ item, onSeriesSelect }) {
           />
         </div>
         <div className="mt-2 flex items-center gap-1 text-slate-500">
-          <RatingStars rating={item.rating} />
+          <RatingStars rating={item.rating} size={14} />
           {item.review && (
             <Heart
               aria-hidden="true"
@@ -862,24 +883,6 @@ function ActivityCard({ item, onSeriesSelect }) {
         </div>
       </button>
     </article>
-  );
-}
-
-function RatingStars({ rating }) {
-  return (
-    <span className="inline-flex items-center gap-0.5" aria-label={`${rating} star rating`}>
-      {Array.from({ length: 5 }, (_, index) => {
-        const isFilled = index + 1 <= rating;
-        return (
-          <Star
-            aria-hidden="true"
-            className={`h-3.5 w-3.5 ${isFilled ? "text-slate-400" : "text-slate-700"}`}
-            fill={isFilled ? "currentColor" : "none"}
-            key={index}
-          />
-        );
-      })}
-    </span>
   );
 }
 
@@ -1016,7 +1019,7 @@ function ShelfHeader({ action, count, eyebrow, onActionClick, title }) {
 function PosterSkeletonGrid({ count = 8, variant = "default" }) {
   const gridClassName =
     variant === "large"
-      ? "grid grid-cols-2 gap-3 sm:grid-cols-4"
+      ? "grid grid-cols-4 gap-2 sm:gap-4"
       : "grid grid-cols-[repeat(auto-fill,minmax(82px,1fr))] gap-4 sm:grid-cols-[repeat(auto-fill,minmax(104px,1fr))]";
 
   return (
