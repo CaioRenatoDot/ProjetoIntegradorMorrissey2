@@ -76,3 +76,15 @@ export const communityLists = [
 export function getCommunityListById(listId) {
   return communityLists.find((list) => list.id === listId) || null;
 }
+
+export function getListsByCreator(creatorName) {
+  const normalizedCreatorName = (creatorName || "").trim().toLowerCase();
+
+  return communityLists.filter((list) => {
+    const normalizedCreator = list.creator.trim().toLowerCase();
+    return (
+      normalizedCreator === normalizedCreatorName ||
+      normalizedCreator.startsWith(normalizedCreatorName)
+    );
+  });
+}

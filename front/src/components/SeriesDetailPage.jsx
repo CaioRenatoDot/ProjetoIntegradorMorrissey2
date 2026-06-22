@@ -2,11 +2,18 @@ import { Calendar, Heart, Star } from "lucide-react";
 import { useEffect, useState } from "react";
 import BackButton from "./BackButton";
 import SeriesReviewForm from "./SeriesReviewForm";
+import UserAvatar from "./UserAvatar";
 import { fallbackPoster } from "../data/constants";
-import { addFavorite, addToWatchlist, getFavorites, removeFavorite } from "../services/api";
+import {
+  addFavorite,
+  addToWatchlist,
+  getFavorites,
+  getReviews,
+  removeFavorite,
+  saveReview,
+} from "../services/api";
 import { getShowById } from "../services/tvmaze";
 import { cleanSummary, getGenres } from "../utils/format";
-import { getSeriesReview, saveSeriesReview } from "../utils/seriesReviews";
 
 export default function SeriesDetailPage({ onBack, showId }) {
   const [show, setShow] = useState(null);
@@ -15,6 +22,10 @@ export default function SeriesDetailPage({ onBack, showId }) {
   const [userRating, setUserRating] = useState(0);
   const [review, setReview] = useState("");
   const [reviewStatus, setReviewStatus] = useState("");
+  const [isSavingReview, setIsSavingReview] = useState(false);
+  const [reviews, setReviews] = useState([]);
+  const [isReviewsLoading, setIsReviewsLoading] = useState(true);
+  const [reviewsError, setReviewsError] = useState("");
   const [watchlistStatus, setWatchlistStatus] = useState("");
   const [isAddingToWatchlist, setIsAddingToWatchlist] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
@@ -54,12 +65,37 @@ export default function SeriesDetailPage({ onBack, showId }) {
   }, [showId]);
 
   useEffect(() => {
-    const savedReview = getSeriesReview(showId);
+    let isMounted = true;
 
-    setUserRating(savedReview?.rating || 0);
-    setReview(savedReview?.review || "");
+    async function fetchReviews() {
+      setIsReviewsLoading(true);
+      setReviewsError("");
+
+      try {
+        const token = localStorage.getItem("watchd_token");
+        const data = await getReviews(showId, token);
+
+        if (!isMounted) return;
+
+        setReviews(data.items);
+
+        const myReview = data.items.find((item) => item.isMine);
+        setUserRating(myReview?.rating || 0);
+        setReview(myReview?.text || "");
+      } catch (error) {
+        if (isMounted) setReviewsError(error.message);
+      } finally {
+        if (isMounted) setIsReviewsLoading(false);
+      }
+    }
+
     setReviewStatus("");
     setFavoriteStatus("");
+    fetchReviews();
+
+    return () => {
+      isMounted = false;
+    };
   }, [showId]);
 
   useEffect(() => {
@@ -109,18 +145,45 @@ export default function SeriesDetailPage({ onBack, showId }) {
     };
   }
 
-  function handleSaveReview(event) {
+  async function handleSaveReview(event) {
     event.preventDefault();
+
+    const token = localStorage.getItem("watchd_token");
+
+    if (!token) {
+      setReviewStatus("You need to be signed in to save a review.");
+      return;
+    }
+
+    if (!userRating) {
+      setReviewStatus("Pick a star rating before saving.");
+      return;
+    }
 
     const trimmedReview = review.trim();
 
-    saveSeriesReview(showId, {
-      rating: userRating,
-      review: trimmedReview,
-    });
-    setReview(trimmedReview);
-    setReviewStatus("Review saved.");
+    setIsSavingReview(true);
+    setReviewStatus("");
+
+    try {
+      await saveReview(token, {
+        ...buildSeriesPayload(),
+        rating: userRating,
+        text: trimmedReview,
+      });
+
+      const data = await getReviews(showId, token);
+
+      setReviews(data.items);
+      setReview(trimmedReview);
+      setReviewStatus("Review saved.");
+    } catch (error) {
+      setReviewStatus(error.message);
+    } finally {
+      setIsSavingReview(false);
+    }
   }
+
 
   async function handleAddToWatchlist() {
     const token = localStorage.getItem("watchd_token");
@@ -294,6 +357,7 @@ export default function SeriesDetailPage({ onBack, showId }) {
           </p>
 
           <SeriesReviewForm
+            isSaving={isSavingReview}
             onReviewChange={setReview}
             onSave={handleSaveReview}
             onStarClick={setUserRating}
@@ -303,6 +367,96 @@ export default function SeriesDetailPage({ onBack, showId }) {
           />
         </div>
       </div>
+
+      <section className="mt-10 border-t border-slate-800 pt-8">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-black uppercase tracking-wide text-emerald-400">
+              Community
+            </p>
+            <h2 className="mt-1 text-2xl font-black text-white">Reviews</h2>
+          </div>
+          {!isReviewsLoading && (
+            <p className="text-sm font-bold text-slate-500">
+              {reviews.length} {reviews.length === 1 ? "review" : "reviews"}
+            </p>
+          )}
+        </div>
+
+        {reviewsError && (
+          <p className="mt-4 rounded border border-red-900 bg-red-950/50 px-4 py-3 text-sm font-bold text-red-200">
+            {reviewsError}
+          </p>
+        )}
+
+        {isReviewsLoading ? (
+          <div className="mt-5 grid gap-4 sm:grid-cols-2">
+            {Array.from({ length: 3 }, (_, index) => (
+              <div
+                className="h-36 animate-pulse rounded border border-slate-800 bg-slate-900"
+                key={index}
+              />
+            ))}
+          </div>
+        ) : reviews.length ? (
+          <div className="mt-5 grid gap-4 sm:grid-cols-2">
+            {reviews.map((item) => (
+              <ReviewCard key={item.id} review={item} />
+            ))}
+          </div>
+        ) : (
+          <p className="mt-5 rounded border border-slate-800 bg-slate-950/60 px-5 py-8 text-center text-sm font-bold text-slate-400">
+            No reviews yet. Be the first to share your thoughts about this series.
+          </p>
+        )}
+      </section>
     </section>
+  );
+}
+
+function ReviewCard({ review }) {
+  const reviewDate = new Intl.DateTimeFormat("en-US", { dateStyle: "medium" }).format(
+    new Date(review.updatedAt)
+  );
+
+  return (
+    <article className="flex flex-col rounded border border-slate-800 bg-slate-950 p-5 shadow-lg shadow-black/20">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <UserAvatar name={review.user.name} size="sm" />
+          <div className="min-w-0">
+            <p className="flex flex-wrap items-center gap-2 text-sm font-black text-white">
+              {review.user.name}
+              {review.isMine && (
+                <span className="rounded bg-[#00c030]/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-[#32d85a]">
+                  Your review
+                </span>
+              )}
+            </p>
+            <p className="text-xs font-bold text-slate-500">{reviewDate}</p>
+          </div>
+        </div>
+        <StarRow rating={review.rating} />
+      </div>
+
+      {review.text && (
+        <p className="mt-3 flex-1 text-sm leading-6 text-slate-300">{review.text}</p>
+      )}
+    </article>
+  );
+}
+
+function StarRow({ rating }) {
+  return (
+    <div aria-label={`${rating} star rating`} className="flex flex-none gap-0.5 text-emerald-400">
+      {Array.from({ length: 5 }, (_, index) => (
+        <Star
+          aria-hidden="true"
+          className="h-3.5 w-3.5"
+          fill={index < rating ? "currentColor" : "none"}
+          key={index}
+        />
+      ))}
+    </div>
   );
 }

@@ -1,37 +1,31 @@
-import { Bookmark, Clipboard, GripVertical, Heart, Link, ListChecks, MapPin, Star, Trash2 } from "lucide-react";
+import { Bookmark, Clipboard, GripVertical, Heart, Link, ListChecks, MapPin, Plus, Star, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { communityLists } from "../data/communityLists";
+import { getListsByCreator } from "../data/communityLists";
 import { fallbackPoster } from "../data/constants";
 import {
   getFavorites,
+  getMyReviews,
   getWatchlist,
   removeFromWatchlist,
   reorderFavorites,
 } from "../services/api";
-import { getShowById } from "../services/tvmaze";
-import { getSavedSeriesReviews } from "../utils/seriesReviews";
+import { searchShows } from "../services/tvmaze";
+import ListPosterStrip from "./ListPosterStrip";
 import UserAvatar from "./UserAvatar";
 
 const favoriteLimit = 4;
 const watchlistPreviewLimit = 8;
 const recentActivityLimit = 4;
-
-function normalizeText(value) {
-  return value.trim().toLowerCase();
-}
-
-function getReviewEntries() {
-  return Object.entries(getSavedSeriesReviews()).sort(([, firstReview], [, secondReview]) => {
-    return new Date(secondReview.updatedAt || 0) - new Date(firstReview.updatedAt || 0);
-  });
-}
+const listPreviewLimit = 3;
 
 export default function ProfilePage({
   currentUserName,
   isLoggedIn,
+  onDiaryClick,
   onEditProfileClick,
   onListSelect,
   onSeriesSelect,
+  onViewAllLists,
   profileDetails,
 }) {
   const [watchlistItems, setWatchlistItems] = useState([]);
@@ -50,21 +44,55 @@ export default function ProfilePage({
   const [draggedFavoriteId, setDraggedFavoriteId] = useState(null);
   const [profileUrlStatus, setProfileUrlStatus] = useState("");
   const [isProfileActionsOpen, setIsProfileActionsOpen] = useState(false);
+  const [listPreviewImages, setListPreviewImages] = useState({});
+  const [reviewedSeriesCount, setReviewedSeriesCount] = useState(0);
   const profileActionsRef = useRef(null);
 
-  const userLists = useMemo(() => {
-    const normalizedUserName = normalizeText(currentUserName || "");
+  const userLists = useMemo(() => getListsByCreator(currentUserName), [currentUserName]);
 
-    return communityLists.filter((list) => {
-      const normalizedCreator = normalizeText(list.creator);
-      return (
-        normalizedCreator === normalizedUserName ||
-        normalizedCreator.startsWith(normalizedUserName)
+  useEffect(() => {
+    let isMounted = true;
+
+    async function fetchListPreviews() {
+      if (!userLists.length) {
+        setListPreviewImages({});
+        return;
+      }
+
+      const previewEntries = await Promise.all(
+        userLists.map(async (list) => {
+          const posters = await Promise.all(
+            list.items.slice(0, 4).map(async (item) => {
+              try {
+                const results = await searchShows(item.search);
+                const matchedShow =
+                  results.find((show) => {
+                    return show.name?.trim().toLowerCase() === item.name.trim().toLowerCase();
+                  }) || results[0];
+
+                return matchedShow?.image?.medium || matchedShow?.image?.original || "";
+              } catch {
+                return "";
+              }
+            })
+          );
+
+          return [list.id, posters];
+        })
       );
-    });
-  }, [currentUserName]);
 
-  const reviewedSeriesCount = getReviewEntries().length;
+      if (isMounted) {
+        setListPreviewImages(Object.fromEntries(previewEntries));
+      }
+    }
+
+    fetchListPreviews();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [userLists]);
+
   useEffect(() => {
     if (!isProfileActionsOpen) return undefined;
 
@@ -134,14 +162,16 @@ export default function ProfilePage({
       if (!isLoggedIn) {
         setRecentActivityItems([]);
         setRecentActivityError("");
+        setReviewedSeriesCount(0);
         return;
       }
 
-      const recentReviews = getReviewEntries().slice(0, recentActivityLimit);
+      const token = localStorage.getItem("watchd_token");
 
-      if (!recentReviews.length) {
+      if (!token) {
         setRecentActivityItems([]);
-        setRecentActivityError("");
+        setRecentActivityError("Sign in again to load your activity.");
+        setReviewedSeriesCount(0);
         return;
       }
 
@@ -149,24 +179,25 @@ export default function ProfilePage({
       setRecentActivityError("");
 
       try {
-        const items = await Promise.all(
-          recentReviews.map(async ([showId, review]) => {
-            const show = await getShowById(showId);
-            return {
-              movieId: String(show.id),
-              title: show.name,
-              posterUrl: show.image?.medium || show.image?.original || "",
-              rating: review.rating || 0,
-              review: review.review || "",
-              updatedAt: review.updatedAt,
-            };
-          })
-        );
+        const data = await getMyReviews(token);
 
-        if (isMounted) setRecentActivityItems(items);
+        if (!isMounted) return;
+
+        setReviewedSeriesCount(data.items.length);
+        setRecentActivityItems(
+          data.items.slice(0, recentActivityLimit).map((item) => ({
+            movieId: item.movieId,
+            title: item.title,
+            posterUrl: item.posterUrl || "",
+            rating: item.rating || 0,
+            review: item.text || "",
+            updatedAt: item.updatedAt,
+          }))
+        );
       } catch (error) {
         if (isMounted) {
           setRecentActivityItems([]);
+          setReviewedSeriesCount(0);
           setRecentActivityError(error.message);
         }
       } finally {
@@ -320,7 +351,7 @@ export default function ProfilePage({
   const stats = [
     { icon: Heart, label: "Favorites", value: favoriteItems.length },
     { icon: Bookmark, label: "Watchlist", value: watchlistItems.length },
-    { icon: Star, label: "Watched", value: reviewedSeriesCount },
+    { icon: Star, label: "Watchd", value: reviewedSeriesCount },
     { icon: ListChecks, label: "Lists", value: userLists.length },
   ];
   const profileName = profileDetails?.displayName || currentUserName;
@@ -403,7 +434,7 @@ export default function ProfilePage({
           )}
         </div>
 
-        {isLoggedIn && <ProfileTabs />}
+        {isLoggedIn && <ProfileTabs onDiaryClick={onDiaryClick} />}
       </header>
 
       {!isLoggedIn ? (
@@ -475,57 +506,17 @@ export default function ProfilePage({
                 />
               )}
             </section>
-
-            <section>
-              <ShelfHeader
-                eyebrow="User shelves"
-                title="Created Lists"
-                description="Collections created by this profile. Frontend-only for now."
-                count={`${userLists.length} lists`}
-              />
-
-              {userLists.length ? (
-                <div className="divide-y divide-slate-800 overflow-hidden rounded border border-slate-800 bg-slate-950/60">
-                  {userLists.map((list) => (
-                    <button
-                      aria-label={`Open list ${list.title}`}
-                      className="grid w-full gap-4 p-4 text-left transition hover:bg-slate-900/70 sm:grid-cols-[1fr_auto] sm:items-center"
-                      key={list.id}
-                      onClick={() => onListSelect(list.id)}
-                      type="button"
-                    >
-                      <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="rounded bg-[#00c030]/10 px-2 py-1 text-[11px] font-black uppercase tracking-wide text-[#32d85a]">
-                            {list.category}
-                          </span>
-                          <span className="text-[11px] font-bold uppercase tracking-wide text-slate-500">
-                            {list.items.length} titles
-                          </span>
-                        </div>
-                        <h3 className="mt-2 text-base font-black text-white">
-                          {list.title}
-                        </h3>
-                        <p className="mt-1 line-clamp-1 text-sm font-semibold text-slate-400">
-                          {list.items.map((item) => item.name).join(" / ")}
-                        </p>
-                      </div>
-                      <p className="text-xs font-black uppercase tracking-wide text-[#00c030]">
-                        Open list
-                      </p>
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <EmptyState
-                  title="No created lists yet"
-                  description="This profile does not have created lists in the frontend mock data yet."
-                />
-              )}
-            </section>
           </div>
 
-          <ProfileBioPanel currentUserName={profileName} profileDetails={profileDetails} stats={stats} />
+          <ProfileBioPanel
+            currentUserName={profileName}
+            listPreviewImages={listPreviewImages}
+            onListSelect={onListSelect}
+            onViewAllLists={onViewAllLists}
+            profileDetails={profileDetails}
+            stats={stats}
+            userLists={userLists}
+          />
         </div>
       )}
     </section>
@@ -543,16 +534,19 @@ function ProfileShelfHeader({ action, title }) {
   );
 }
 
-function ProfileTabs() {
+function ProfileTabs({ onDiaryClick }) {
   const tabs = [
     "Profile",
-    "Activity",
     "Series",
     "Diary",
     "Reviews",
     "Watchlist",
     "Lists",
   ];
+
+  const tabHandlers = {
+    Diary: onDiaryClick,
+  };
 
   return (
     <nav className="mt-7 overflow-x-auto rounded border border-slate-800 bg-slate-950/30 px-4" aria-label="Profile sections">
@@ -563,6 +557,7 @@ function ProfileTabs() {
               tab === "Profile" ? "text-white" : "text-slate-400"
             }`}
             key={tab}
+            onClick={tabHandlers[tab]}
             type="button"
           >
             {tab}
@@ -576,7 +571,15 @@ function ProfileTabs() {
   );
 }
 
-function ProfileBioPanel({ currentUserName, profileDetails, stats }) {
+function ProfileBioPanel({
+  currentUserName,
+  listPreviewImages,
+  onListSelect,
+  onViewAllLists,
+  profileDetails,
+  stats,
+  userLists,
+}) {
   const bio =
     profileDetails?.bio ||
     `${currentUserName} is building a shelf of favorite series, recent ratings, and titles saved for later.`;
@@ -622,6 +625,61 @@ function ProfileBioPanel({ currentUserName, profileDetails, stats }) {
             </div>
           ))}
         </div>
+      </section>
+
+      <section>
+        <ProfileShelfHeader title="Created Lists" />
+
+        {userLists.length ? (
+          <>
+            <div className="space-y-4">
+              {userLists.slice(0, listPreviewLimit).map((list) => (
+                <button
+                  aria-label={`Open list ${list.title}`}
+                  className="group block w-full overflow-hidden rounded border border-slate-800 bg-slate-950/60 text-left transition hover:-translate-y-1 hover:border-[#00c030] hover:shadow-lg hover:shadow-black/30"
+                  key={list.id}
+                  onClick={() => onListSelect(list.id)}
+                  type="button"
+                >
+                  <ListPosterStrip posters={listPreviewImages[list.id]} />
+
+                  <div className="p-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="inline-flex h-6 items-center rounded-md border border-white/10 bg-zinc-900/80 px-2 text-[11px] font-medium uppercase tracking-wide text-slate-200 shadow-sm shadow-black/20">
+                        {list.category}
+                      </span>
+                      <span className="text-[11px] font-bold uppercase tracking-wide text-slate-500">
+                        {list.items.length} titles
+                      </span>
+                    </div>
+                    <h3 className="mt-2 truncate text-sm font-black text-white">
+                      {list.title}
+                    </h3>
+                    <p className="mt-1 flex items-center gap-1.5 text-xs font-bold text-slate-500">
+                      <ListChecks aria-hidden="true" className="h-3.5 w-3.5 text-slate-600" />
+                      Created by {list.creator}
+                    </p>
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            {userLists.length > listPreviewLimit && (
+              <button
+                className="mt-4 inline-flex h-8 w-full items-center justify-center gap-1.5 rounded border border-slate-700 text-xs font-black uppercase tracking-wide text-slate-300 transition hover:border-[#00c030] hover:text-white"
+                onClick={onViewAllLists}
+                type="button"
+              >
+                Show more
+                <Plus aria-hidden="true" className="h-3.5 w-3.5" strokeWidth={2.6} />
+              </button>
+            )}
+          </>
+        ) : (
+          <p className="rounded border border-slate-800 bg-slate-950/60 px-4 py-6 text-center text-sm font-semibold text-slate-400">
+            No created lists yet.
+          </p>
+        )}
       </section>
     </aside>
   );

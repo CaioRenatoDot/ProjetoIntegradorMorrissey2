@@ -2,6 +2,28 @@ const prisma = require("../config/prisma");
 const bcrypt = require("bcrypt")
 const jwt = require("jsonwebtoken");
 
+function slugify(value) {
+    return value
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[̀-ͯ]/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+}
+
+async function generateUniqueUsername(name) {
+    const baseSlug = slugify(name) || "user";
+    let candidate = baseSlug;
+    let suffix = 1;
+
+    while (await prisma.user.findUnique({ where: { username: candidate } })) {
+        suffix += 1;
+        candidate = `${baseSlug}-${suffix}`;
+    }
+
+    return candidate;
+}
+
 async function register(req, res) {
     const { name, email, password } = req.body;
 
@@ -24,12 +46,14 @@ async function register(req, res) {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10)
+    const username = await generateUniqueUsername(name);
 
     const user = await prisma.user.create({
         data: {
             name,
             email,
-            password: hashedPassword
+            password: hashedPassword,
+            username
         }
     });
 
@@ -39,6 +63,7 @@ async function register(req, res) {
             id: user.id,
             name: user.name,
             email: user.email,
+            username: user.username,
         }
     });
 }
@@ -88,7 +113,8 @@ async function login(req, res) {
     user: {
         id: user.id,
         name: user.name,
-        email: user.email
+        email: user.email,
+        username: user.username
     }
 });
 
@@ -100,11 +126,70 @@ async function me(req, res){
     });
 }
 
+async function updateProfile(req, res) {
+    const { displayName, location, website, bio, username } = req.body;
+
+    let normalizedUsername;
+
+    if (username !== undefined) {
+        normalizedUsername = username.trim().toLowerCase();
+
+        if (!/^[a-z0-9-]{3,30}$/.test(normalizedUsername)) {
+            return res.status(400).json({
+                message: "Username precisa ter de 3 a 30 caracteres: letras minusculas, numeros e hifen."
+            });
+        }
+
+        const usernameTaken = await prisma.user.findFirst({
+            where: {
+                username: normalizedUsername,
+                NOT: {
+                    id: req.user.id
+                }
+            }
+        });
+
+        if (usernameTaken) {
+            return res.status(400).json({
+                message: "Esse username ja esta em uso."
+            });
+        }
+    }
+
+    const user = await prisma.user.update({
+        where: {
+            id: req.user.id
+        },
+        data: {
+            displayName,
+            location,
+            website,
+            bio,
+            ...(normalizedUsername !== undefined ? { username: normalizedUsername } : {})
+        }
+    });
+
+    return res.json({
+        message: "Perfil atualizado com sucesso.",
+        user: {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            username: user.username,
+            displayName: user.displayName,
+            location: user.location,
+            website: user.website,
+            bio: user.bio
+        }
+    });
+}
+
 
 
 
 module.exports = {
     register,
     login,
-    me
+    me,
+    updateProfile
 };

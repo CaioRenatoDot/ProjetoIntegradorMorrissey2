@@ -6,6 +6,7 @@ import HomeFooter from "./components/HomeFooter";
 import ListDetailPage from "./components/ListDetailPage";
 import ListPage from "./components/ListPage";
 import LoginScreen from "./components/LoginScreen";
+import MyListsPage from "./components/MyListsPage";
 import Navbar from "./components/Navbar";
 import ProfilePage from "./components/ProfilePage";
 import ResultsSection from "./components/ResultsSection";
@@ -13,7 +14,7 @@ import SearchResultsPage from "./components/SearchResultsPage";
 import SeriesDetailPage from "./components/SeriesDetailPage";
 import { getMostPopularShows, searchShows } from "./services/tvmaze";
 import { shuffleItems } from "./utils/arrays";
-import { login, register, getMe } from "./services/api";
+import { login, register, getMe, updateProfile } from "./services/api";
 
 function getAuthModeFromHistoryState(state) {
   if (!state || typeof state !== "object") return null;
@@ -29,6 +30,7 @@ function getAuthModeFromHistoryState(state) {
 function getPageFromHash(hash) {
   if (hash === "#diary") return "diary";
   if (hash === "#lists") return "lists";
+  if (hash === "#my-lists") return "myLists";
   if (hash === "#profile") return "profile";
   if (hash === "#edit-profile") return "editProfile";
   if (hash === "#search") return "search";
@@ -38,6 +40,7 @@ function getPageFromHash(hash) {
 function getHashFromPage(page) {
   if (page === "diary") return "#diary";
   if (page === "lists") return "#lists";
+  if (page === "myLists") return "#my-lists";
   if (page === "profile") return "#profile";
   if (page === "editProfile") return "#edit-profile";
   if (page === "search") return "#search";
@@ -52,7 +55,7 @@ function easeInOutCubic(progress) {
 
 function slideToElement(elementId, { duration = 1100, offset = 86 } = {}) {
   const target = document.getElementById(elementId);
-  if (!target) return () => {};
+  if (!target) return () => { };
 
   const startY = window.scrollY;
   const targetY = target.getBoundingClientRect().top + window.scrollY - offset;
@@ -80,53 +83,27 @@ function slideToElement(elementId, { duration = 1100, offset = 86 } = {}) {
     if (animationFrameId) window.cancelAnimationFrame(animationFrameId);
   };
 }
-function getProfileStorageKey(userKey) {
-  return `watchd_profile_details:${userKey || "guest"}`;
-}
 
 function getDefaultProfileDetails(displayName = "") {
   return {
     displayName,
-    location: "Brazil",
+    location: "World",
     website: "",
     bio: "Building a shelf of favorite series, recent ratings, and titles saved for later.",
   };
 }
 
-function loadProfileDetails(userKey, fallbackName) {
-  const defaults = getDefaultProfileDetails(fallbackName || "");
+function mapUserToProfileDetails(user) {
+  const defaults = getDefaultProfileDetails(user.name);
 
-  if (typeof localStorage === "undefined") return defaults;
-
-  try {
-    const savedProfile = JSON.parse(
-      localStorage.getItem(getProfileStorageKey(userKey)) || "null"
-    );
-
-    if (!savedProfile || typeof savedProfile !== "object") return defaults;
-
-    return {
-      ...defaults,
-      ...savedProfile,
-      displayName: savedProfile.displayName || defaults.displayName,
-    };
-  } catch (error) {
-    return defaults;
-  }
+  return {
+    displayName: user.displayName || defaults.displayName,
+    location: user.location || defaults.location,
+    website: user.website || defaults.website,
+    bio: user.bio || defaults.bio,
+  };
 }
 
-function saveProfileDetails(userKey, profileDetails) {
-  if (typeof localStorage === "undefined") return;
-
-  localStorage.setItem(
-    getProfileStorageKey(userKey),
-    JSON.stringify(profileDetails)
-  );
-}
-
-function getUserKey(user) {
-  return user?.email || user?.id || user?.name || "guest";
-}
 export default function App() {
   const [query, setQuery] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
@@ -141,11 +118,14 @@ export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loginEmail, setLoginEmail] = useState("");
   const [currentUserName, setCurrentUserName] = useState("");
-  const [currentUserKey, setCurrentUserKey] = useState("");
+  const [currentUserEmail, setCurrentUserEmail] = useState("");
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [profileSaveError, setProfileSaveError] = useState("");
   const [profileDetails, setProfileDetails] = useState(() => getDefaultProfileDetails(""));
   const [selectedShowId, setSelectedShowId] = useState(null);
   const [selectedListId, setSelectedListId] = useState(null);
   const [detailReturnPage, setDetailReturnPage] = useState("home");
+  const [listDetailReturnPage, setListDetailReturnPage] = useState("lists");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [shouldScrollToResults, setShouldScrollToResults] = useState(false);
@@ -161,16 +141,14 @@ export default function App() {
       try {
         const data = await getMe(token);
 
-        const userKey = getUserKey(data.user);
-        const savedProfile = loadProfileDetails(userKey, data.user.name);
-
-        setCurrentUserKey(userKey);
-        setProfileDetails(savedProfile);
-        setCurrentUserName(savedProfile.displayName || data.user.name);
+        setProfileDetails(mapUserToProfileDetails(data.user));
+        setCurrentUserName(data.user.displayName || data.user.name);
+        setCurrentUserEmail(data.user.email);
         setIsLoggedIn(true);
       } catch (error) {
         localStorage.removeItem("watchd_token");
         setCurrentUserName("");
+        setCurrentUserEmail("");
         setIsLoggedIn(false);
       }
     }
@@ -211,7 +189,7 @@ export default function App() {
       return undefined;
     }
 
-    let cancelSlide = () => {};
+    let cancelSlide = () => { };
     let resetTimer = null;
     const scrollDuration = 1200;
     const timer = window.setTimeout(() => {
@@ -308,14 +286,14 @@ export default function App() {
 
     localStorage.setItem("watchd_token", data.token);
 
-    const userKey = getUserKey(data.user);
-    const savedProfile = loadProfileDetails(userKey, data.user.name);
+    const me = await getMe(data.token);
 
-    setCurrentUserKey(userKey);
-    setProfileDetails(savedProfile);
-    setCurrentUserName(savedProfile.displayName || data.user.name);
+    setProfileDetails(mapUserToProfileDetails(me.user));
+    setCurrentUserName(me.user.displayName || me.user.name);
+    setCurrentUserEmail(me.user.email);
     setIsLoggedIn(true);
     closeAuthScreen();
+
   }
 
   async function handleRegister(credentials) {
@@ -325,20 +303,20 @@ export default function App() {
 
     localStorage.setItem("watchd_token", data.token);
 
-    const userKey = getUserKey(data.user);
-    const savedProfile = loadProfileDetails(userKey, data.user.name);
+    const me = await getMe(data.token);
 
-    setCurrentUserKey(userKey);
-    setProfileDetails(savedProfile);
-    setCurrentUserName(savedProfile.displayName || data.user.name);
+    setProfileDetails(mapUserToProfileDetails(me.user));
+    setCurrentUserName(me.user.displayName || me.user.name);
+    setCurrentUserEmail(me.user.email);
     setIsLoggedIn(true);
     closeAuthScreen();
   }
 
+
   function handleLogout() {
     localStorage.removeItem("watchd_token");
     setCurrentUserName("");
-    setCurrentUserKey("");
+    setCurrentUserEmail("");
     setProfileDetails(getDefaultProfileDetails(""));
     setIsLoggedIn(false);
   }
@@ -389,9 +367,10 @@ export default function App() {
     }
   }
 
-  function handleListSelect(listId) {
+  function handleListSelect(listId, returnPage = "lists") {
     setSelectedShowId(null);
     setSelectedListId(listId);
+    setListDetailReturnPage(returnPage);
     setActivePage("listDetails");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -402,7 +381,10 @@ export default function App() {
     setActivePage("details");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
-  function handleProfileSave(nextProfile) {
+
+  async function handleProfileSave(nextProfile) {
+    const token = localStorage.getItem("watchd_token");
+
     const normalizedProfile = {
       displayName: nextProfile.displayName.trim() || currentUserName,
       location: nextProfile.location.trim(),
@@ -410,11 +392,22 @@ export default function App() {
       bio: nextProfile.bio.trim(),
     };
 
-    saveProfileDetails(currentUserKey, normalizedProfile);
-    setProfileDetails(normalizedProfile);
-    setCurrentUserName(normalizedProfile.displayName);
-    handleNavigate("profile");
+    setIsSavingProfile(true);
+    setProfileSaveError("");
+
+    try {
+      const data = await updateProfile(token, normalizedProfile);
+
+      setProfileDetails(mapUserToProfileDetails(data.user));
+      setCurrentUserName(data.user.displayName || data.user.name);
+      handleNavigate("profile");
+    } catch (saveError) {
+      setProfileSaveError(saveError.message);
+    } finally {
+      setIsSavingProfile(false);
+    }
   }
+
   return (
     <main className="min-h-screen overflow-x-clip bg-[#14181c] text-slate-100">
       {!isLoginVisible && (
@@ -457,31 +450,43 @@ export default function App() {
           <ProfilePage
             currentUserName={currentUserName}
             isLoggedIn={isLoggedIn}
+            onDiaryClick={() => handleNavigate("diary")}
             onEditProfileClick={() => handleNavigate("editProfile")}
-            onListSelect={handleListSelect}
+            onListSelect={(listId) => handleListSelect(listId, "profile")}
             onSeriesSelect={handleSeriesSelect}
+            onViewAllLists={() => handleNavigate("myLists")}
             profileDetails={profileDetails}
           />
         ) : activePage === "editProfile" ? (
           <EditProfilePage
+            currentUserEmail={currentUserEmail}
             currentUserName={currentUserName}
             isLoggedIn={isLoggedIn}
+            isSaving={isSavingProfile}
             onBack={() => handleNavigate("profile")}
             onSave={handleProfileSave}
             profileDetails={profileDetails}
+            saveError={profileSaveError}
           />
         ) : activePage === "lists" ? (
           <ListPage onListSelect={handleListSelect} />
+        ) : activePage === "myLists" ? (
+          <MyListsPage
+            currentUserName={currentUserName}
+            onBack={() => handleNavigate("profile")}
+            onListSelect={(listId) => handleListSelect(listId, "myLists")}
+          />
         ) : activePage === "listDetails" && selectedListId ? (
           <ListDetailPage
             listId={selectedListId}
-            onBack={() => setActivePage("lists")}
+            onBack={() => setActivePage(listDetailReturnPage)}
             onSeriesSelect={(showId) => handleSeriesSelect(showId, "listDetails")}
           />
         ) : activePage === "diary" ? (
           <DiaryPage
             currentUserName={currentUserName}
             isLoggedIn={isLoggedIn}
+            onSeriesSelect={(showId) => handleSeriesSelect(showId, "diary")}
           />
         ) : activePage === "search" ? (
           <SearchResultsPage
@@ -507,6 +512,11 @@ export default function App() {
 
               if (detailReturnPage === "search") {
                 setActivePage("search");
+                return;
+              }
+
+              if (detailReturnPage === "diary") {
+                setActivePage("diary");
                 return;
               }
 

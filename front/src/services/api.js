@@ -175,3 +175,71 @@ export async function reorderFavorites(token, ids) {
 
     return data;
 }
+
+export async function updateProfile(token, profile){
+    const response = await fetch(`${API_URL}/auth/me`, {
+        method: "PUT",
+        headers: {
+            "Content-Type" : "application/json",
+            Authorization:`Bearer ${token}`,
+        },
+        body: JSON.stringify(profile),
+    });
+
+    const data = await response.json();
+
+    if(!response.ok){
+        throw new Error(data.message || "Erro ao atualizar perfil.");
+    }
+
+    return data;
+}
+
+export async function getReviews(movieId, token) {
+    const response = await fetch(`${API_URL}/reviews/${movieId}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.message || "Erro ao buscar reviews.");
+    }
+
+    return data;
+}
+
+export async function getMyReviews(token) {
+    const response = await fetch(`${API_URL}/reviews/mine`, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.message || "Erro ao buscar suas reviews.");
+    }
+
+    return data;
+}
+
+export async function saveReview(token, review) {
+    const response = await fetch(`${API_URL}/reviews`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(review),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.message || "Erro ao salvar review.");
+    }
+
+    return data;
+}

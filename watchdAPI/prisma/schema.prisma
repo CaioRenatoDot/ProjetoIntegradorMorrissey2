@@ -12,12 +12,18 @@ model User {
   id String @id @default(uuid())
   name String
   email String @unique
+  username String? @unique
   password String
+  displayName String?
+  location String?
+  website String?
+  bio String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   favoriteSeries FavoriteSeries[]
 
   watchlist WatchListItem[]
+  reviews Review[]
 }
 
 model FavoriteSeries{
@@ -48,4 +54,22 @@ model WatchListItem{
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+}
+
+model Review {
+  id String @id @default(uuid())
+  userId String
+  movieId String
+  title String
+  posterUrl String?
+  releaseYear String?
+  type String
+  rating Int
+  text String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, movieId])
 }

@@ -4,6 +4,7 @@ const maxReviewLength = 280;
 const starCount = 5;
 
 export default function SeriesReviewForm({
+  isSaving,
   onReviewChange,
   onSave,
   onStarClick,
@@ -86,11 +87,12 @@ export default function SeriesReviewForm({
             <p className="text-sm font-bold text-emerald-400">{status}</p>
           )}
           <button
-            className="inline-flex min-h-10 items-center gap-2 rounded bg-[#00c030] px-4 text-sm font-black text-white transition hover:bg-emerald-400"
+            className="inline-flex min-h-10 items-center gap-2 rounded bg-[#00c030] px-4 text-sm font-black text-white transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:bg-zinc-700"
+            disabled={isSaving}
             type="submit"
           >
             <Save size={17} />
-            Save
+            {isSaving ? "Saving..." : "Save"}
           </button>
         </div>
       </div>

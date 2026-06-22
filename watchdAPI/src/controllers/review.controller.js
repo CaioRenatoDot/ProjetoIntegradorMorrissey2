@@ -1,0 +1,121 @@
+const prisma = require("../config/prisma");
+
+async function listForMovie(req, res) {
+    const { movieId } = req.params;
+
+    const reviews = await prisma.review.findMany({
+        where: {
+            movieId
+        },
+        orderBy: {
+            createdAt: "desc"
+        },
+        include: {
+            user: {
+                select: {
+                    id: true,
+                    name: true,
+                    displayName: true
+                }
+            }
+        }
+    });
+
+    const items = reviews.map((review) => ({
+        id: review.id,
+        movieId: review.movieId,
+        title: review.title,
+        posterUrl: review.posterUrl,
+        releaseYear: review.releaseYear,
+        type: review.type,
+        rating: review.rating,
+        text: review.text,
+        createdAt: review.createdAt,
+        updatedAt: review.updatedAt,
+        isMine: req.user?.id === review.userId,
+        user: {
+            id: review.user.id,
+            name: review.user.displayName || review.user.name
+        }
+    }));
+
+    return res.json({ items });
+}
+
+async function listMine(req, res) {
+    const reviews = await prisma.review.findMany({
+        where: {
+            userId: req.user.id
+        },
+        orderBy: {
+            updatedAt: "desc"
+        }
+    });
+
+    return res.json({ items: reviews });
+}
+
+async function upsert(req, res) {
+    const { movieId, title, posterUrl, releaseYear, type, rating, text } = req.body;
+
+    if (!movieId || !title || !type || !rating) {
+        return res.status(400).json({
+            message: "movieId, title, type e rating sao obrigatorios."
+        });
+    }
+
+    if (rating < 1 || rating > 5) {
+        return res.status(400).json({
+            message: "rating precisa ser entre 1 e 5."
+        });
+    }
+
+    const existingReview = await prisma.review.findFirst({
+        where: {
+            userId: req.user.id,
+            movieId
+        }
+    });
+
+    let review;
+
+    if (existingReview) {
+        review = await prisma.review.update({
+            where: {
+                id: existingReview.id
+            },
+            data: {
+                rating,
+                text: text || "",
+                title,
+                posterUrl,
+                releaseYear,
+                type
+            }
+        });
+    } else {
+        review = await prisma.review.create({
+            data: {
+                userId: req.user.id,
+                movieId,
+                title,
+                posterUrl,
+                releaseYear,
+                type,
+                rating,
+                text: text || ""
+            }
+        });
+    }
+
+    return res.status(existingReview ? 200 : 201).json({
+        message: "Review salva com sucesso.",
+        item: review
+    });
+}
+
+module.exports = {
+    listForMovie,
+    listMine,
+    upsert
+};
