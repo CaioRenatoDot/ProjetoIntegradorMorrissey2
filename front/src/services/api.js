@@ -260,6 +260,22 @@ export async function getMyLists(token) {
     return data;
 }
 
+export async function getList(token, listId) {
+    const response = await fetch(`${API_URL}/lists/${listId}`, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.message || "Erro ao buscar lista.");
+    }
+
+    return data;
+}
+
 export async function createList(token, { title, category }) {
     const response = await fetch(`${API_URL}/lists`, {
         method: "POST",
@@ -291,6 +307,25 @@ export async function deleteList(token, listId) {
 
     if (!response.ok) {
         throw new Error(data.message || "Erro ao remover lista.");
+    }
+
+    return data;
+}
+
+export async function addListItem(token, listId, item) {
+    const response = await fetch(`${API_URL}/lists/${listId}/items`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(item),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.message || "Erro ao adicionar item na lista.");
     }
 
     return data;

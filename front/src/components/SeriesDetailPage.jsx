@@ -1,5 +1,5 @@
-import { Calendar, Heart, Star } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Calendar, Heart, ListPlus, Star } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import BackButton from "./BackButton";
 import RatingStars from "./RatingStars";
 import SeriesReviewForm from "./SeriesReviewForm";
@@ -7,8 +7,11 @@ import UserAvatar from "./UserAvatar";
 import { fallbackPoster } from "../data/constants";
 import {
   addFavorite,
+  addListItem,
   addToWatchlist,
+  createList,
   getFavorites,
+  getMyLists,
   getReviews,
   removeFavorite,
   saveReview,
@@ -33,6 +36,14 @@ export default function SeriesDetailPage({ onBack, showId }) {
   const [favoriteItemId, setFavoriteItemId] = useState(null);
   const [favoriteStatus, setFavoriteStatus] = useState("");
   const [isFavoriteLoading, setIsFavoriteLoading] = useState(false);
+  const [userLists, setUserLists] = useState([]);
+  const [isListsMenuOpen, setIsListsMenuOpen] = useState(false);
+  const [isListsLoading, setIsListsLoading] = useState(false);
+  const [addingToListId, setAddingToListId] = useState(null);
+  const [listActionStatus, setListActionStatus] = useState("");
+  const [newListTitle, setNewListTitle] = useState("");
+  const [isCreatingList, setIsCreatingList] = useState(false);
+  const listsMenuRef = useRef(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -92,6 +103,8 @@ export default function SeriesDetailPage({ onBack, showId }) {
 
     setReviewStatus("");
     setFavoriteStatus("");
+    setListActionStatus("");
+    setIsListsMenuOpen(false);
     fetchReviews();
 
     return () => {
@@ -135,6 +148,27 @@ export default function SeriesDetailPage({ onBack, showId }) {
       isMounted = false;
     };
   }, [showId]);
+
+  useEffect(() => {
+    if (!isListsMenuOpen) return undefined;
+
+    function handleDocumentPointerDown(event) {
+      if (listsMenuRef.current?.contains(event.target)) return;
+      setIsListsMenuOpen(false);
+    }
+
+    function handleDocumentKeyDown(event) {
+      if (event.key === "Escape") setIsListsMenuOpen(false);
+    }
+
+    document.addEventListener("pointerdown", handleDocumentPointerDown);
+    document.addEventListener("keydown", handleDocumentKeyDown);
+
+    return () => {
+      document.removeEventListener("pointerdown", handleDocumentPointerDown);
+      document.removeEventListener("keydown", handleDocumentKeyDown);
+    };
+  }, [isListsMenuOpen]);
 
   function buildSeriesPayload() {
     return {
@@ -235,6 +269,75 @@ export default function SeriesDetailPage({ onBack, showId }) {
       setFavoriteStatus(error.message);
     } finally {
       setIsFavoriteLoading(false);
+    }
+  }
+
+  async function handleToggleListsMenu() {
+    const token = localStorage.getItem("watchd_token");
+
+    if (!token) {
+      setListActionStatus("You need to be signed in to add this series to a list.");
+      return;
+    }
+
+    const willOpen = !isListsMenuOpen;
+    setIsListsMenuOpen(willOpen);
+
+    if (!willOpen) return;
+
+    setListActionStatus("");
+    setIsListsLoading(true);
+
+    try {
+      const data = await getMyLists(token);
+      setUserLists(data.items || []);
+    } catch (error) {
+      setListActionStatus(error.message);
+    } finally {
+      setIsListsLoading(false);
+    }
+  }
+
+  async function handleAddToList(listId, listTitle) {
+    const token = localStorage.getItem("watchd_token");
+    if (!token) return;
+
+    setAddingToListId(listId);
+    setListActionStatus("");
+
+    try {
+      await addListItem(token, listId, buildSeriesPayload());
+      setListActionStatus(`Added to "${listTitle}".`);
+      setIsListsMenuOpen(false);
+    } catch (error) {
+      setListActionStatus(error.message);
+    } finally {
+      setAddingToListId(null);
+    }
+  }
+
+  async function handleCreateListAndAdd(event) {
+    event.preventDefault();
+
+    const trimmedTitle = newListTitle.trim();
+    if (!trimmedTitle) return;
+
+    const token = localStorage.getItem("watchd_token");
+    if (!token) return;
+
+    setIsCreatingList(true);
+    setListActionStatus("");
+
+    try {
+      const listData = await createList(token, { title: trimmedTitle, category: null });
+      await addListItem(token, listData.item.id, buildSeriesPayload());
+      setNewListTitle("");
+      setListActionStatus(`Added to "${trimmedTitle}".`);
+      setIsListsMenuOpen(false);
+    } catch (error) {
+      setListActionStatus(error.message);
+    } finally {
+      setIsCreatingList(false);
     }
   }
 
@@ -344,12 +447,74 @@ export default function SeriesDetailPage({ onBack, showId }) {
               />
               {isFavoriteLoading ? "Saving..." : isFavorite ? "Favorited" : "Favorite"}
             </button>
+
+            <div className="relative" ref={listsMenuRef}>
+              <button
+                aria-expanded={isListsMenuOpen}
+                className="inline-flex min-h-11 items-center gap-2 rounded border border-slate-700 px-5 font-black text-slate-200 transition hover:border-[#00c030] hover:text-white"
+                onClick={handleToggleListsMenu}
+                type="button"
+              >
+                <ListPlus aria-hidden="true" className="h-4 w-4" />
+                Add to List
+              </button>
+
+              {isListsMenuOpen && (
+                <div className="absolute left-0 top-full z-20 mt-2 w-72 overflow-hidden rounded border border-slate-700 bg-slate-900 shadow-xl shadow-black/40">
+                  {isListsLoading ? (
+                    <div className="p-4 text-sm font-bold text-slate-400">Loading your lists...</div>
+                  ) : userLists.length ? (
+                    <ul className="max-h-56 overflow-y-auto py-1">
+                      {userLists.map((list) => (
+                        <li key={list.id}>
+                          <button
+                            className="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left text-sm font-bold text-slate-200 transition hover:bg-slate-800 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+                            disabled={addingToListId === list.id}
+                            onClick={() => handleAddToList(list.id, list.title)}
+                            type="button"
+                          >
+                            <span className="truncate">{list.title}</span>
+                            <span className="flex-none text-xs font-bold text-slate-500">
+                              {addingToListId === list.id ? "Adding..." : `${list.itemsCount} items`}
+                            </span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <div className="px-4 py-3 text-sm font-bold text-slate-400">
+                      You don't have any lists yet.
+                    </div>
+                  )}
+
+                  <form
+                    className="flex items-center gap-2 border-t border-slate-800 p-3"
+                    onSubmit={handleCreateListAndAdd}
+                  >
+                    <input
+                      className="min-h-9 w-full min-w-0 rounded border border-slate-700 bg-[#14181c] px-3 text-sm font-semibold text-white outline-none transition placeholder:text-slate-600 focus:border-[#00c030]"
+                      onChange={(event) => setNewListTitle(event.target.value)}
+                      placeholder="New list name"
+                      value={newListTitle}
+                    />
+                    <button
+                      className="min-h-9 flex-none rounded bg-[#00c030] px-3 text-xs font-black uppercase tracking-wide text-white transition hover:bg-[#32d85a] disabled:cursor-not-allowed disabled:bg-zinc-700"
+                      disabled={!newListTitle.trim() || isCreatingList}
+                      type="submit"
+                    >
+                      {isCreatingList ? "..." : "Create"}
+                    </button>
+                  </form>
+                </div>
+              )}
+            </div>
           </div>
 
-          {(watchlistStatus || favoriteStatus) && (
+          {(watchlistStatus || favoriteStatus || listActionStatus) && (
             <div className="mt-3 space-y-1 text-sm font-bold text-slate-300">
               {watchlistStatus && <p>{watchlistStatus}</p>}
               {favoriteStatus && <p>{favoriteStatus}</p>}
+              {listActionStatus && <p>{listActionStatus}</p>}
             </div>
           )}
 

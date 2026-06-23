@@ -7,6 +7,7 @@ import ListDetailPage from "./components/ListDetailPage";
 import ListPage from "./components/ListPage";
 import LoginScreen from "./components/LoginScreen";
 import MyListsPage from "./components/MyListsPage";
+import MySeriesPage from "./components/MySeriesPage";
 import Navbar from "./components/Navbar";
 import ProfilePage from "./components/ProfilePage";
 import ResultsSection from "./components/ResultsSection";
@@ -28,6 +29,7 @@ function getAuthModeFromHistoryState(state) {
 
 function getPageFromHash(hash) {
   if (hash === "#diary") return "diary";
+  if (hash === "#my-series") return "mySeries";
   if (hash === "#lists") return "lists";
   if (hash === "#my-lists") return "myLists";
   if (hash === "#profile") return "profile";
@@ -38,6 +40,7 @@ function getPageFromHash(hash) {
 
 function getHashFromPage(page) {
   if (page === "diary") return "#diary";
+  if (page === "mySeries") return "#my-series";
   if (page === "lists") return "#lists";
   if (page === "myLists") return "#my-lists";
   if (page === "profile") return "#profile";
@@ -463,6 +466,7 @@ export default function App() {
             onEditProfileClick={() => handleNavigate("editProfile")}
             onListSelect={(listId) => handleListSelect(listId, "profile")}
             onSeriesSelect={handleSeriesSelect}
+            onSeriesTabClick={() => handleNavigate("mySeries")}
             onViewAllLists={() => handleNavigate("myLists")}
             profileDetails={profileDetails}
           />
@@ -496,6 +500,11 @@ export default function App() {
             isLoggedIn={isLoggedIn}
             onSeriesSelect={(showId) => handleSeriesSelect(showId, "diary")}
           />
+        ) : activePage === "mySeries" ? (
+          <MySeriesPage
+            isLoggedIn={isLoggedIn}
+            onSeriesSelect={(showId) => handleSeriesSelect(showId, "mySeries")}
+          />
         ) : activePage === "search" ? (
           <SearchResultsPage
             error={error}
@@ -525,6 +534,11 @@ export default function App() {
 
               if (detailReturnPage === "diary") {
                 setActivePage("diary");
+                return;
+              }
+
+              if (detailReturnPage === "mySeries") {
+                setActivePage("mySeries");
                 return;
               }
 

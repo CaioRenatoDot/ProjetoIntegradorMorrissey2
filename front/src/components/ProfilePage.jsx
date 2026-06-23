@@ -1,15 +1,15 @@
 import { Bookmark, Clipboard, GripVertical, Heart, Link, ListChecks, MapPin, Plus, Star, Trash2 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { getListsByCreator } from "../data/communityLists";
+import { useEffect, useRef, useState } from "react";
 import { fallbackPoster } from "../data/constants";
 import {
   getFavorites,
+  getList,
+  getMyLists,
   getMyReviews,
   getWatchlist,
   removeFromWatchlist,
   reorderFavorites,
 } from "../services/api";
-import { searchShows } from "../services/tvmaze";
 import ListPosterStrip from "./ListPosterStrip";
 import RatingStars from "./RatingStars";
 import UserAvatar from "./UserAvatar";
@@ -26,6 +26,7 @@ export default function ProfilePage({
   onEditProfileClick,
   onListSelect,
   onSeriesSelect,
+  onSeriesTabClick,
   onViewAllLists,
   profileDetails,
 }) {
@@ -47,9 +48,51 @@ export default function ProfilePage({
   const [isProfileActionsOpen, setIsProfileActionsOpen] = useState(false);
   const [listPreviewImages, setListPreviewImages] = useState({});
   const [reviewedSeriesCount, setReviewedSeriesCount] = useState(0);
+  const [userLists, setUserLists] = useState([]);
+  const [isListsLoading, setIsListsLoading] = useState(false);
+  const [listsError, setListsError] = useState("");
   const profileActionsRef = useRef(null);
 
-  const userLists = useMemo(() => getListsByCreator(currentUserName), [currentUserName]);
+  useEffect(() => {
+    let isMounted = true;
+
+    async function fetchUserLists() {
+      if (!isLoggedIn) {
+        setUserLists([]);
+        setListsError("");
+        return;
+      }
+
+      const token = localStorage.getItem("watchd_token");
+
+      if (!token) {
+        setUserLists([]);
+        setListsError("Sign in again to load your lists.");
+        return;
+      }
+
+      setIsListsLoading(true);
+      setListsError("");
+
+      try {
+        const data = await getMyLists(token);
+        if (isMounted) setUserLists(data.items || []);
+      } catch (error) {
+        if (isMounted) {
+          setUserLists([]);
+          setListsError(error.message);
+        }
+      } finally {
+        if (isMounted) setIsListsLoading(false);
+      }
+    }
+
+    fetchUserLists();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isLoggedIn]);
 
   useEffect(() => {
     let isMounted = true;
@@ -60,25 +103,21 @@ export default function ProfilePage({
         return;
       }
 
+      const token = localStorage.getItem("watchd_token");
+      if (!token) return;
+
       const previewEntries = await Promise.all(
-        userLists.map(async (list) => {
-          const posters = await Promise.all(
-            list.items.slice(0, 4).map(async (item) => {
-              try {
-                const results = await searchShows(item.search);
-                const matchedShow =
-                  results.find((show) => {
-                    return show.name?.trim().toLowerCase() === item.name.trim().toLowerCase();
-                  }) || results[0];
+        userLists.slice(0, listPreviewLimit).map(async (list) => {
+          try {
+            const data = await getList(token, list.id);
+            const posters = (data.list.items || [])
+              .slice(0, 4)
+              .map((item) => item.posterUrl || "");
 
-                return matchedShow?.image?.medium || matchedShow?.image?.original || "";
-              } catch {
-                return "";
-              }
-            })
-          );
-
-          return [list.id, posters];
+            return [list.id, posters];
+          } catch {
+            return [list.id, []];
+          }
         })
       );
 
@@ -435,7 +474,9 @@ export default function ProfilePage({
           )}
         </div>
 
-        {isLoggedIn && <ProfileTabs onDiaryClick={onDiaryClick} />}
+        {isLoggedIn && (
+          <ProfileTabs onDiaryClick={onDiaryClick} onSeriesClick={onSeriesTabClick} />
+        )}
       </header>
 
       {!isLoggedIn ? (
@@ -511,7 +552,9 @@ export default function ProfilePage({
 
           <ProfileBioPanel
             currentUserName={profileName}
+            isListsLoading={isListsLoading}
             listPreviewImages={listPreviewImages}
+            listsError={listsError}
             onListSelect={onListSelect}
             onViewAllLists={onViewAllLists}
             profileDetails={profileDetails}
@@ -535,7 +578,7 @@ function ProfileShelfHeader({ action, title }) {
   );
 }
 
-function ProfileTabs({ onDiaryClick }) {
+function ProfileTabs({ onDiaryClick, onSeriesClick }) {
   const tabs = [
     "Profile",
     "Series",
@@ -546,6 +589,7 @@ function ProfileTabs({ onDiaryClick }) {
   ];
 
   const tabHandlers = {
+    Series: onSeriesClick,
     Diary: onDiaryClick,
   };
 
@@ -574,7 +618,9 @@ function ProfileTabs({ onDiaryClick }) {
 
 function ProfileBioPanel({
   currentUserName,
+  isListsLoading,
   listPreviewImages,
+  listsError,
   onListSelect,
   onViewAllLists,
   profileDetails,
@@ -631,7 +677,19 @@ function ProfileBioPanel({
       <section>
         <ProfileShelfHeader title="Created Lists" />
 
-        {userLists.length ? (
+        {listsError && (
+          <p className="mb-4 rounded border border-red-900 bg-red-950/50 px-4 py-3 text-sm font-bold text-red-200">
+            {listsError}
+          </p>
+        )}
+
+        {isListsLoading ? (
+          <div className="space-y-4">
+            {Array.from({ length: 2 }, (_, index) => (
+              <div className="h-40 animate-pulse rounded border border-slate-800 bg-slate-900" key={index} />
+            ))}
+          </div>
+        ) : userLists.length ? (
           <>
             <div className="space-y-4">
               {userLists.slice(0, listPreviewLimit).map((list) => (
@@ -646,11 +704,13 @@ function ProfileBioPanel({
 
                   <div className="p-3">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="inline-flex h-6 items-center rounded-md border border-white/10 bg-zinc-900/80 px-2 text-[11px] font-medium uppercase tracking-wide text-slate-200 shadow-sm shadow-black/20">
-                        {list.category}
-                      </span>
+                      {list.category && (
+                        <span className="inline-flex h-6 items-center rounded-md border border-white/10 bg-zinc-900/80 px-2 text-[11px] font-medium uppercase tracking-wide text-slate-200 shadow-sm shadow-black/20">
+                          {list.category}
+                        </span>
+                      )}
                       <span className="text-[11px] font-bold uppercase tracking-wide text-slate-500">
-                        {list.items.length} titles
+                        {list.itemsCount} {list.itemsCount === 1 ? "title" : "titles"}
                       </span>
                     </div>
                     <h3 className="mt-2 truncate text-sm font-black text-white">
@@ -658,7 +718,7 @@ function ProfileBioPanel({
                     </h3>
                     <p className="mt-1 flex items-center gap-1.5 text-xs font-bold text-slate-500">
                       <ListChecks aria-hidden="true" className="h-3.5 w-3.5 text-slate-600" />
-                      Created by {list.creator}
+                      Created by {currentUserName}
                     </p>
                   </div>
                 </button>
