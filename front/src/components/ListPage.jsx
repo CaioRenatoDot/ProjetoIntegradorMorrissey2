@@ -1,66 +1,108 @@
-import { Search } from "lucide-react";
-import { useMemo, useState } from "react";
-import { communityLists } from "../data/communityLists";
+import { ChevronDown } from "lucide-react";
+import { useEffect, useState } from "react";
+import { getAllLists } from "../services/api";
 import ListCard from "./ListCard";
 
+const PAGE_SIZE = 6;
+
 export default function ListPage({ onListSelect }) {
-  const [listSearch, setListSearch] = useState("");
+  const [lists, setLists] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
-  const filteredLists = useMemo(() => {
-    const normalizedSearch = listSearch.trim().toLowerCase();
+  useEffect(() => {
+    let isMounted = true;
 
-    if (!normalizedSearch) return communityLists;
+    async function fetchLists() {
+      setIsLoading(true);
+      setError("");
 
-    return communityLists.filter((list) => {
-      const searchableText = `${list.title} ${list.category}`.toLowerCase();
-      return searchableText.includes(normalizedSearch);
-    });
-  }, [listSearch]);
+      try {
+        const data = await getAllLists();
+        if (isMounted) setLists(data.items);
+      } catch (requestError) {
+        if (isMounted) setError(requestError.message);
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    }
+
+    fetchLists();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const visibleLists = lists.slice(0, visibleCount);
+  const hasMore = visibleCount < lists.length;
 
   return (
     <section id="lists" className="py-8 sm:py-12">
-      <header className="mb-8 flex flex-col gap-5 border-b border-slate-800 pb-8 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <p className="text-sm font-black uppercase tracking-[0.18em] text-[#00c030]">
-            Lists
-          </p>
-          <h1 className="mt-3 text-3xl font-black text-white sm:text-5xl">
-            Community Lists
-          </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-400 sm:text-base">
-            Discover public collections created by users and find new series to
-            watch or save for later.
-          </p>
-        </div>
-
-        <label className="relative w-full lg:max-w-sm">
-          <span className="sr-only">Search lists by title or category</span>
-          <Search
-            aria-hidden="true"
-            className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500"
-            strokeWidth={2.4}
-          />
-          <input
-            className="min-h-12 w-full rounded border border-slate-700 bg-slate-950 px-4 pl-11 text-sm font-semibold text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-[#00c030] focus:ring-4 focus:ring-[#00c030]/15"
-            onChange={(event) => setListSearch(event.target.value)}
-            placeholder="Search by title or category"
-            type="search"
-            value={listSearch}
-          />
-        </label>
+      <header className="mb-8 border-b border-slate-800 pb-8">
+        <p className="text-sm font-black uppercase tracking-[0.18em] text-[#00c030]">
+          Lists
+        </p>
+        <h1 className="mt-3 text-3xl font-black text-white sm:text-5xl">
+          Community Lists
+        </h1>
+        <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-400 sm:text-base">
+          Discover collections created by users and find new series to watch or
+          save for later.
+        </p>
       </header>
 
-      {filteredLists.length ? (
+      {error ? (
+        <p className="rounded border border-red-900 bg-red-950/50 px-4 py-3 text-sm font-bold text-red-200">
+          {error}
+        </p>
+      ) : isLoading ? (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {filteredLists.map((list) => (
-            <ListCard key={list.id} list={list} onSelect={onListSelect} />
+          {Array.from({ length: PAGE_SIZE }, (_, index) => (
+            <div
+              key={index}
+              className="h-60 animate-pulse rounded border border-slate-800 bg-slate-900"
+            />
           ))}
         </div>
+      ) : lists.length ? (
+        <>
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {visibleLists.map((list, index) => (
+              <div
+                key={list.id}
+                className="animate-slide-in-up"
+                style={{ animationDelay: `${(index % PAGE_SIZE) * 40}ms` }}
+              >
+                <ListCard list={list} onSelect={onListSelect} />
+              </div>
+            ))}
+          </div>
+
+          {hasMore && (
+            <div className="mt-8 flex justify-center">
+              <button
+                className="group relative inline-flex min-h-11 items-center justify-center gap-2 overflow-hidden rounded border border-slate-700 px-6 text-sm font-black uppercase tracking-wide text-slate-300 transition-colors duration-300 hover:border-[#00c030] hover:text-white"
+                onClick={() => setVisibleCount((prev) => prev + PAGE_SIZE)}
+                type="button"
+              >
+                <span className="absolute inset-0 -z-10 origin-bottom scale-y-0 bg-[#00c030]/10 transition-transform duration-300 ease-out group-hover:scale-y-100" />
+                <span className="leading-none">Show more</span>
+                <ChevronDown
+                  aria-hidden="true"
+                  className="h-4 w-4 flex-none"
+                  strokeWidth={2.6}
+                />
+              </button>
+            </div>
+          )}
+        </>
       ) : (
         <div className="rounded border border-slate-800 bg-slate-950 px-5 py-10 text-center">
-          <h2 className="text-lg font-black text-white">No lists found</h2>
+          <h2 className="text-lg font-black text-white">No lists yet</h2>
           <p className="mt-2 text-sm text-slate-400">
-            Try searching for another title or category.
+            Be the first to create a list.
           </p>
         </div>
       )}

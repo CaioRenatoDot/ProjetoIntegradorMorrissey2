@@ -330,3 +330,28 @@ export async function addListItem(token, listId, item) {
 
     return data;
 }
+
+export async function getAllLists(){
+    const response = await fetch(`${API_URL}/lists/all`);
+
+    const data = await response.json();
+
+    if(!response.ok){
+        throw new Error(data.message || "Erro ao buscar listas." );
+    }
+
+    return data;
+}
+
+export async function getPublicList(listId){
+    const response = await fetch(`${API_URL}/lists/public/${listId}`);
+
+    const data = await response.json();
+
+    if(!response.ok){
+        throw new Error(data.message || "Erro ao buscar lista.");
+
+    }
+
+    return data;
+}

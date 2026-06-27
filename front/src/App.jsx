@@ -490,6 +490,7 @@ export default function App() {
           />
         ) : activePage === "listDetails" && selectedListId ? (
           <ListDetailPage
+            isPublic={listDetailReturnPage === "lists"}
             listId={selectedListId}
             onBack={() => setActivePage(listDetailReturnPage)}
             onSeriesSelect={(showId) => handleSeriesSelect(showId, "listDetails")}
