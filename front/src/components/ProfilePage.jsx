@@ -675,7 +675,18 @@ function ProfileBioPanel({
       </section>
 
       <section>
-        <ProfileShelfHeader title="Created Lists" />
+        <ProfileShelfHeader
+          title="Created Lists"
+          action={
+            <button
+              className="min-h-8 rounded border border-slate-700 px-3 text-xs font-black uppercase tracking-wide text-slate-300 transition hover:border-[#00c030] hover:text-white"
+              onClick={onViewAllLists}
+              type="button"
+            >
+              View all
+            </button>
+          }
+        />
 
         {listsError && (
           <p className="mb-4 rounded border border-red-900 bg-red-950/50 px-4 py-3 text-sm font-bold text-red-200">

@@ -139,6 +139,21 @@ export default function Navbar({
             >
               Lists
             </a>
+
+            {isLoggedIn && (
+              <a
+                className={
+                  activePage === "myLists" ? activeLinkClassName : linkClassName
+                }
+                href="#my-lists"
+                onClick={(event) => {
+                  event.preventDefault();
+                  onNavigate("myLists");
+                }}
+              >
+                My Lists
+              </a>
+            )}
           </div>
 
           <form

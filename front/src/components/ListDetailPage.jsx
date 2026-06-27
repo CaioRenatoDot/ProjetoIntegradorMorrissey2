@@ -2,7 +2,7 @@ import { Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import BackButton from "./BackButton";
 import { fallbackPoster } from "../data/constants";
-import { deleteList, getList, getPublicList } from "../services/api";
+import { deleteList, getList, getPublicList, removeListItem } from "../services/api";
 
 export default function ListDetailPage({ isPublic, listId, onBack, onSeriesSelect }) {
   const [list, setList] = useState(null);
@@ -10,6 +10,7 @@ export default function ListDetailPage({ isPublic, listId, onBack, onSeriesSelec
   const [error, setError] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
+  const [removingItemId, setRemovingItemId] = useState(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -47,6 +48,25 @@ export default function ListDetailPage({ isPublic, listId, onBack, onSeriesSelec
       isMounted = false;
     };
   }, [isPublic, listId]);
+
+  async function handleRemoveItem(itemId) {
+    const token = localStorage.getItem("watchd_token");
+    if (!token) return;
+
+    setRemovingItemId(itemId);
+
+    try {
+      await removeListItem(token, listId, itemId);
+      setList((current) => ({
+        ...current,
+        items: current.items.filter((item) => item.id !== itemId),
+      }));
+    } catch (requestError) {
+      setDeleteError(requestError.message);
+    } finally {
+      setRemovingItemId(null);
+    }
+  }
 
   async function handleDeleteList() {
     if (!window.confirm(`Delete "${list.title}"? This cannot be undone.`)) return;
@@ -138,8 +158,24 @@ export default function ListDetailPage({ isPublic, listId, onBack, onSeriesSelec
           {list.items.map((item) => (
             <article
               key={item.id}
-              className="group overflow-hidden rounded border border-slate-700 bg-slate-900 shadow-sm transition hover:-translate-y-1 hover:border-emerald-500 hover:shadow-xl hover:shadow-emerald-950/30"
+              className="group relative overflow-hidden rounded border border-slate-700 bg-slate-900 shadow-sm transition hover:-translate-y-1 hover:border-emerald-500 hover:shadow-xl hover:shadow-emerald-950/30"
             >
+              {!isPublic && (
+                <button
+                  aria-label={`Remove ${item.title} from list`}
+                  className="absolute right-2 top-2 z-10 grid h-8 w-8 place-items-center rounded-full border border-red-400/40 bg-slate-950/90 text-red-300 opacity-100 shadow-lg shadow-black/40 transition hover:border-red-300 hover:bg-red-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-50 sm:opacity-0 sm:group-hover:opacity-100"
+                  disabled={removingItemId === item.id}
+                  onClick={() => handleRemoveItem(item.id)}
+                  type="button"
+                >
+                  {removingItemId === item.id ? (
+                    <span className="text-xs font-black">...</span>
+                  ) : (
+                    <Trash2 aria-hidden="true" className="h-4 w-4" />
+                  )}
+                </button>
+              )}
+
               <button
                 className="block h-full w-full text-left"
                 onClick={() => onSeriesSelect(Number(item.movieId))}

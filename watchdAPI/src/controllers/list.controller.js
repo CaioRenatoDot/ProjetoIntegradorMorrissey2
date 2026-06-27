@@ -192,9 +192,64 @@ async function removeItem(req, res) {
     });
 }
 
+async function listAll(req, res) {
+    const lists = await prisma.list.findMany({
+        orderBy: { createdAt: "desc" },
+        include: {
+            user: {
+                select: { username: true, name: true, displayName: true }
+            },
+            items: {
+                orderBy: { position: "asc" },
+                take: 4,
+                select: { posterUrl: true }
+            },
+            _count: {
+                select: { items: true }
+            }
+        }
+    });
+
+    const items = lists.map((list) => ({
+        id: list.id,
+        title: list.title,
+        category: list.category,
+        createdAt: list.createdAt,
+        itemsCount: list._count.items,
+        creator: list.user.displayName || list.user.name,
+        previewPosters: list.items.map((item) => item.posterUrl || "")
+    }));
+
+    return res.json({ items });
+}
+
+async function getPublicOne(req, res) {
+    const { id } = req.params;
+
+    const list = await prisma.list.findFirst({
+        where: { id },
+        include: {
+            user: {
+                select: { username: true, name: true, displayName: true }
+            },
+            items: {
+                orderBy: { position: "asc" }
+            }
+        }
+    });
+
+    if (!list) {
+        return res.status(404).json({ message: "Lista nao encontrada." });
+    }
+
+    return res.json({ list });
+}
+
 module.exports = {
     listMine,
+    listAll,
     getOne,
+    getPublicOne,
     create,
     remove,
     addItem,

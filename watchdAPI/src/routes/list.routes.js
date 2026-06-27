@@ -4,7 +4,12 @@ const listController = require("../controllers/list.controller");
 const listRoutes = express.Router();
 const authMiddleware = require("../middlewares/auth.middleware");
 
-listRoutes.use(authMiddleware);
+// Rotas públicas, sem auth para listagem
+listRoutes.get("/all", listController.listAll);
+listRoutes.get("/public/:id", listController.getPublicOne);
+
+//Rota protegida - precisa do auth
+listRoutes.use(authMiddleware)
 
 listRoutes.get("/", listController.listMine);
 listRoutes.post("", listController.create);

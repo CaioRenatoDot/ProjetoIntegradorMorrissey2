@@ -331,6 +331,23 @@ export async function addListItem(token, listId, item) {
     return data;
 }
 
+export async function removeListItem(token, listId, itemId) {
+    const response = await fetch(`${API_URL}/lists/${listId}/items/${itemId}`, {
+        method: "DELETE",
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.message || "Erro ao remover item da lista.");
+    }
+
+    return data;
+}
+
 export async function getAllLists(){
     const response = await fetch(`${API_URL}/lists/all`);
 
