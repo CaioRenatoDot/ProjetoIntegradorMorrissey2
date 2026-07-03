@@ -18,6 +18,9 @@ export default function HomeFooter() {
           <p className="mt-1 text-xs uppercase tracking-wide text-slate-600">
             Projeto Integrador Morrissey - Oxetech Academy
           </p>
+          <p>
+            Esse projeto é apenas algo com fins de estudo!
+          </p>
         </div>
       </div>
     </footer>

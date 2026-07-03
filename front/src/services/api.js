@@ -372,3 +372,15 @@ export async function getPublicList(listId){
 
     return data;
 }
+
+export async function getPublicProfile(username) {
+    const response = await fetch(`${API_URL}/users/${username}`);
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.message || "Erro ao buscar perfil.");
+    }
+
+    return data;
+}

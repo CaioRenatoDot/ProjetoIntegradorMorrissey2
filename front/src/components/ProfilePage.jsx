@@ -6,6 +6,7 @@ import {
   getList,
   getMyLists,
   getMyReviews,
+  getPublicProfile,
   getWatchlist,
   removeFromWatchlist,
   reorderFavorites,
@@ -21,6 +22,7 @@ const listPreviewLimit = 3;
 
 export default function ProfilePage({
   currentUserName,
+  currentUsername = "",
   isLoggedIn,
   onDiaryClick,
   onEditProfileClick,
@@ -29,6 +31,7 @@ export default function ProfilePage({
   onSeriesTabClick,
   onViewAllLists,
   profileDetails,
+  viewedUsername = null,
 }) {
   const [watchlistItems, setWatchlistItems] = useState([]);
   const [favoriteItems, setFavoriteItems] = useState([]);
@@ -52,11 +55,75 @@ export default function ProfilePage({
   const [isListsLoading, setIsListsLoading] = useState(false);
   const [listsError, setListsError] = useState("");
   const profileActionsRef = useRef(null);
+  const [publicUser, setPublicUser] = useState(null);
+  const isOwnProfile =
+    isLoggedIn && (!viewedUsername || viewedUsername === currentUsername);
+  const isPublicView = Boolean(viewedUsername) && !isOwnProfile;
+
+  useEffect(() => {
+    if (!isPublicView) return undefined;
+
+    let isMounted = true;
+
+    async function fetchPublicProfile() {
+      setIsListsLoading(true);
+      setIsFavoritesLoading(true);
+      setIsRecentActivityLoading(true);
+      setListsError("");
+      setFavoriteError("");
+      setRecentActivityError("");
+
+      try {
+        const data = await getPublicProfile(viewedUsername);
+        if (!isMounted) return;
+
+        setPublicUser(data.user);
+        setFavoriteItems(data.favorites || []);
+        setUserLists(data.lists || []);
+        setListPreviewImages(
+          Object.fromEntries(
+            (data.lists || []).map((list) => [list.id, list.previewPosters || []])
+          )
+        );
+        setRecentActivityItems(
+          (data.recentActivity || []).slice(0, recentActivityLimit).map((item) => ({
+            movieId: item.movieId,
+            title: item.title,
+            posterUrl: item.posterUrl || "",
+            rating: item.rating || 0,
+            review: item.text || "",
+            updatedAt: item.updatedAt,
+          }))
+        );
+        setReviewedSeriesCount(data.stats?.watchd || 0);
+        setWatchlistItems([]);
+      } catch (error) {
+        if (isMounted) {
+          setPublicUser(null);
+          setListsError(error.message);
+        }
+      } finally {
+        if (isMounted) {
+          setIsListsLoading(false);
+          setIsFavoritesLoading(false);
+          setIsRecentActivityLoading(false);
+        }
+      }
+    }
+
+    fetchPublicProfile();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isPublicView, viewedUsername]);
 
   useEffect(() => {
     let isMounted = true;
 
     async function fetchUserLists() {
+      if (isPublicView) return;
+
       if (!isLoggedIn) {
         setUserLists([]);
         setListsError("");
@@ -98,6 +165,8 @@ export default function ProfilePage({
     let isMounted = true;
 
     async function fetchListPreviews() {
+      if (isPublicView) return;
+
       if (!userLists.length) {
         setListPreviewImages({});
         return;
@@ -157,6 +226,8 @@ export default function ProfilePage({
     let isMounted = true;
 
     async function fetchFavorites() {
+      if (isPublicView) return;
+
       if (!isLoggedIn) {
         setFavoriteItems([]);
         setFavoriteError("");
@@ -199,6 +270,8 @@ export default function ProfilePage({
     let isMounted = true;
 
     async function fetchRecentActivity() {
+      if (isPublicView) return;
+
       if (!isLoggedIn) {
         setRecentActivityItems([]);
         setRecentActivityError("");
@@ -256,6 +329,8 @@ export default function ProfilePage({
     let isMounted = true;
 
     async function fetchWatchlist() {
+      if (isPublicView) return;
+
       if (!isLoggedIn) {
         setWatchlistItems([]);
         setWatchlistError("");
@@ -390,11 +465,27 @@ export default function ProfilePage({
   }
   const stats = [
     { icon: Heart, label: "Favorites", value: favoriteItems.length },
-    { icon: Bookmark, label: "Watchlist", value: watchlistItems.length },
+    ...(isPublicView
+      ? []
+      : [{ icon: Bookmark, label: "Watchlist", value: watchlistItems.length }]),
     { icon: Star, label: "Watchd", value: reviewedSeriesCount },
     { icon: ListChecks, label: "Lists", value: userLists.length },
   ];
-  const profileName = profileDetails?.displayName || currentUserName;
+  const displayedDetails = isPublicView
+    ? {
+        displayName: publicUser?.displayName || "",
+        bio: publicUser?.bio || "",
+        location: publicUser?.location || "",
+        website: publicUser?.website || "",
+      }
+    : profileDetails;
+  const profileName =
+    displayedDetails?.displayName || (isPublicView ? "" : currentUserName);
+  const headerUsername = isPublicView
+    ? publicUser?.username || ""
+    : isLoggedIn
+      ? currentUsername || ""
+      : "";
 
   return (
     <section className="mx-auto max-w-6xl py-7 sm:py-10">
@@ -403,15 +494,20 @@ export default function ProfilePage({
           <div className="flex items-center gap-5">
             <UserAvatar
               className="ring-2 ring-slate-700/70"
-              name={isLoggedIn ? profileName : "Guest"}
+              name={isPublicView ? profileName : isLoggedIn ? profileName : "Guest"}
               size="lg"
             />
             <div className="min-w-0">
               <h1 className="truncate text-2xl font-black leading-none text-white sm:text-3xl">
-                {isLoggedIn ? profileName : "Guest"}
+                {isPublicView ? profileName : isLoggedIn ? profileName : "Guest"}
               </h1>
+              {headerUsername && (
+                <p className="mt-1 text-sm font-bold text-slate-500">
+                  @{headerUsername}
+                </p>
+              )}
               <div className="mt-3 flex flex-wrap items-center gap-2">
-                {isLoggedIn && (
+                {!isPublicView && isLoggedIn && (
                   <>
                     <button
                       className="min-h-8 rounded border border-slate-600 bg-slate-700/80 px-3 text-xs font-black uppercase tracking-wide text-slate-100 transition hover:border-[#00c030] hover:bg-slate-600"
@@ -461,7 +557,7 @@ export default function ProfilePage({
             </div>
           </div>
 
-          {isLoggedIn && (
+          {(isPublicView || isLoggedIn) && (
             <div className="flex flex-wrap items-center gap-y-3 text-left sm:justify-end">
               {stats.map((stat, index) => (
                 <StatCell
@@ -474,12 +570,12 @@ export default function ProfilePage({
           )}
         </div>
 
-        {isLoggedIn && (
+        {!isPublicView && isLoggedIn && (
           <ProfileTabs onDiaryClick={onDiaryClick} onSeriesClick={onSeriesTabClick} />
         )}
       </header>
 
-      {!isLoggedIn ? (
+      {!isPublicView && !isLoggedIn ? (
         <EmptyState
           title="You need to be signed in"
           description="After signing in, this page will show your favorite series, Watchlist, and created lists."
@@ -493,6 +589,7 @@ export default function ProfilePage({
               favoriteItems={favoriteItems}
               isAdjusting={isAdjustingFavoriteOrder}
               isLoading={isFavoritesLoading}
+              readOnly={isPublicView}
               onAdjustToggle={() => {
                 setIsAdjustingFavoriteOrder((currentValue) => !currentValue);
                 setDraggedFavoriteId(null);
@@ -510,6 +607,7 @@ export default function ProfilePage({
               onSeriesSelect={onSeriesSelect}
             />
 
+            {!isPublicView && (
             <section>
               <ShelfHeader
                 action={isWatchlistExpanded ? "Show preview" : null}
@@ -548,16 +646,18 @@ export default function ProfilePage({
                 />
               )}
             </section>
+            )}
           </div>
 
           <ProfileBioPanel
             currentUserName={profileName}
             isListsLoading={isListsLoading}
+            isPublicView={isPublicView}
             listPreviewImages={listPreviewImages}
             listsError={listsError}
             onListSelect={onListSelect}
             onViewAllLists={onViewAllLists}
-            profileDetails={profileDetails}
+            profileDetails={displayedDetails}
             stats={stats}
             userLists={userLists}
           />
@@ -619,6 +719,7 @@ function ProfileTabs({ onDiaryClick, onSeriesClick }) {
 function ProfileBioPanel({
   currentUserName,
   isListsLoading,
+  isPublicView,
   listPreviewImages,
   listsError,
   onListSelect,
@@ -678,13 +779,15 @@ function ProfileBioPanel({
         <ProfileShelfHeader
           title="Created Lists"
           action={
-            <button
-              className="min-h-8 rounded border border-slate-700 px-3 text-xs font-black uppercase tracking-wide text-slate-300 transition hover:border-[#00c030] hover:text-white"
-              onClick={onViewAllLists}
-              type="button"
-            >
-              View all
-            </button>
+            isPublicView ? null : (
+              <button
+                className="min-h-8 rounded border border-slate-700 px-3 text-xs font-black uppercase tracking-wide text-slate-300 transition hover:border-[#00c030] hover:text-white"
+                onClick={onViewAllLists}
+                type="button"
+              >
+                View all
+              </button>
+            )
           }
         />
 
@@ -736,7 +839,7 @@ function ProfileBioPanel({
               ))}
             </div>
 
-            {userLists.length > listPreviewLimit && (
+            {!isPublicView && userLists.length > listPreviewLimit && (
               <button
                 className="mt-4 inline-flex h-8 w-full items-center justify-center gap-1.5 rounded border border-slate-700 text-xs font-black uppercase tracking-wide text-slate-300 transition hover:border-[#00c030] hover:text-white"
                 onClick={onViewAllLists}
@@ -747,6 +850,11 @@ function ProfileBioPanel({
               </button>
             )}
           </>
+        ) : isPublicView ? (
+          <EmptyState
+            title="No lists yet"
+            description={`${currentUserName} hasn't created any lists yet.`}
+          />
         ) : (
           <div className="group relative overflow-hidden rounded border border-slate-800 bg-slate-950/60 px-4 py-6 text-center">
             <div className="relative mx-auto h-12 w-12">
@@ -788,6 +896,7 @@ function FavoriteShelf({
   onDragStart,
   onDrop,
   onSeriesSelect,
+  readOnly,
 }) {
   const visibleFavoriteItems = favoriteItems.slice(0, favoriteLimit);
   const emptySlotCount = Math.max(favoriteLimit - visibleFavoriteItems.length, 0);
@@ -796,14 +905,16 @@ function FavoriteShelf({
     <section>
       <ProfileShelfHeader
         action={
-          <button
-            className="min-h-8 rounded border border-slate-700 px-3 text-xs font-black uppercase tracking-wide text-slate-300 transition hover:border-[#00c030] hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
-            disabled={favoriteItems.length < 2 || isLoading}
-            onClick={onAdjustToggle}
-            type="button"
-          >
-            {isAdjusting ? "DONE" : "ADJUST ORDER"}
-          </button>
+          readOnly ? null : (
+            <button
+              className="min-h-8 rounded border border-slate-700 px-3 text-xs font-black uppercase tracking-wide text-slate-300 transition hover:border-[#00c030] hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={favoriteItems.length < 2 || isLoading}
+              onClick={onAdjustToggle}
+              type="button"
+            >
+              {isAdjusting ? "DONE" : "ADJUST ORDER"}
+            </button>
+          )
         }
         title="Favorite Series"
       />

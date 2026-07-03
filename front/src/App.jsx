@@ -16,6 +16,7 @@ import SeriesDetailPage from "./components/SeriesDetailPage";
 import { getMostPopularShows, searchShows } from "./services/tvmaze";
 import { login, register, getMe, updateProfile } from "./services/api";
 
+
 function getAuthModeFromHistoryState(state) {
   if (!state || typeof state !== "object") return null;
 
@@ -27,6 +28,8 @@ function getAuthModeFromHistoryState(state) {
   return null;
 }
 
+const BASE_PATH = import.meta.env.BASE_URL;
+
 function getPageFromHash(hash) {
   if (hash === "#diary") return "diary";
   if (hash === "#my-series") return "mySeries";
@@ -36,6 +39,18 @@ function getPageFromHash(hash) {
   if (hash === "#edit-profile") return "editProfile";
   if (hash === "#search") return "search";
   return "home";
+}
+
+function getUsernameFromPath(pathname) {
+  if (!pathname.startsWith(BASE_PATH)) return null;
+  const segment = pathname.slice(BASE_PATH.length).replace(/\/+$/, "");
+  return segment ? decodeURIComponent(segment) : null;
+}
+
+function getRouteFromLocation() {
+  const username = getUsernameFromPath(window.location.pathname);
+  if (username) return { page: "publicProfile", username };
+  return { page: getPageFromHash(window.location.hash), username: null };
 }
 
 function getHashFromPage(page) {
@@ -117,18 +132,22 @@ export default function App() {
   const [isNavSearchOpen, setIsNavSearchOpen] = useState(false);
   const [isLoginVisible, setIsLoginVisible] = useState(false);
   const [activePage, setActivePage] = useState(() =>
-    typeof window === "undefined" ? "home" : getPageFromHash(window.location.hash)
+    typeof window === "undefined" ? "home" : getRouteFromLocation().page
   );
   const [authMode, setAuthMode] = useState("login");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loginEmail, setLoginEmail] = useState("");
   const [currentUserName, setCurrentUserName] = useState("");
   const [currentUserEmail, setCurrentUserEmail] = useState("");
+  const [currentUsername, setCurrentUsername] = useState("");
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [profileSaveError, setProfileSaveError] = useState("");
   const [profileDetails, setProfileDetails] = useState(() => getDefaultProfileDetails(""));
   const [selectedShowId, setSelectedShowId] = useState(null);
   const [selectedListId, setSelectedListId] = useState(null);
+  const [selectedUsername, setSelectedUsername] = useState(() =>
+    typeof window === "undefined" ? null : getRouteFromLocation().username
+  );
   const [detailReturnPage, setDetailReturnPage] = useState("home");
   const [listDetailReturnPage, setListDetailReturnPage] = useState("lists");
   const [isLoading, setIsLoading] = useState(false);
@@ -149,11 +168,13 @@ export default function App() {
 
         setProfileDetails(mapUserToProfileDetails(data.user));
         setCurrentUserName(data.user.displayName || data.user.name);
+        setCurrentUsername(data.user.username || "");
         setCurrentUserEmail(data.user.email);
         setIsLoggedIn(true);
       } catch (error) {
         localStorage.removeItem("watchd_token");
         setCurrentUserName("");
+        setCurrentUsername("");
         setCurrentUserEmail("");
         setIsLoggedIn(false);
       }
@@ -239,14 +260,20 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    function handleHashChange() {
+    function syncRouteFromUrl() {
+      const { page, username } = getRouteFromLocation();
       setSelectedShowId(null);
       setSelectedListId(null);
-      setActivePage(getPageFromHash(window.location.hash));
+      setSelectedUsername(username);
+      setActivePage(page);
     }
 
-    window.addEventListener("hashchange", handleHashChange);
-    return () => window.removeEventListener("hashchange", handleHashChange);
+    window.addEventListener("hashchange", syncRouteFromUrl);
+    window.addEventListener("popstate", syncRouteFromUrl);
+    return () => {
+      window.removeEventListener("hashchange", syncRouteFromUrl);
+      window.removeEventListener("popstate", syncRouteFromUrl);
+    };
   }, []);
 
   function prepareSearch() {
@@ -263,6 +290,7 @@ export default function App() {
     setIsNavSearchOpen(false);
     setSelectedShowId(null);
     setSelectedListId(null);
+    setSelectedUsername(null);
 
     return trimmedQuery;
   }
@@ -275,8 +303,9 @@ export default function App() {
     setActivePage("home");
     setShouldScrollToResults(true);
 
-    if (window.location.hash !== "#catalog") {
-      window.location.hash = "#catalog";
+    const nextUrl = `${BASE_PATH}#catalog`;
+    if (window.location.pathname + window.location.hash !== nextUrl) {
+      window.history.pushState({}, "", nextUrl);
     }
   }
 
@@ -288,8 +317,9 @@ export default function App() {
     setActivePage("search");
     setShouldScrollToResults(false);
 
-    if (window.location.hash !== "#search") {
-      window.location.hash = "#search";
+    const nextUrl = `${BASE_PATH}#search`;
+    if (window.location.pathname + window.location.hash !== nextUrl) {
+      window.history.pushState({}, "", nextUrl);
     }
   }
 
@@ -302,6 +332,7 @@ export default function App() {
 
     setProfileDetails(mapUserToProfileDetails(me.user));
     setCurrentUserName(me.user.displayName || me.user.name);
+    setCurrentUsername(me.user.username || "");
     setCurrentUserEmail(me.user.email);
     setIsLoggedIn(true);
     closeAuthScreen();
@@ -319,6 +350,7 @@ export default function App() {
 
     setProfileDetails(mapUserToProfileDetails(me.user));
     setCurrentUserName(me.user.displayName || me.user.name);
+    setCurrentUsername(me.user.username || "");
     setCurrentUserEmail(me.user.email);
     setIsLoggedIn(true);
     closeAuthScreen();
@@ -328,6 +360,7 @@ export default function App() {
   function handleLogout() {
     localStorage.removeItem("watchd_token");
     setCurrentUserName("");
+    setCurrentUsername("");
     setCurrentUserEmail("");
     setProfileDetails(getDefaultProfileDetails(""));
     setIsLoggedIn(false);
@@ -369,14 +402,15 @@ export default function App() {
   }
 
   function handleNavigate(page) {
+    const nextUrl = `${BASE_PATH}${getHashFromPage(page)}`;
+    if (window.location.pathname + window.location.hash !== nextUrl) {
+      window.history.pushState({}, "", nextUrl);
+    }
+
     setSelectedShowId(null);
     setSelectedListId(null);
+    setSelectedUsername(null);
     setActivePage(page);
-
-    const nextHash = getHashFromPage(page);
-    if (window.location.hash !== nextHash) {
-      window.location.hash = nextHash;
-    }
   }
 
   function handleListSelect(listId, returnPage = "lists") {
@@ -385,6 +419,27 @@ export default function App() {
     setListDetailReturnPage(returnPage);
     setActivePage("listDetails");
     window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function handleUserSelect(username) {
+    const nextUrl = `${BASE_PATH}${encodeURIComponent(username)}`;
+    if (window.location.pathname + window.location.hash !== nextUrl) {
+      window.history.pushState({}, "", nextUrl);
+    }
+
+    setSelectedShowId(null);
+    setSelectedListId(null);
+    setSelectedUsername(username);
+    setActivePage("publicProfile");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function goToMyProfile() {
+    if (isLoggedIn && currentUsername) {
+      handleUserSelect(currentUsername);
+    } else {
+      handleNavigate("profile");
+    }
   }
 
   function handleSeriesSelect(showId, returnPage = "home") {
@@ -412,7 +467,13 @@ export default function App() {
 
       setProfileDetails(mapUserToProfileDetails(data.user));
       setCurrentUserName(data.user.displayName || data.user.name);
-      handleNavigate("profile");
+      setCurrentUsername(data.user.username || "");
+
+      if (data.user.username) {
+        handleUserSelect(data.user.username);
+      } else {
+        handleNavigate("profile");
+      }
     } catch (saveError) {
       setProfileSaveError(saveError.message);
     } finally {
@@ -429,7 +490,7 @@ export default function App() {
           activePage={activePage}
           currentUserName={currentUserName}
           onNavigate={handleNavigate}
-          onProfileClick={() => handleNavigate("profile")}
+          onProfileClick={goToMyProfile}
           onLoginClick={() => openAuthScreen("login")}
           onLogout={handleLogout}
           onRegisterClick={() => openAuthScreen("register")}
@@ -461,6 +522,7 @@ export default function App() {
         ) : activePage === "profile" ? (
           <ProfilePage
             currentUserName={currentUserName}
+            currentUsername={currentUsername}
             isLoggedIn={isLoggedIn}
             onDiaryClick={() => handleNavigate("diary")}
             onEditProfileClick={() => handleNavigate("editProfile")}
@@ -482,7 +544,27 @@ export default function App() {
             saveError={profileSaveError}
           />
         ) : activePage === "lists" ? (
-          <ListPage onListSelect={handleListSelect} />
+          <ListPage onListSelect={handleListSelect} onCreatorSelect={handleUserSelect} />
+        ) : activePage === "publicProfile" && selectedUsername ? (
+          <ProfilePage
+            key={selectedUsername}
+            currentUserName={currentUserName}
+            currentUsername={currentUsername}
+            isLoggedIn={isLoggedIn}
+            onDiaryClick={() => handleNavigate("diary")}
+            onEditProfileClick={() => handleNavigate("editProfile")}
+            onListSelect={(listId) =>
+              handleListSelect(
+                listId,
+                selectedUsername === currentUsername ? "profile" : "lists"
+              )
+            }
+            onSeriesSelect={handleSeriesSelect}
+            onSeriesTabClick={() => handleNavigate("mySeries")}
+            onViewAllLists={() => handleNavigate("myLists")}
+            profileDetails={profileDetails}
+            viewedUsername={selectedUsername}
+          />
         ) : activePage === "myLists" ? (
           <MyListsPage
             isLoggedIn={isLoggedIn}

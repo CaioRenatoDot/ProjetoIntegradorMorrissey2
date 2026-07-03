@@ -6,6 +6,27 @@ async function getPublicProfile(req, res) {
     const user = await prisma.user.findUnique({
         where: {
             username
+        },
+        include: {
+            favoriteSeries: {
+                orderBy: { position: "asc" }
+            },
+            reviews: {
+                orderBy: { updatedAt: "desc" }
+            },
+            lists: {
+                orderBy: { createdAt: "desc" },
+                include: {
+                    items: {
+                        orderBy: { position: "asc" },
+                        take: 4,
+                        select: { posterUrl: true }
+                    },
+                    _count: {
+                        select: { items: true }
+                    }
+                }
+            }
         }
     });
 
@@ -23,6 +44,27 @@ async function getPublicProfile(req, res) {
             location: user.location,
             website: user.website,
             bio: user.bio
+        },
+        favorites: user.favoriteSeries,
+        recentActivity: user.reviews.map((review) => ({
+            movieId: review.movieId,
+            title: review.title,
+            posterUrl: review.posterUrl || "",
+            rating: review.rating || 0,
+            text: review.text || "",
+            updatedAt: review.updatedAt
+        })),
+        lists: user.lists.map((list) => ({
+            id: list.id,
+            title: list.title,
+            category: list.category,
+            itemsCount: list._count.items,
+            previewPosters: list.items.map((item) => item.posterUrl || "")
+        })),
+        stats: {
+            favorites: user.favoriteSeries.length,
+            lists: user.lists.length,
+            watchd: user.reviews.length
         }
     });
 }

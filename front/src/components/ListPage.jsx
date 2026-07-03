@@ -5,7 +5,7 @@ import ListCard from "./ListCard";
 
 const PAGE_SIZE = 6;
 
-export default function ListPage({ onListSelect }) {
+export default function ListPage({ onListSelect, onCreatorSelect }) {
   const [lists, setLists] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -75,7 +75,7 @@ export default function ListPage({ onListSelect }) {
                 className="animate-slide-in-up"
                 style={{ animationDelay: `${(index % PAGE_SIZE) * 40}ms` }}
               >
-                <ListCard list={list} onSelect={onListSelect} />
+                <ListCard list={list} onSelect={onListSelect} onCreatorSelect={onCreatorSelect} />
               </div>
             ))}
           </div>

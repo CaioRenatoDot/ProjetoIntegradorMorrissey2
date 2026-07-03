@@ -217,6 +217,7 @@ async function listAll(req, res) {
         createdAt: list.createdAt,
         itemsCount: list._count.items,
         creator: list.user.displayName || list.user.name,
+        creatorUsername: list.user.username,
         previewPosters: list.items.map((item) => item.posterUrl || "")
     }));
 
