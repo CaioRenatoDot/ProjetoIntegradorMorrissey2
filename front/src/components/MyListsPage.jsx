@@ -1,9 +1,10 @@
-import { Plus, Trash2 } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import BackButton from "./BackButton";
+import ListCard from "./ListCard";
 import { createList, deleteList, getMyLists } from "../services/api";
 
-export default function MyListsPage({ isLoggedIn, onBack }) {
+export default function MyListsPage({ isLoggedIn, onBack, onListSelect }) {
   const [lists, setLists] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -74,7 +75,10 @@ export default function MyListsPage({ isLoggedIn, onBack }) {
         category: category.trim() || null,
       });
 
-      setLists((currentLists) => [{ ...data.item, itemsCount: 0 }, ...currentLists]);
+      setLists((currentLists) => [
+        { ...data.item, itemsCount: 0, previewPosters: [] },
+        ...currentLists,
+      ]);
       setTitle("");
       setCategory("");
     } catch (requestError) {
@@ -177,31 +181,14 @@ export default function MyListsPage({ isLoggedIn, onBack }) {
             </div>
           ) : lists.length ? (
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {lists.map((list) => (
-                <article className="rounded border border-slate-800 bg-slate-950 p-5" key={list.id}>
-                  <div className="flex items-start justify-between gap-4">
-                    {list.category && (
-                      <span className="inline-flex h-7 items-center rounded-md border border-white/10 bg-zinc-900/80 px-2.5 text-xs font-medium uppercase tracking-wide text-slate-200">
-                        {list.category}
-                      </span>
-                    )}
-                    <button
-                      aria-label={`Delete ${list.title}`}
-                      className="text-slate-500 transition hover:text-red-400"
-                      onClick={() => handleDelete(list.id)}
-                      type="button"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-
-                  <h2 className="mt-4 text-xl font-black leading-tight text-white">
-                    {list.title}
-                  </h2>
-                  <p className="mt-2 text-sm font-semibold text-slate-400">
-                    {list.itemsCount} {list.itemsCount === 1 ? "item" : "items"}
-                  </p>
-                </article>
+              {lists.map((list, index) => (
+                <div
+                  className="animate-slide-in-up"
+                  key={list.id}
+                  style={{ animationDelay: `${(index % 6) * 40}ms` }}
+                >
+                  <ListCard list={list} onDelete={handleDelete} onSelect={onListSelect} />
+                </div>
               ))}
             </div>
           ) : (

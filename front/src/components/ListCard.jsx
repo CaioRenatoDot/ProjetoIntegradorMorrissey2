@@ -1,13 +1,23 @@
+import { Trash2 } from "lucide-react";
 import ListPosterStrip from "./ListPosterStrip";
 
-export default function ListCard({ list, onSelect, onCreatorSelect }) {
+const dateFormatter = new Intl.DateTimeFormat("en-US", { dateStyle: "medium" });
+
+export default function ListCard({ list, onSelect, onCreatorSelect, onDelete }) {
   return (
     <article className="flex w-full flex-col overflow-hidden rounded border border-slate-800 bg-slate-950 text-left shadow-xl shadow-black/20 transition hover:-translate-y-1 hover:border-[#00c030]/70 hover:shadow-[#00c030]/10 focus-within:ring-4 focus-within:ring-[#00c030]/20">
-      <button
-        type="button"
-        onClick={() => onSelect?.(list.id)}
-        className="flex flex-col text-left focus:outline-none"
+      <div
         aria-label={`View full list: ${list.title}`}
+        className="flex cursor-pointer flex-col text-left focus:outline-none"
+        onClick={() => onSelect?.(list.id)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            onSelect?.(list.id);
+          }
+        }}
+        role="button"
+        tabIndex={0}
       >
         <ListPosterStrip posters={list.previewPosters} />
 
@@ -18,31 +28,57 @@ export default function ListCard({ list, onSelect, onCreatorSelect }) {
                 {list.category}
               </span>
             )}
-            <span className="ml-auto text-sm font-bold text-slate-500">
-              {list.itemsCount} {list.itemsCount === 1 ? "item" : "items"}
-            </span>
+            <div className="ml-auto flex items-center gap-3">
+              <span className="text-sm font-bold text-slate-500">
+                {list.itemsCount} {list.itemsCount === 1 ? "item" : "items"}
+              </span>
+              {onDelete && (
+                <button
+                  aria-label={`Delete ${list.title}`}
+                  className="text-slate-500 transition hover:text-red-400"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onDelete(list.id);
+                  }}
+                  type="button"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              )}
+            </div>
           </div>
 
           <h2 className="mt-4 text-xl font-black leading-tight text-white">
             {list.title}
           </h2>
         </div>
-      </button>
+      </div>
 
-      <p className="px-5 pb-5 pt-2 text-sm font-semibold text-slate-400">
-        Created by{" "}
-        {list.creatorUsername ? (
-          <button
-            type="button"
-            onClick={() => onCreatorSelect?.(list.creatorUsername)}
-            className="font-black text-slate-200 underline-offset-2 transition hover:text-[#00c030] hover:underline"
-          >
-            {list.creator}
-          </button>
-        ) : (
-          <span className="font-black text-slate-300">{list.creator}</span>
-        )}
-      </p>
+      {list.creator ? (
+        <p className="px-5 pb-5 pt-2 text-sm font-semibold text-slate-400">
+          Created by{" "}
+          {list.creatorUsername ? (
+            <button
+              type="button"
+              onClick={() => onCreatorSelect?.(list.creatorUsername)}
+              className="font-black text-slate-200 underline-offset-2 transition hover:text-[#00c030] hover:underline"
+            >
+              {list.creator}
+            </button>
+          ) : (
+            <span className="font-black text-slate-300">{list.creator}</span>
+          )}
+        </p>
+      ) : (
+        list.createdAt && (
+          <p className="px-5 pb-5 pt-2 text-sm font-semibold text-slate-400">
+            Created on{" "}
+            <span className="font-black text-slate-300">
+              {dateFormatter.format(new Date(list.createdAt))}
+            </span>
+          </p>
+        )
+      )}
     </article>
   );
 }

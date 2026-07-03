@@ -9,6 +9,11 @@ async function listMine(req, res) {
             createdAt: "desc"
         },
         include: {
+            items: {
+                orderBy: { position: "asc" },
+                take: 4,
+                select: { posterUrl: true }
+            },
             _count: {
                 select: { items: true }
             }
@@ -21,7 +26,8 @@ async function listMine(req, res) {
         category: list.category,
         createdAt: list.createdAt,
         updatedAt: list.updatedAt,
-        itemsCount: list._count.items
+        itemsCount: list._count.items,
+        previewPosters: list.items.map((item) => item.posterUrl || "")
     }))
 
     return res.json({ items })

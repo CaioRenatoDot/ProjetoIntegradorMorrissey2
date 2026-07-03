@@ -588,6 +588,7 @@ export default function App() {
           <MyListsPage
             isLoggedIn={isLoggedIn}
             onBack={() => handleNavigate("profile")}
+            onListSelect={(listId) => handleListSelect(listId, "myLists")}
           />
         ) : activePage === "listDetails" && selectedListId ? (
           <ListDetailPage
