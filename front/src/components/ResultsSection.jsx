@@ -13,19 +13,24 @@ export default function ResultsSection({
 }) {
   return (
     <>
-      <div
+      <header
         id="results"
-        className="mb-6 flex items-center justify-between gap-4 border-b border-slate-800 pb-4"
+        className="mb-6 flex items-end justify-between gap-4 border-b border-slate-800 pb-5"
       >
-        <h2 className="text-xl font-black text-white sm:text-2xl">
-          {hasSearched ? `Results for ${searchTerm}` : "Most Popular"}
-        </h2>
+        <div>
+          <p className="text-sm font-black uppercase tracking-[0.18em] text-[#00c030]">
+            {hasSearched ? "Search results" : "Trending"}
+          </p>
+          <h2 className="mt-3 text-2xl font-black text-white sm:text-3xl">
+            {hasSearched ? `Results for ${searchTerm}` : "Most Popular"}
+          </h2>
+        </div>
         <p className="flex-none text-right text-sm font-bold text-slate-400">
           {isLoading
             ? "Searching..."
             : `${series.length} result${series.length === 1 ? "" : "s"}`}
         </p>
-      </div>
+      </header>
 
       {isLoading ? (
         <section className="grid grid-cols-4 gap-3 sm:grid-cols-[repeat(auto-fill,minmax(170px,1fr))] sm:gap-4">

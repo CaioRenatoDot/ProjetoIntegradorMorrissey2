@@ -1,4 +1,4 @@
-import { ChevronDown, Eye, FileText, Link, Mail, MapPin, Save, User } from "lucide-react";
+import { AtSign, ChevronDown, Eye, FileText, Link, Mail, MapPin, Save, Trash2, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import BackButton from "./BackButton";
 import UserAvatar from "./UserAvatar";
@@ -6,9 +6,10 @@ import { countries } from "../data/countries";
 
 const maxBioLength = 240;
 
-function getInitialProfile(currentUserName, profileDetails) {
+function getInitialProfile(currentUserName, profileDetails, currentUsername) {
   return {
     displayName: profileDetails?.displayName || currentUserName || "",
+    username: currentUsername || "",
     location: profileDetails?.location || "Brazil",
     website: profileDetails?.website || "",
     bio:
@@ -17,23 +18,40 @@ function getInitialProfile(currentUserName, profileDetails) {
   };
 }
 
+const usernameCooldownDays = 30;
+
 export default function EditProfilePage({
   currentUserEmail,
   currentUserName,
+  currentUsername,
+  usernameChangedAt,
   isLoggedIn,
   isSaving,
   onBack,
+  onDeleteAccount,
   onSave,
   profileDetails,
   saveError,
 }) {
+  const [deletePassword, setDeletePassword] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
   const [form, setForm] = useState(() =>
-    getInitialProfile(currentUserName, profileDetails)
+    getInitialProfile(currentUserName, profileDetails, currentUsername)
   );
 
   useEffect(() => {
-    setForm(getInitialProfile(currentUserName, profileDetails));
-  }, [currentUserName, profileDetails]);
+    setForm(getInitialProfile(currentUserName, profileDetails, currentUsername));
+  }, [currentUserName, profileDetails, currentUsername]);
+
+  const daysSinceUsernameChange = usernameChangedAt
+    ? (Date.now() - new Date(usernameChangedAt).getTime()) / (1000 * 60 * 60 * 24)
+    : null;
+  const isUsernameLocked =
+    daysSinceUsernameChange !== null && daysSinceUsernameChange < usernameCooldownDays;
+  const usernameDaysLeft = isUsernameLocked
+    ? Math.ceil(usernameCooldownDays - daysSinceUsernameChange)
+    : 0;
 
   function updateField(field, value) {
     setForm((currentForm) => ({
@@ -42,11 +60,28 @@ export default function EditProfilePage({
     }));
   }
 
+  async function handleDeleteClick() {
+    if (!window.confirm("Delete your account? All your data (favorites, watchlist, reviews and lists) will be permanently removed.")) {
+      return;
+    }
+
+    setIsDeleting(true);
+    setDeleteError("");
+
+    try {
+      await onDeleteAccount(deletePassword);
+    } catch (error) {
+      setDeleteError(error.message);
+      setIsDeleting(false);
+    }
+  }
+
   function handleSubmit(event) {
     event.preventDefault();
 
     const nextProfile = {
       displayName: form.displayName.trim() || currentUserName,
+      username: form.username.trim().toLowerCase(),
       location: form.location.trim(),
       website: form.website.trim(),
       bio: form.bio.trim(),
@@ -106,6 +141,21 @@ export default function EditProfilePage({
               />
 
               <ProfileField
+                Icon={AtSign}
+                disabled={isUsernameLocked}
+                label="Username"
+                maxLength={30}
+                onChange={(event) => updateField("username", event.target.value)}
+                placeholder="your-username"
+                title={
+                  isUsernameLocked
+                    ? `You can change your username again in ${usernameDaysLeft} day${usernameDaysLeft === 1 ? "" : "s"}.`
+                    : undefined
+                }
+                value={form.username}
+              />
+
+              <ProfileField
                 Icon={Mail}
                 disabled
                 label="Email"
@@ -130,7 +180,10 @@ export default function EditProfilePage({
             </div>
 
             <p className="mt-3 text-xs font-semibold text-slate-500">
-              Your email is private and can't be changed yet.
+              Your email is private and can't be changed yet.{" "}
+              {isUsernameLocked
+                ? `You can change your username again in ${usernameDaysLeft} day${usernameDaysLeft === 1 ? "" : "s"}.`
+                : "Your username can only be changed once every 30 days (lowercase letters, numbers and hyphens) and defines your profile URL."}
             </p>
           </section>
 
@@ -152,6 +205,46 @@ export default function EditProfilePage({
             <p className="mt-2 text-right text-xs font-bold text-slate-500">
               {form.bio.length}/{maxBioLength}
             </p>
+          </section>
+
+          <section className="rounded border border-red-900/50 bg-red-950/10 p-5">
+            <SectionTitle Icon={Trash2} title="Danger Zone" />
+
+            <p className="text-sm font-semibold leading-6 text-slate-400">
+              Deleting your account permanently removes your favorites,
+              watchlist, reviews and lists. This cannot be undone.
+            </p>
+
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
+              <label className="flex-1">
+                <span className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">
+                  Confirm your password
+                </span>
+                <input
+                  className="mt-2 min-h-11 w-full rounded border border-slate-700 bg-[#14181c] px-3 text-sm font-semibold text-white outline-none transition placeholder:text-slate-600 focus:border-red-500"
+                  onChange={(event) => setDeletePassword(event.target.value)}
+                  placeholder="Your current password"
+                  type="password"
+                  value={deletePassword}
+                />
+              </label>
+
+              <button
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded border border-red-900/60 px-4 text-sm font-black uppercase tracking-wide text-red-300 transition hover:border-red-500 hover:bg-red-500/10 hover:text-red-200 disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={!deletePassword || isDeleting}
+                onClick={handleDeleteClick}
+                type="button"
+              >
+                <Trash2 aria-hidden="true" className="h-4 w-4" />
+                {isDeleting ? "Deleting..." : "Delete account"}
+              </button>
+            </div>
+
+            {deleteError && (
+              <p className="mt-3 rounded border border-red-900 bg-red-950/50 px-4 py-3 text-sm font-bold text-red-200">
+                {deleteError}
+              </p>
+            )}
           </section>
 
           {saveError && (
@@ -196,6 +289,11 @@ export default function EditProfilePage({
                   <h2 className="truncate text-2xl font-black text-white">
                     {form.displayName || currentUserName}
                   </h2>
+                  {form.username && (
+                    <p className="mt-1 truncate text-sm font-bold text-slate-500">
+                      @{form.username.trim().toLowerCase()}
+                    </p>
+                  )}
                   <span className="mt-2 inline-block rounded-full bg-slate-800/80 px-3 py-1 text-xs font-bold text-slate-400">
                     Watchd member
                   </span>

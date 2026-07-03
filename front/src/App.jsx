@@ -14,7 +14,7 @@ import ResultsSection from "./components/ResultsSection";
 import SearchResultsPage from "./components/SearchResultsPage";
 import SeriesDetailPage from "./components/SeriesDetailPage";
 import { getMostPopularShows, searchShows } from "./services/tvmaze";
-import { login, register, getMe, updateProfile } from "./services/api";
+import { deleteAccount, login, register, getMe, updateProfile } from "./services/api";
 
 
 function getAuthModeFromHistoryState(state) {
@@ -140,6 +140,7 @@ export default function App() {
   const [currentUserName, setCurrentUserName] = useState("");
   const [currentUserEmail, setCurrentUserEmail] = useState("");
   const [currentUsername, setCurrentUsername] = useState("");
+  const [usernameChangedAt, setUsernameChangedAt] = useState(null);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [profileSaveError, setProfileSaveError] = useState("");
   const [profileDetails, setProfileDetails] = useState(() => getDefaultProfileDetails(""));
@@ -169,6 +170,7 @@ export default function App() {
         setProfileDetails(mapUserToProfileDetails(data.user));
         setCurrentUserName(data.user.displayName || data.user.name);
         setCurrentUsername(data.user.username || "");
+        setUsernameChangedAt(data.user.usernameChangedAt || null);
         setCurrentUserEmail(data.user.email);
         setIsLoggedIn(true);
       } catch (error) {
@@ -333,6 +335,7 @@ export default function App() {
     setProfileDetails(mapUserToProfileDetails(me.user));
     setCurrentUserName(me.user.displayName || me.user.name);
     setCurrentUsername(me.user.username || "");
+    setUsernameChangedAt(me.user.usernameChangedAt || null);
     setCurrentUserEmail(me.user.email);
     setIsLoggedIn(true);
     closeAuthScreen();
@@ -351,6 +354,7 @@ export default function App() {
     setProfileDetails(mapUserToProfileDetails(me.user));
     setCurrentUserName(me.user.displayName || me.user.name);
     setCurrentUsername(me.user.username || "");
+    setUsernameChangedAt(me.user.usernameChangedAt || null);
     setCurrentUserEmail(me.user.email);
     setIsLoggedIn(true);
     closeAuthScreen();
@@ -361,6 +365,7 @@ export default function App() {
     localStorage.removeItem("watchd_token");
     setCurrentUserName("");
     setCurrentUsername("");
+    setUsernameChangedAt(null);
     setCurrentUserEmail("");
     setProfileDetails(getDefaultProfileDetails(""));
     setIsLoggedIn(false);
@@ -449,6 +454,15 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
+  async function handleDeleteAccount(password) {
+    const token = localStorage.getItem("watchd_token");
+
+    await deleteAccount(token, password);
+
+    handleLogout();
+    handleNavigate("home");
+  }
+
   async function handleProfileSave(nextProfile) {
     const token = localStorage.getItem("watchd_token");
 
@@ -457,6 +471,7 @@ export default function App() {
       location: nextProfile.location.trim(),
       website: nextProfile.website.trim(),
       bio: nextProfile.bio.trim(),
+      ...(nextProfile.username ? { username: nextProfile.username } : {}),
     };
 
     setIsSavingProfile(true);
@@ -468,6 +483,7 @@ export default function App() {
       setProfileDetails(mapUserToProfileDetails(data.user));
       setCurrentUserName(data.user.displayName || data.user.name);
       setCurrentUsername(data.user.username || "");
+      setUsernameChangedAt(data.user.usernameChangedAt || null);
 
       if (data.user.username) {
         handleUserSelect(data.user.username);
@@ -536,9 +552,12 @@ export default function App() {
           <EditProfilePage
             currentUserEmail={currentUserEmail}
             currentUserName={currentUserName}
+            currentUsername={currentUsername}
+            usernameChangedAt={usernameChangedAt}
             isLoggedIn={isLoggedIn}
             isSaving={isSavingProfile}
             onBack={() => handleNavigate("profile")}
+            onDeleteAccount={handleDeleteAccount}
             onSave={handleProfileSave}
             profileDetails={profileDetails}
             saveError={profileSaveError}
@@ -640,12 +659,17 @@ export default function App() {
               setQuery={setQuery}
             />
 
-            <div className="mx-auto mb-10 hidden w-full max-w-3xl overflow-hidden rounded border border-slate-700 bg-slate-950 shadow-[0_18px_46px_rgba(0,0,0,0.5)] sm:block">
-              <img
-                className="block h-auto w-full"
-                src={`${import.meta.env.BASE_URL}assets/banner.png`}
-                alt="Watchd banner"
-              />
+            <div className="mx-auto mb-10 hidden w-full max-w-3xl sm:block">
+              <p className="mb-1.5 text-right text-[10px] font-bold uppercase tracking-[0.18em] text-slate-600">
+                Watchd · Ad
+              </p>
+              <div className="overflow-hidden rounded border border-slate-700 bg-slate-950 shadow-[0_18px_46px_rgba(0,0,0,0.5)]">
+                <img
+                  className="block h-auto w-full"
+                  src={`${import.meta.env.BASE_URL}assets/banner.png`}
+                  alt="Watchd banner"
+                />
+              </div>
             </div>
 
             {error && (

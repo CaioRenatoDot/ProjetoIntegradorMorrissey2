@@ -195,6 +195,25 @@ export async function updateProfile(token, profile){
     return data;
 }
 
+export async function deleteAccount(token, password) {
+    const response = await fetch(`${API_URL}/auth/me`, {
+        method: "DELETE",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ password }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.message || "Erro ao excluir conta.");
+    }
+
+    return data;
+}
+
 export async function getReviews(movieId, token) {
     const response = await fetch(`${API_URL}/reviews/${movieId}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},

@@ -79,11 +79,11 @@ export default function Hero({
             type="search"
             value={query}
           />
-          <button className="inline-flex min-h-11 flex-none items-center justify-center gap-2 rounded-md border border-[#00c030]/70 bg-[#00c030]/10 px-4 text-sm font-medium text-[#9af2aa] transition hover:border-[#00c030] hover:bg-[#00c030]/15 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00c030]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 sm:px-6 sm:text-base">
+          <button className="group inline-flex min-h-11 flex-none items-center justify-center gap-2 rounded-md bg-[#00c030] px-4 text-sm font-black uppercase tracking-wide text-white/85 shadow-lg shadow-[#00c030]/25 transition duration-300 hover:bg-[#32d85a] hover:text-white hover:shadow-xl hover:shadow-[#00c030]/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00c030]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 active:scale-95 sm:px-6">
             <Search
               aria-hidden="true"
-              className="h-4 w-4"
-              strokeWidth={2.4}
+              className="h-4 w-4 transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110"
+              strokeWidth={2.6}
             />
             Search
           </button>
@@ -166,93 +166,3 @@ function HeroMarqueeSkeleton() {
   );
 }
 
-function Metric({ label, value, valueClassName = "text-white" }) {
-  const animatedValue = useAnimatedMetric(value);
-
-  return (
-    <div className="text-center">
-      <p className={`text-xl font-black ${valueClassName}`}>{animatedValue}</p>
-      <p className="text-xs font-bold text-slate-500">{label}</p>
-    </div>
-  );
-}
-
-function useAnimatedMetric(value) {
-  const metric = useMemo(() => parseMetricValue(value), [value]);
-  const [displayValue, setDisplayValue] = useState(metric.initialValue);
-
-  useEffect(() => {
-    setDisplayValue(metric.initialValue);
-
-    if (!metric.canAnimate) {
-      setDisplayValue(metric.finalValue);
-      return undefined;
-    }
-
-    const prefersReducedMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)"
-    ).matches;
-
-    if (prefersReducedMotion) {
-      setDisplayValue(metric.finalValue);
-      return undefined;
-    }
-
-    const duration = 2400;
-    let animationFrame;
-    let startTime;
-
-    function animate(timestamp) {
-      if (!startTime) {
-        startTime = timestamp;
-      }
-
-      const progress = Math.min((timestamp - startTime) / duration, 1);
-      const easedProgress = 1 - Math.pow(1 - progress, 3);
-      const currentValue = Math.round(metric.number * easedProgress);
-
-      setDisplayValue(`${currentValue}${metric.suffix}`);
-
-      if (progress < 1) {
-        animationFrame = window.requestAnimationFrame(animate);
-      }
-    }
-
-    animationFrame = window.requestAnimationFrame(animate);
-
-    return () => window.cancelAnimationFrame(animationFrame);
-  }, [metric]);
-
-  return displayValue;
-}
-
-function parseMetricValue(value) {
-  if (typeof value !== "string") {
-    return {
-      canAnimate: false,
-      finalValue: value,
-      initialValue: value,
-    };
-  }
-
-  const match = value.match(/^(\d+)(.*)$/);
-
-  if (!match) {
-    return {
-      canAnimate: false,
-      finalValue: value,
-      initialValue: value,
-    };
-  }
-
-  const number = Number(match[1]);
-  const suffix = match[2];
-
-  return {
-    canAnimate: Number.isFinite(number),
-    finalValue: value,
-    initialValue: `0${suffix}`,
-    number,
-    suffix,
-  };
-}

@@ -156,6 +156,22 @@ async function updateProfile(req, res) {
         }
     }
 
+    const isChangingUsername =
+        normalizedUsername !== undefined && normalizedUsername !== req.user.username;
+
+    if (isChangingUsername && req.user.usernameChangedAt) {
+        const cooldownDays = 30;
+        const daysSinceChange =
+            (Date.now() - new Date(req.user.usernameChangedAt).getTime()) / (1000 * 60 * 60 * 24);
+
+        if (daysSinceChange < cooldownDays) {
+            const daysLeft = Math.ceil(cooldownDays - daysSinceChange);
+            return res.status(400).json({
+                message: `Voce so pode mudar o username a cada ${cooldownDays} dias. Tente novamente em ${daysLeft} dia${daysLeft === 1 ? "" : "s"}.`
+            });
+        }
+    }
+
     const user = await prisma.user.update({
         where: {
             id: req.user.id
@@ -165,7 +181,9 @@ async function updateProfile(req, res) {
             location,
             website,
             bio,
-            ...(normalizedUsername !== undefined ? { username: normalizedUsername } : {})
+            ...(isChangingUsername
+                ? { username: normalizedUsername, usernameChangedAt: new Date() }
+                : {})
         }
     });
 
@@ -176,6 +194,7 @@ async function updateProfile(req, res) {
             name: user.name,
             email: user.email,
             username: user.username,
+            usernameChangedAt: user.usernameChangedAt,
             displayName: user.displayName,
             location: user.location,
             website: user.website,
@@ -187,9 +206,44 @@ async function updateProfile(req, res) {
 
 
 
+async function deleteAccount(req, res) {
+    const { password } = req.body;
+
+    if (!password) {
+        return res.status(400).json({
+            message: "Informe sua senha para excluir a conta."
+        });
+    }
+
+    const user = await prisma.user.findUnique({
+        where: {
+            id: req.user.id
+        }
+    });
+
+    const passwordIsValid = await bcrypt.compare(password, user.password);
+
+    if (!passwordIsValid) {
+        return res.status(400).json({
+            message: "Senha incorreta."
+        });
+    }
+
+    await prisma.user.delete({
+        where: {
+            id: req.user.id
+        }
+    });
+
+    return res.json({
+        message: "Conta excluida com sucesso."
+    });
+}
+
 module.exports = {
     register,
     login,
     me,
-    updateProfile
+    updateProfile,
+    deleteAccount
 };
