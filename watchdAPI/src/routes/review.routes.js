@@ -9,5 +9,6 @@ const reviewRoutes = express.Router();
 reviewRoutes.get("/mine", authMiddleware, reviewController.listMine);
 reviewRoutes.get("/:movieId", optionalAuthMiddleware, reviewController.listForMovie);
 reviewRoutes.post("/", authMiddleware, reviewController.upsert);
+reviewRoutes.delete("/:id", authMiddleware, reviewController.remove);
 
 module.exports = reviewRoutes;

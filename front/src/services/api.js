@@ -263,6 +263,23 @@ export async function saveReview(token, review) {
     return data;
 }
 
+export async function deleteReview(token, reviewId) {
+    const response = await fetch(`${API_URL}/reviews/${reviewId}`, {
+        method: "DELETE",
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.message || "Erro ao remover review.");
+    }
+
+    return data;
+}
+
 export async function getMyLists(token) {
     const response = await fetch(`${API_URL}/lists`, {
         headers: {

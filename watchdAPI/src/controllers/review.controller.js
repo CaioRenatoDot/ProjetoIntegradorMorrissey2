@@ -114,8 +114,34 @@ async function upsert(req, res) {
     });
 }
 
+async function remove(req, res) {
+    const { id } = req.params;
+
+    const review = await prisma.review.findFirst({
+        where: {
+            id,
+            userId: req.user.id
+        }
+    });
+
+    if (!review) {
+        return res.status(404).json({
+            message: "Review nao encontrada."
+        });
+    }
+
+    await prisma.review.delete({
+        where: { id }
+    });
+
+    return res.json({
+        message: "Review removida com sucesso."
+    });
+}
+
 module.exports = {
     listForMovie,
     listMine,
-    upsert
+    upsert,
+    remove
 };

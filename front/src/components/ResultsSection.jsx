@@ -19,7 +19,7 @@ export default function ResultsSection({
       >
         <div>
           <p className="text-sm font-black uppercase tracking-[0.18em] text-[#00c030]">
-            {hasSearched ? "Search results" : "Trending"}
+            {hasSearched ? "Search results" : "SERIES"}
           </p>
           <h2 className="mt-3 text-2xl font-black text-white sm:text-3xl">
             {hasSearched ? `Results for ${searchTerm}` : "Most Popular"}

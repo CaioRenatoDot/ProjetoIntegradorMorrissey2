@@ -1,4 +1,4 @@
-import { Calendar, Heart, ListPlus, Star } from "lucide-react";
+import { Calendar, Heart, ListPlus, Star, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import BackButton from "./BackButton";
 import RatingStars from "./RatingStars";
@@ -10,6 +10,7 @@ import {
   addListItem,
   addToWatchlist,
   createList,
+  deleteReview,
   getFavorites,
   getMyLists,
   getReviews,
@@ -30,6 +31,7 @@ export default function SeriesDetailPage({ onBack, showId }) {
   const [reviews, setReviews] = useState([]);
   const [isReviewsLoading, setIsReviewsLoading] = useState(true);
   const [reviewsError, setReviewsError] = useState("");
+  const [deletingReviewId, setDeletingReviewId] = useState(null);
   const [watchlistStatus, setWatchlistStatus] = useState("");
   const [isAddingToWatchlist, setIsAddingToWatchlist] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
@@ -216,6 +218,27 @@ export default function SeriesDetailPage({ onBack, showId }) {
       setReviewStatus(error.message);
     } finally {
       setIsSavingReview(false);
+    }
+  }
+
+  async function handleDeleteReview(reviewId) {
+    const token = localStorage.getItem("watchd_token");
+    if (!token) return;
+
+    if (!window.confirm("Delete this review? This cannot be undone.")) return;
+
+    setDeletingReviewId(reviewId);
+    setReviewStatus("");
+
+    try {
+      await deleteReview(token, reviewId);
+      setReviews((currentReviews) => currentReviews.filter((item) => item.id !== reviewId));
+      setUserRating(0);
+      setReview("");
+    } catch (error) {
+      setReviewStatus(error.message);
+    } finally {
+      setDeletingReviewId(null);
     }
   }
 
@@ -567,7 +590,12 @@ export default function SeriesDetailPage({ onBack, showId }) {
         ) : reviews.length ? (
           <div className="mt-5 grid gap-4 sm:grid-cols-2">
             {reviews.map((item) => (
-              <ReviewCard key={item.id} review={item} />
+              <ReviewCard
+                isDeleting={deletingReviewId === item.id}
+                key={item.id}
+                onDelete={handleDeleteReview}
+                review={item}
+              />
             ))}
           </div>
         ) : (
@@ -580,7 +608,7 @@ export default function SeriesDetailPage({ onBack, showId }) {
   );
 }
 
-function ReviewCard({ review }) {
+function ReviewCard({ isDeleting, onDelete, review }) {
   const reviewDate = new Intl.DateTimeFormat("en-US", { dateStyle: "medium" }).format(
     new Date(review.updatedAt)
   );
@@ -602,7 +630,20 @@ function ReviewCard({ review }) {
             <p className="text-xs font-bold text-slate-500">{reviewDate}</p>
           </div>
         </div>
-        <RatingStars rating={review.rating} size={14} />
+        <div className="flex items-center gap-3">
+          <RatingStars rating={review.rating} size={14} />
+          {review.isMine && (
+            <button
+              aria-label="Delete review"
+              className="text-slate-500 transition hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={isDeleting}
+              onClick={() => onDelete?.(review.id)}
+              type="button"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          )}
+        </div>
       </div>
 
       {review.text && (

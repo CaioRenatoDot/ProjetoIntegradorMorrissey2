@@ -50,9 +50,6 @@ export default function Hero({
       className="relative left-1/2 mb-6 w-dvw -translate-x-1/2 overflow-hidden bg-[radial-gradient(circle_at_80%_15%,rgba(16,185,129,0.16),transparent_30%),linear-gradient(180deg,#10151a_0%,#14181c_85%)] py-14 sm:py-20"
     >
       <div className="mx-auto flex w-full max-w-3xl flex-col items-center px-4 text-center">
-        <p className="text-sm font-black uppercase tracking-wide text-emerald-400">
-          Series catalog
-        </p>
         <h1 className="mt-3 max-w-2xl text-4xl font-black tracking-tight text-white sm:text-5xl lg:text-6xl">
           Find something to watch
         </h1>

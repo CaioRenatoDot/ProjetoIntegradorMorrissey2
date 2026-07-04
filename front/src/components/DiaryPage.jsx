@@ -1,20 +1,25 @@
-import { CalendarDays, MessageSquareQuote } from "lucide-react";
+import { AlignLeft, Heart, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { fallbackPoster } from "../data/constants";
-import { getMyReviews } from "../services/api";
+import { deleteReview, getFavorites, getMyReviews } from "../services/api";
 import Modal from "./Modal";
 import RatingStars from "./RatingStars";
 import UserAvatar from "./UserAvatar";
 
+const rowGridClass =
+  "grid grid-cols-[3rem_2.25rem_minmax(0,1fr)_5.5rem_2.75rem] items-center gap-3 px-3 sm:grid-cols-[4rem_2.5rem_minmax(0,1fr)_4.5rem_7rem_4.5rem_4rem] sm:gap-4 sm:px-5";
+
 export default function DiaryPage({ currentUserName, isLoggedIn, onSeriesSelect }) {
   const [reviews, setReviews] = useState([]);
+  const [favoriteMovieIds, setFavoriteMovieIds] = useState(() => new Set());
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [deletingReviewId, setDeletingReviewId] = useState(null);
 
   useEffect(() => {
     let isMounted = true;
 
-    async function fetchMyReviews() {
+    async function fetchDiaryData() {
       if (!isLoggedIn) {
         setReviews([]);
         setError("");
@@ -43,16 +48,45 @@ export default function DiaryPage({ currentUserName, isLoggedIn, onSeriesSelect 
       } finally {
         if (isMounted) setIsLoading(false);
       }
+
+      try {
+        const favoritesData = await getFavorites(token);
+        if (isMounted) {
+          setFavoriteMovieIds(new Set(favoritesData.items.map((item) => item.movieId)));
+        }
+      } catch {
+      }
     }
 
-    fetchMyReviews();
+    fetchDiaryData();
 
     return () => {
       isMounted = false;
     };
   }, [isLoggedIn]);
 
-  const groupedReviews = groupReviewsByDate(reviews);
+  async function handleDeleteReview(reviewId) {
+    const token = localStorage.getItem("watchd_token");
+    if (!token) return false;
+
+    if (!window.confirm("Delete this review? This cannot be undone.")) return false;
+
+    setDeletingReviewId(reviewId);
+    setError("");
+
+    try {
+      await deleteReview(token, reviewId);
+      setReviews((currentReviews) => currentReviews.filter((item) => item.id !== reviewId));
+      return true;
+    } catch (requestError) {
+      setError(requestError.message);
+      return false;
+    } finally {
+      setDeletingReviewId(null);
+    }
+  }
+
+  const diaryRows = buildDiaryRows(reviews);
 
   return (
     <section id="diary" className="py-8 sm:py-12">
@@ -78,43 +112,42 @@ export default function DiaryPage({ currentUserName, isLoggedIn, onSeriesSelect 
           {error}
         </p>
       ) : isLoading ? (
-        <div className="space-y-4">
-          {Array.from({ length: 3 }, (_, index) => (
+        <div className="space-y-2">
+          {Array.from({ length: 5 }, (_, index) => (
             <div
-              className="h-28 animate-pulse rounded border border-slate-800 bg-slate-900"
+              className="h-16 animate-pulse rounded border border-slate-800 bg-slate-900"
               key={index}
             />
           ))}
         </div>
-      ) : groupedReviews.length ? (
-        <div className="space-y-10">
-          {groupedReviews.map((group) => (
-            <section key={group.date}>
-              <div className="mb-4 flex items-center gap-3">
-                <span className="grid h-8 w-8 flex-none place-items-center rounded-full border border-[#00c030]/50 bg-[#00c030]/10 text-[#00c030]">
-                  <CalendarDays className="h-4 w-4" strokeWidth={2.4} />
-                </span>
-                <h2 className="text-sm font-black uppercase tracking-[0.18em] text-slate-300">
-                  {group.date}
-                </h2>
-                <span className="h-px flex-1 bg-slate-800" />
-                <span className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                  {group.items.length} {group.items.length === 1 ? "entry" : "entries"}
-                </span>
-              </div>
+      ) : diaryRows.length ? (
+        <div className="overflow-hidden rounded border border-slate-800 bg-slate-950 shadow-xl shadow-black/20">
+          <div
+            className={`${rowGridClass} border-b border-slate-800 bg-slate-900/80 py-3 text-[11px] font-black uppercase tracking-[0.14em] text-slate-500`}
+          >
+            <p>Month</p>
+            <p>Day</p>
+            <p>Series</p>
+            <p className="hidden sm:block">Released</p>
+            <p>Rating</p>
+            <p className="hidden text-center sm:block">Fav.</p>
+            <p className="text-center">Review</p>
+          </div>
 
-              <div className="divide-y divide-slate-800 overflow-hidden rounded border border-slate-800 bg-slate-950 shadow-xl shadow-black/20">
-                {group.items.map((item) => (
-                  <DiaryEntry
-                    currentUserName={currentUserName}
-                    key={item.id}
-                    onSeriesSelect={onSeriesSelect}
-                    review={item}
-                  />
-                ))}
-              </div>
-            </section>
-          ))}
+          <div className="divide-y divide-slate-800/80">
+            {diaryRows.map((row) => (
+              <DiaryRow
+                currentUserName={currentUserName}
+                isDeleting={deletingReviewId === row.review.id}
+                isFavorite={favoriteMovieIds.has(row.review.movieId)}
+                key={row.review.id}
+                onDelete={handleDeleteReview}
+                onSeriesSelect={onSeriesSelect}
+                review={row.review}
+                showMonth={row.showMonth}
+              />
+            ))}
+          </div>
         </div>
       ) : (
         <EmptyState
@@ -126,80 +159,119 @@ export default function DiaryPage({ currentUserName, isLoggedIn, onSeriesSelect 
   );
 }
 
-function DiaryEntry({ currentUserName, onSeriesSelect, review }) {
+function DiaryRow({
+  currentUserName,
+  isDeleting,
+  isFavorite,
+  onDelete,
+  onSeriesSelect,
+  review,
+  showMonth,
+}) {
   const [isReviewOpen, setIsReviewOpen] = useState(false);
 
   const posterUrl = review.posterUrl || fallbackPoster;
   const isClickable = Boolean(review.movieId && onSeriesSelect);
-  const isLongReview = (review.text || "").length > 160;
 
-  function handleOpenSeries(event) {
-    event.stopPropagation();
+  const entryDate = new Date(review.updatedAt);
+  const monthLabel = new Intl.DateTimeFormat("en-US", { month: "short" }).format(entryDate);
+  const dayLabel = String(entryDate.getDate()).padStart(2, "0");
+  const releasedYear = (review.releaseYear || "").slice(0, 4);
+
+  function handleOpenSeries() {
     if (isClickable) onSeriesSelect(Number(review.movieId));
   }
 
   return (
-    <article
-      className="group flex cursor-pointer gap-4 p-4 transition hover:bg-slate-900/60 sm:gap-5 sm:p-5"
-      onClick={() => setIsReviewOpen(true)}
-    >
-      <button
-        aria-label={isClickable ? `Open details for ${review.title}` : undefined}
-        className="block flex-none overflow-hidden rounded border border-slate-700 bg-slate-900 shadow-lg shadow-black/30 transition group-hover:border-[#00c030] disabled:cursor-default"
-        disabled={!isClickable}
-        onClick={handleOpenSeries}
-        type="button"
-      >
-        <img
-          alt={`Poster for ${review.title}`}
-          className="h-24 w-16 object-cover sm:h-28 sm:w-20"
-          src={posterUrl}
-        />
-      </button>
-
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <UserAvatar name={currentUserName} size="sm" />
-          <p className="text-sm font-bold text-slate-300">
-            <span className="text-white">{currentUserName}</span>{" "}
-            <span className="text-slate-500">reviewed</span>
-          </p>
-        </div>
-
-        <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-          <button
-            className="text-left text-lg font-black text-white transition group-hover:text-[#32d85a] disabled:cursor-default disabled:group-hover:text-white"
-            disabled={!isClickable}
-            onClick={handleOpenSeries}
-            type="button"
-          >
-            {review.title}
-          </button>
-          <RatingStars rating={review.rating} />
-        </div>
-
-        {review.text && (
-          <p className="mt-2 flex gap-2 text-sm leading-6 text-slate-400">
-            <MessageSquareQuote
-              aria-hidden="true"
-              className="mt-1 h-4 w-4 flex-none text-slate-600"
-            />
-            <span className={isLongReview ? "line-clamp-3" : undefined}>
-              {review.text}
-            </span>
-          </p>
+    <div className={`${rowGridClass} group py-2.5 transition hover:bg-slate-900/60`}>
+      <div>
+        {showMonth && (
+          <div className="w-12 rounded-md border border-slate-700 bg-slate-800 py-1.5 text-center shadow-md shadow-black/40 sm:w-14">
+            <p className="text-xs font-black uppercase leading-tight tracking-wide text-slate-100">
+              {monthLabel}
+            </p>
+            <p className="text-[10px] font-bold leading-tight text-slate-400">
+              {entryDate.getFullYear()}
+            </p>
+          </div>
         )}
+      </div>
+
+      <p className="text-xl font-light text-slate-500 sm:text-2xl">{dayLabel}</p>
+
+      <div className="flex min-w-0 items-center gap-3">
+        <button
+          aria-label={isClickable ? `Open details for ${review.title}` : undefined}
+          className="block h-14 w-10 flex-none overflow-hidden rounded border border-slate-700 bg-slate-900 shadow shadow-black/30 transition group-hover:border-[#00c030] disabled:cursor-default"
+          disabled={!isClickable}
+          onClick={handleOpenSeries}
+          type="button"
+        >
+          <img
+            alt={`Poster for ${review.title}`}
+            className="h-full w-full object-cover"
+            src={posterUrl}
+          />
+        </button>
+        <button
+          className="truncate text-left text-base font-black text-white transition hover:text-[#32d85a] disabled:cursor-default disabled:hover:text-white sm:text-lg"
+          disabled={!isClickable}
+          onClick={handleOpenSeries}
+          type="button"
+        >
+          {review.title}
+        </button>
+      </div>
+
+      <p className="hidden text-sm font-bold text-slate-400 sm:block">{releasedYear}</p>
+
+      <RatingStars rating={review.rating} size={14} />
+
+      <div className="hidden justify-center sm:flex">
+        <Heart
+          aria-label={isFavorite ? "Favorite" : undefined}
+          className={`h-4 w-4 ${isFavorite ? "fill-current text-orange-500" : "text-slate-700"}`}
+        />
+      </div>
+
+      <div className="flex justify-center">
+        <button
+          aria-label={`Open review of ${review.title}`}
+          className={`grid h-8 w-8 place-items-center rounded transition hover:bg-slate-800 hover:text-white ${
+            review.text ? "text-slate-400" : "text-slate-700"
+          }`}
+          onClick={() => setIsReviewOpen(true)}
+          type="button"
+        >
+          <AlignLeft className="h-4 w-4" />
+        </button>
       </div>
 
       {isReviewOpen && (
         <Modal onClose={() => setIsReviewOpen(false)} title={review.title}>
           <div className="flex gap-5">
-            <img
-              alt={`Poster for ${review.title}`}
-              className="h-48 w-32 flex-none rounded border border-slate-700 object-cover shadow-lg shadow-black/40"
-              src={posterUrl}
-            />
-            <div className="min-w-0">
+            <div className="relative h-48 w-32 flex-none">
+              <img
+                alt={`Poster for ${review.title}`}
+                className="h-full w-full rounded border border-slate-700 object-cover shadow-lg shadow-black/40"
+                src={posterUrl}
+              />
+              {onDelete && (
+                <button
+                  aria-label="Delete review"
+                  className="absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-full bg-black/70 text-red-300 backdrop-blur transition hover:bg-red-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                  disabled={isDeleting}
+                  onClick={async () => {
+                    const deleted = await onDelete(review.id);
+                    if (deleted) setIsReviewOpen(false);
+                  }}
+                  type="button"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
               <div className="flex items-center gap-3">
                 <UserAvatar name={currentUserName} size="md" />
                 <p className="text-base font-bold text-slate-300">
@@ -210,17 +282,17 @@ function DiaryEntry({ currentUserName, onSeriesSelect, review }) {
               <div className="mt-4">
                 <RatingStars rating={review.rating} size={24} />
               </div>
+
+              {review.text && (
+                <p className="mt-4 whitespace-pre-line wrap-break-word text-base leading-7 text-slate-300">
+                  {review.text}
+                </p>
+              )}
             </div>
           </div>
-
-          {review.text && (
-            <p className="mt-6 whitespace-pre-line text-lg leading-8 text-slate-300">
-              {review.text}
-            </p>
-          )}
         </Modal>
       )}
-    </article>
+    </div>
   );
 }
 
@@ -233,23 +305,15 @@ function EmptyState({ description, title }) {
   );
 }
 
-function groupReviewsByDate(reviews) {
-  const groups = new Map();
+function buildDiaryRows(reviews) {
+  let lastMonthKey = null;
 
-  reviews.forEach((review) => {
-    const dateKey = new Date(review.updatedAt).toDateString();
+  return reviews.map((review) => {
+    const entryDate = new Date(review.updatedAt);
+    const monthKey = `${entryDate.getFullYear()}-${entryDate.getMonth()}`;
+    const showMonth = monthKey !== lastMonthKey;
+    lastMonthKey = monthKey;
 
-    if (!groups.has(dateKey)) {
-      groups.set(dateKey, []);
-    }
-
-    groups.get(dateKey).push(review);
+    return { review, showMonth };
   });
-
-  return Array.from(groups, ([dateKey, items]) => ({
-    date: new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric" }).format(
-      new Date(dateKey)
-    ),
-    items,
-  }));
 }
