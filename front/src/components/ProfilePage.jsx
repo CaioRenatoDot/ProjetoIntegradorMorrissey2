@@ -30,6 +30,7 @@ export default function ProfilePage({
   onSeriesSelect,
   onSeriesTabClick,
   onViewAllLists,
+  onWatchlistTabClick,
   profileDetails,
   viewedUsername = null,
 }) {
@@ -571,7 +572,12 @@ export default function ProfilePage({
         </div>
 
         {!isPublicView && isLoggedIn && (
-          <ProfileTabs onDiaryClick={onDiaryClick} onSeriesClick={onSeriesTabClick} />
+          <ProfileTabs
+            onDiaryClick={onDiaryClick}
+            onListsClick={onViewAllLists}
+            onSeriesClick={onSeriesTabClick}
+            onWatchlistClick={onWatchlistTabClick}
+          />
         )}
       </header>
 
@@ -678,12 +684,11 @@ function ProfileShelfHeader({ action, title }) {
   );
 }
 
-function ProfileTabs({ onDiaryClick, onSeriesClick }) {
+function ProfileTabs({ onDiaryClick, onSeriesClick, onListsClick, onWatchlistClick }) {
   const tabs = [
     "Profile",
     "Series",
     "Diary",
-    "Reviews",
     "Watchlist",
     "Lists",
   ];
@@ -691,6 +696,8 @@ function ProfileTabs({ onDiaryClick, onSeriesClick }) {
   const tabHandlers = {
     Series: onSeriesClick,
     Diary: onDiaryClick,
+    Lists: onListsClick,
+    Watchlist: onWatchlistClick,
   };
 
   return (

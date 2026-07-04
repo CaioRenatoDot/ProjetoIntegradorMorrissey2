@@ -8,6 +8,7 @@ import ListPage from "./components/ListPage";
 import LoginScreen from "./components/LoginScreen";
 import MyListsPage from "./components/MyListsPage";
 import MySeriesPage from "./components/MySeriesPage";
+import MyWatchlistPage from "./components/MyWatchlistPage";
 import Navbar from "./components/Navbar";
 import ProfilePage from "./components/ProfilePage";
 import ResultsSection from "./components/ResultsSection";
@@ -546,6 +547,7 @@ export default function App() {
             onSeriesSelect={handleSeriesSelect}
             onSeriesTabClick={() => handleNavigate("mySeries")}
             onViewAllLists={() => handleNavigate("myLists")}
+            onWatchlistTabClick={() => handleNavigate("myWatchlist")}
             profileDetails={profileDetails}
           />
         ) : activePage === "editProfile" ? (
@@ -581,6 +583,7 @@ export default function App() {
             onSeriesSelect={handleSeriesSelect}
             onSeriesTabClick={() => handleNavigate("mySeries")}
             onViewAllLists={() => handleNavigate("myLists")}
+            onWatchlistTabClick={() => handleNavigate("myWatchlist")}
             profileDetails={profileDetails}
             viewedUsername={selectedUsername}
           />
@@ -607,6 +610,11 @@ export default function App() {
           <MySeriesPage
             isLoggedIn={isLoggedIn}
             onSeriesSelect={(showId) => handleSeriesSelect(showId, "mySeries")}
+          />
+        ) : activePage === "myWatchlist" ? (
+          <MyWatchlistPage
+            isLoggedIn={isLoggedIn}
+            onSeriesSelect={(showId) => handleSeriesSelect(showId, "myWatchlist")}
           />
         ) : activePage === "search" ? (
           <SearchResultsPage
@@ -642,6 +650,11 @@ export default function App() {
 
               if (detailReturnPage === "mySeries") {
                 setActivePage("mySeries");
+                return;
+              }
+
+              if (detailReturnPage === "myWatchlist") {
+                setActivePage("myWatchlist");
                 return;
               }
 
