@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { fallbackPoster } from "../data/constants";
 import { getWatchlist } from "../services/api";
+import BackButton from "./BackButton";
 
-export default function MyWatchlistPage({ isLoggedIn, onSeriesSelect }) {
+export default function MyWatchlistPage({ isLoggedIn, onBack, onSeriesSelect }) {
   const [watchlistItems, setWatchlistItems] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -50,6 +51,8 @@ export default function MyWatchlistPage({ isLoggedIn, onSeriesSelect }) {
 
   return (
     <section id="watchlist" className="py-6 sm:py-10">
+      <BackButton onBack={onBack} />
+
       <header className="mb-6 border-b border-slate-800 pb-6">
         <p className="text-sm font-black uppercase tracking-[0.18em] text-[#00c030]">
           Watchlist

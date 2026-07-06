@@ -514,6 +514,7 @@ export default function App() {
           onSearchClose={() => setIsNavSearchOpen(false)}
           onSearchOpen={() => setIsNavSearchOpen(true)}
           onSearchSubmit={handleNavSearchSubmit}
+          onSettingsClick={() => handleNavigate("editProfile")}
           query={query}
           setQuery={setQuery}
         />
@@ -604,16 +605,19 @@ export default function App() {
           <DiaryPage
             currentUserName={currentUserName}
             isLoggedIn={isLoggedIn}
+            onBack={() => handleNavigate("profile")}
             onSeriesSelect={(showId) => handleSeriesSelect(showId, "diary")}
           />
         ) : activePage === "mySeries" ? (
           <MySeriesPage
             isLoggedIn={isLoggedIn}
+            onBack={() => handleNavigate("profile")}
             onSeriesSelect={(showId) => handleSeriesSelect(showId, "mySeries")}
           />
         ) : activePage === "myWatchlist" ? (
           <MyWatchlistPage
             isLoggedIn={isLoggedIn}
+            onBack={() => handleNavigate("profile")}
             onSeriesSelect={(showId) => handleSeriesSelect(showId, "myWatchlist")}
           />
         ) : activePage === "search" ? (

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { DoorOpen, LogIn, Search } from "lucide-react";
+import { ChevronDown, DoorOpen, LogIn, Search, Settings, User } from "lucide-react";
 import BrandLogo from "./BrandLogo";
 import UserAvatar from "./UserAvatar";
 
@@ -16,11 +16,14 @@ export default function Navbar({
   onSearchOpen,
   onSearchSubmit,
   onSearchClose,
+  onSettingsClick,
   query,
   setQuery,
 }) {
   const [isSearchFieldExpanded, setIsSearchFieldExpanded] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const searchInputRef = useRef(null);
+  const userMenuRef = useRef(null);
   const linkClassName =
     "flex h-full flex-none items-center border-b-2 border-transparent px-2 transition hover:border-[#00c030] hover:text-white md:px-0";
   const activeLinkClassName =
@@ -40,6 +43,32 @@ export default function Navbar({
     return () => window.clearTimeout(timer);
   }, [isNavSearchOpen]);
 
+  useEffect(() => {
+    if (!isUserMenuOpen) return undefined;
+
+    function handleDocumentPointerDown(event) {
+      if (userMenuRef.current?.contains(event.target)) return;
+      setIsUserMenuOpen(false);
+    }
+
+    function handleDocumentKeyDown(event) {
+      if (event.key === "Escape") setIsUserMenuOpen(false);
+    }
+
+    document.addEventListener("pointerdown", handleDocumentPointerDown);
+    document.addEventListener("keydown", handleDocumentKeyDown);
+
+    return () => {
+      document.removeEventListener("pointerdown", handleDocumentPointerDown);
+      document.removeEventListener("keydown", handleDocumentKeyDown);
+    };
+  }, [isUserMenuOpen]);
+
+  function handleUserMenuAction(action) {
+    setIsUserMenuOpen(false);
+    action?.();
+  }
+
   return (
     <nav className="sticky top-0 z-50 border-b border-[#2e2e2e] bg-[#1a1a1a]">
       <div className="mx-auto flex max-w-6xl flex-col px-4 sm:px-5 md:min-h-16 md:flex-row md:items-center md:gap-x-6 md:px-4 md:py-0">
@@ -48,10 +77,12 @@ export default function Navbar({
 
           <div className="order-2 ml-auto flex flex-none items-center gap-2.5 md:order-4 md:ml-0">
             {isLoggedIn ? (
-              <>
+              <div className="relative" ref={userMenuRef}>
                 <button
+                  aria-expanded={isUserMenuOpen}
+                  aria-haspopup="menu"
                   className="inline-flex h-9 max-w-40 items-center gap-2 rounded-full border border-zinc-700/80 bg-zinc-900/70 py-1 pl-1 pr-3 text-sm font-bold text-slate-200 shadow-sm shadow-black/20 transition hover:border-[#00c030]/80 hover:bg-zinc-800 hover:text-white sm:max-w-56"
-                  onClick={onProfileClick}
+                  onClick={() => setIsUserMenuOpen((isOpen) => !isOpen)}
                   type="button"
                 >
                   <UserAvatar
@@ -60,20 +91,51 @@ export default function Navbar({
                     size="nav"
                   />
                   <span className="min-w-0 truncate leading-none">{currentUserName}</span>
-                </button>
-                <button
-                  aria-label="Log out"
-                  className="grid h-9 w-9 place-items-center rounded border border-red-500/70 text-red-400 transition hover:border-red-400 hover:bg-red-500/10 hover:text-red-300"
-                  onClick={onLogout}
-                  type="button"
-                >
-                  <DoorOpen
+                  <ChevronDown
                     aria-hidden="true"
-                    className="h-4 w-4"
-                    strokeWidth={2.4}
+                    className={`h-3.5 w-3.5 flex-none text-slate-400 transition-transform ${
+                      isUserMenuOpen ? "rotate-180" : ""
+                    }`}
+                    strokeWidth={2.6}
                   />
                 </button>
-              </>
+
+                {isUserMenuOpen && (
+                  <div
+                    className="absolute left-0 top-full z-50 mt-2 min-w-full overflow-hidden rounded-md border border-zinc-700/80 bg-zinc-900 py-1 shadow-xl shadow-black/50"
+                    role="menu"
+                  >
+                    <button
+                      className="flex w-full items-center gap-2 whitespace-nowrap px-3 py-2 text-left text-xs font-bold text-slate-200 transition hover:bg-zinc-800 hover:text-white"
+                      onClick={() => handleUserMenuAction(onProfileClick)}
+                      role="menuitem"
+                      type="button"
+                    >
+                      <User aria-hidden="true" className="h-3.5 w-3.5 text-slate-400" strokeWidth={2.4} />
+                      View profile
+                    </button>
+                    <button
+                      className="flex w-full items-center gap-2 whitespace-nowrap px-3 py-2 text-left text-xs font-bold text-slate-200 transition hover:bg-zinc-800 hover:text-white"
+                      onClick={() => handleUserMenuAction(onSettingsClick)}
+                      role="menuitem"
+                      type="button"
+                    >
+                      <Settings aria-hidden="true" className="h-3.5 w-3.5 text-slate-400" strokeWidth={2.4} />
+                      Settings
+                    </button>
+                    <div className="my-1 h-px bg-zinc-800" />
+                    <button
+                      className="flex w-full items-center gap-2 whitespace-nowrap px-3 py-2 text-left text-xs font-bold text-red-400 transition hover:bg-red-500/10 hover:text-red-300"
+                      onClick={() => handleUserMenuAction(onLogout)}
+                      role="menuitem"
+                      type="button"
+                    >
+                      <DoorOpen aria-hidden="true" className="h-3.5 w-3.5" strokeWidth={2.4} />
+                      Log out
+                    </button>
+                  </div>
+                )}
+              </div>
             ) : (
               <>
                 <button
