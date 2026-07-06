@@ -264,7 +264,27 @@ export default function App() {
 
   useEffect(() => {
     function syncRouteFromUrl() {
+      const historyState = window.history.state;
       const { page, username } = getRouteFromLocation();
+
+      if (historyState && typeof historyState === "object" && historyState.watchdShowId) {
+        setSelectedShowId(historyState.watchdShowId);
+        setSelectedListId(historyState.watchdListId || null);
+        setDetailReturnPage(historyState.watchdReturnPage || "home");
+        setSelectedUsername(username);
+        setActivePage("details");
+        return;
+      }
+
+      if (historyState && typeof historyState === "object" && historyState.watchdListId) {
+        setSelectedShowId(null);
+        setSelectedListId(historyState.watchdListId);
+        setListDetailReturnPage(historyState.watchdListReturnPage || "lists");
+        setSelectedUsername(username);
+        setActivePage("listDetails");
+        return;
+      }
+
       setSelectedShowId(null);
       setSelectedListId(null);
       setSelectedUsername(username);
@@ -420,6 +440,12 @@ export default function App() {
   }
 
   function handleListSelect(listId, returnPage = "lists") {
+    window.history.pushState(
+      { watchdListId: listId, watchdListReturnPage: returnPage },
+      "",
+      window.location.href
+    );
+
     setSelectedShowId(null);
     setSelectedListId(listId);
     setListDetailReturnPage(returnPage);
@@ -449,6 +475,16 @@ export default function App() {
   }
 
   function handleSeriesSelect(showId, returnPage = "home") {
+    window.history.pushState(
+      {
+        watchdShowId: showId,
+        watchdReturnPage: returnPage,
+        watchdListId: returnPage === "listDetails" ? selectedListId : null,
+      },
+      "",
+      window.location.href
+    );
+
     setSelectedShowId(showId);
     setDetailReturnPage(returnPage);
     setActivePage("details");
@@ -581,7 +617,7 @@ export default function App() {
                 selectedUsername === currentUsername ? "profile" : "lists"
               )
             }
-            onSeriesSelect={handleSeriesSelect}
+            onSeriesSelect={(showId) => handleSeriesSelect(showId, "publicProfile")}
             onSeriesTabClick={() => handleNavigate("mySeries")}
             onViewAllLists={() => handleNavigate("myLists")}
             onWatchlistTabClick={() => handleNavigate("myWatchlist")}
@@ -598,7 +634,19 @@ export default function App() {
           <ListDetailPage
             isPublic={listDetailReturnPage === "lists"}
             listId={selectedListId}
-            onBack={() => setActivePage(listDetailReturnPage)}
+            onBack={() => {
+              const historyState = window.history.state;
+              if (
+                historyState &&
+                typeof historyState === "object" &&
+                historyState.watchdListId === selectedListId
+              ) {
+                window.history.back();
+                return;
+              }
+
+              setActivePage(listDetailReturnPage);
+            }}
             onSeriesSelect={(showId) => handleSeriesSelect(showId, "listDetails")}
           />
         ) : activePage === "diary" ? (
@@ -631,9 +679,24 @@ export default function App() {
         ) : activePage === "details" && selectedShowId ? (
           <SeriesDetailPage
             onBack={() => {
+              const historyState = window.history.state;
+              if (
+                historyState &&
+                typeof historyState === "object" &&
+                historyState.watchdShowId === selectedShowId
+              ) {
+                window.history.back();
+                return;
+              }
+
               setSelectedShowId(null);
               if (detailReturnPage === "listDetails" && selectedListId) {
                 setActivePage("listDetails");
+                return;
+              }
+
+              if (detailReturnPage === "publicProfile" && selectedUsername) {
+                setActivePage("publicProfile");
                 return;
               }
 
