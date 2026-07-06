@@ -26,5 +26,5 @@ Configure o `.env` local antes de iniciar a API. O arquivo real `.env` fica fora
 
 ## Deploy
 
-O workflow do GitHub Pages roda o build dentro da pasta `front`.
+O workflow do GitHub Pages roda o build dentro da pasta `front`
 
