@@ -1,0 +1,55 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: watchd-postgres
+    environment:
+      POSTGRES_USER: watchd
+      POSTGRES_PASSWORD: watchd
+      POSTGRES_DB: watchd
+    ports:
+      - "5432:5432"
+    volumes:
+      - watchd-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U watchd -d watchd"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: watchd-api:latest
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://watchd:watchd@db:5432/watchd?schema=public
+      PORT: 3000
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder
+    image: watchd-api:builder
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://watchd:watchd@db:5432/watchd?schema=public
+    depends_on:
+      db:
+        condition: service_healthy
+    user: node
+    command: npx prisma migrate deploy
+    profiles: ["tools"]
+
+volumes:
+  watchd-pgdata:
