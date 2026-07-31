@@ -33,9 +33,14 @@ jobs:
         working-directory: front
         run: npm ci
 
+      # VITE_API_URL vem de uma variable do repositorio
+      # (Settings > Secrets and variables > Actions > Variables) e aponta para a
+      # API publicada. Sem ela o build sai com o proxy /api, que so vale em dev.
       - name: Build
         working-directory: front
         run: npm run build
+        env:
+          VITE_API_URL: ${{ vars.VITE_API_URL }}
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

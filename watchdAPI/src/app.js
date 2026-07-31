@@ -1,5 +1,8 @@
 const express = require('express');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
+
+const { notFoundHandler, errorHandler } = require('./middlewares/error.middleware');
 
 const authRoutes = require('./routes/auth.routes');
 const watchlistRoutes = require("./routes/watchlist.routes");
@@ -10,10 +13,20 @@ const listRoutes = require("./routes/list.routes")
 
 const app = express();
 
+// CORS_ORIGIN aceita varias origens separadas por virgula (ex.: o front local
+// e o publicado no GitHub Pages). credentials: true e obrigatorio para o
+// navegador enviar o cookie de sessao em requisicoes cross-origin.
+const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:5173'
+  origin: allowedOrigins,
+  credentials: true
 }));
 app.use(express.json());
+app.use(cookieParser());
 
 app.get("/", (req, res) => {
   return res.json({
@@ -36,5 +49,8 @@ app.use("/watchlist", watchlistRoutes);
 app.use("/reviews", reviewRoutes);
 app.use("/users", userRoutes);
 app.use("/lists", listRoutes);
+
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 module.exports = app;

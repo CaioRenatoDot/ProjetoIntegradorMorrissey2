@@ -1,7 +1,8 @@
-const API_URL = "/api"
+const API_URL = import.meta.env.VITE_API_URL || "/api";
 
 export async function login(email, password) {
     const response = await fetch(`${API_URL}/auth/login`, {
+        credentials: "include",
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -19,8 +20,24 @@ export async function login(email, password) {
 
 }
 
+export async function logout() {
+    const response = await fetch(`${API_URL}/auth/logout`, {
+        credentials: "include",
+        method: "POST",
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.message || "Erro ao encerrar a sessao.");
+    }
+
+    return data;
+}
+
 export async function register(name, email, password) {
     const response = await fetch(`${API_URL}/auth/register`, {
+        credentials: "include",
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -38,9 +55,7 @@ export async function register(name, email, password) {
 
 export async function getMe(token) {
     const response = await fetch(`${API_URL}/auth/me`, {
-        headers: {
-            Authorization: `Bearer ${token}`,
-        },
+        credentials: "include",
     });
 
     const data = await response.json();
@@ -54,9 +69,7 @@ export async function getMe(token) {
 
 export async function getWatchlist(token) {
     const response = await fetch(`${API_URL}/watchlist`, {
-        headers: {
-            Authorization: `Bearer ${token}`,
-        },
+        credentials: "include",
     });
 
     const data = await response.json();
@@ -69,10 +82,10 @@ export async function getWatchlist(token) {
 
 export async function addToWatchlist(token, item) {
     const response = await fetch(`${API_URL}/watchlist`, {
+        credentials: "include",
         method: "POST",
         headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(item),
 
@@ -91,9 +104,7 @@ export async function addToWatchlist(token, item) {
 export async function removeFromWatchlist(token, itemId) {
     const response = await fetch(`${API_URL}/watchlist/${itemId}`, {
         method: "DELETE",
-        headers: {
-            Authorization: `Bearer ${token}`,
-        },
+        credentials: "include",
     });
 
     const data = await response.json();
@@ -107,9 +118,7 @@ export async function removeFromWatchlist(token, itemId) {
 
 export async function getFavorites(token) {
     const response = await fetch(`${API_URL}/favorites`, {
-        headers: {
-            Authorization: `Bearer ${token}`,
-        },
+        credentials: "include",
     });
 
     const data = await response.json();
@@ -123,10 +132,10 @@ export async function getFavorites(token) {
 
 export async function addFavorite(token, item) {
     const response = await fetch(`${API_URL}/favorites`, {
+        credentials: "include",
         method: "POST",
         headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(item),
     });
@@ -143,9 +152,7 @@ export async function addFavorite(token, item) {
 export async function removeFavorite(token, favoriteId) {
     const response = await fetch(`${API_URL}/favorites/${favoriteId}`, {
         method: "DELETE",
-        headers: {
-            Authorization: `Bearer ${token}`,
-        },
+        credentials: "include",
     });
 
     const data = await response.json();
@@ -159,10 +166,10 @@ export async function removeFavorite(token, favoriteId) {
 
 export async function reorderFavorites(token, ids) {
     const response = await fetch(`${API_URL}/favorites/reorder`, {
+        credentials: "include",
         method: "PUT",
         headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ ids }),
     });
@@ -178,10 +185,10 @@ export async function reorderFavorites(token, ids) {
 
 export async function updateProfile(token, profile){
     const response = await fetch(`${API_URL}/auth/me`, {
+        credentials: "include",
         method: "PUT",
         headers: {
             "Content-Type" : "application/json",
-            Authorization:`Bearer ${token}`,
         },
         body: JSON.stringify(profile),
     });
@@ -197,10 +204,10 @@ export async function updateProfile(token, profile){
 
 export async function deleteAccount(token, password) {
     const response = await fetch(`${API_URL}/auth/me`, {
+        credentials: "include",
         method: "DELETE",
         headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ password }),
     });
@@ -214,9 +221,11 @@ export async function deleteAccount(token, password) {
     return data;
 }
 
-export async function getReviews(movieId, token) {
+export async function getReviews(movieId) {
+    // Rota com auth opcional: o cookie, quando existe, destaca a review do
+    // proprio usuario.
     const response = await fetch(`${API_URL}/reviews/${movieId}`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        credentials: "include",
     });
 
     const data = await response.json();
@@ -230,9 +239,7 @@ export async function getReviews(movieId, token) {
 
 export async function getMyReviews(token) {
     const response = await fetch(`${API_URL}/reviews/mine`, {
-        headers: {
-            Authorization: `Bearer ${token}`,
-        },
+        credentials: "include",
     });
 
     const data = await response.json();
@@ -246,10 +253,10 @@ export async function getMyReviews(token) {
 
 export async function saveReview(token, review) {
     const response = await fetch(`${API_URL}/reviews`, {
+        credentials: "include",
         method: "POST",
         headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(review),
     });
@@ -266,9 +273,7 @@ export async function saveReview(token, review) {
 export async function deleteReview(token, reviewId) {
     const response = await fetch(`${API_URL}/reviews/${reviewId}`, {
         method: "DELETE",
-        headers: {
-            Authorization: `Bearer ${token}`,
-        },
+        credentials: "include",
     });
 
     const data = await response.json();
@@ -282,9 +287,7 @@ export async function deleteReview(token, reviewId) {
 
 export async function getMyLists(token) {
     const response = await fetch(`${API_URL}/lists`, {
-        headers: {
-            Authorization: `Bearer ${token}`,
-        },
+        credentials: "include",
     });
 
     const data = await response.json();
@@ -298,9 +301,7 @@ export async function getMyLists(token) {
 
 export async function getList(token, listId) {
     const response = await fetch(`${API_URL}/lists/${listId}`, {
-        headers: {
-            Authorization: `Bearer ${token}`,
-        },
+        credentials: "include",
     });
 
     const data = await response.json();
@@ -314,10 +315,10 @@ export async function getList(token, listId) {
 
 export async function createList(token, { title, category }) {
     const response = await fetch(`${API_URL}/lists`, {
+        credentials: "include",
         method: "POST",
         headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ title, category }),
     });
@@ -334,9 +335,7 @@ export async function createList(token, { title, category }) {
 export async function deleteList(token, listId) {
     const response = await fetch(`${API_URL}/lists/${listId}`, {
         method: "DELETE",
-        headers: {
-            Authorization: `Bearer ${token}`,
-        },
+        credentials: "include",
     });
 
     const data = await response.json();
@@ -350,10 +349,10 @@ export async function deleteList(token, listId) {
 
 export async function addListItem(token, listId, item) {
     const response = await fetch(`${API_URL}/lists/${listId}/items`, {
+        credentials: "include",
         method: "POST",
         headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(item),
     });
@@ -370,9 +369,7 @@ export async function addListItem(token, listId, item) {
 export async function removeListItem(token, listId, itemId) {
     const response = await fetch(`${API_URL}/lists/${listId}/items/${itemId}`, {
         method: "DELETE",
-        headers: {
-            Authorization: `Bearer ${token}`,
-        },
+        credentials: "include",
     });
 
     const data = await response.json();
