@@ -13,6 +13,11 @@ const listRoutes = require("./routes/list.routes")
 
 const app = express();
 
+// Necessario para o express-rate-limit identificar o IP real do cliente:
+// atras do proxy reverso do Railway, req.ip seria sempre o IP do proxy sem
+// isso, agrupando todo mundo no mesmo limite.
+app.set("trust proxy", 1);
+
 // CORS_ORIGIN aceita varias origens separadas por virgula (ex.: o front local
 // e o publicado no GitHub Pages). credentials: true e obrigatorio para o
 // navegador enviar o cookie de sessao em requisicoes cross-origin.
