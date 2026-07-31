@@ -315,18 +315,24 @@ function RegisterForm({ email, onEmailChange, onRegister }) {
 function LoginForm({ email, onEmailChange, onLogin, onModeChange }) {
   const [password, setPassword] = useState("");
   const [loginError, setLoginError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  function handleLogin(event) {
+  async function handleLogin(event) {
     event.preventDefault();
 
-
     setLoginError("");
+    setIsSubmitting(true);
 
-    onLogin({
-      email: email.trim(),
-      password,
-
-    });
+    try {
+      await onLogin({
+        email: email.trim(),
+        password,
+      });
+    } catch (error) {
+      setLoginError(error.message || "Could not sign in.");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -335,7 +341,10 @@ function LoginForm({ email, onEmailChange, onLogin, onModeChange }) {
         Icon={User}
         id="login-identifier"
         label="Email or username"
-        onChange={(event) => onEmailChange(event.target.value)}
+        onChange={(event) => {
+          onEmailChange(event.target.value);
+          setLoginError("");
+        }}
         placeholder="Email or username"
         type="text"
         value={email}
@@ -367,8 +376,11 @@ function LoginForm({ email, onEmailChange, onLogin, onModeChange }) {
         </button>
       </div>
 
-      <button className="min-h-12 w-full rounded-md border border-[#00c030]/70 bg-[#00c030]/10 px-5 font-medium text-[#9af2aa] transition hover:border-[#00c030] hover:bg-[#00c030]/15 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00c030]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d0d0d]">
-        Sign in
+      <button
+        className="min-h-12 w-full rounded-md border border-[#00c030]/70 bg-[#00c030]/10 px-5 font-medium text-[#9af2aa] transition hover:border-[#00c030] hover:bg-[#00c030]/15 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00c030]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d0d0d] disabled:cursor-not-allowed disabled:border-zinc-700 disabled:bg-zinc-900 disabled:text-zinc-500 disabled:hover:bg-zinc-900 disabled:hover:text-zinc-500"
+        disabled={isSubmitting}
+      >
+        {isSubmitting ? "Signing in..." : "Sign in"}
       </button>
     </form>
   );
