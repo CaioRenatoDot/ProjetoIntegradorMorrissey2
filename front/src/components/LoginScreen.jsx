@@ -220,19 +220,30 @@ function RegisterForm({ email, onEmailChange, onRegister }) {
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirmation, setPasswordConfirmation] = useState("");
+  const [registerError, setRegisterError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const passwordsDoNotMatch =
     passwordConfirmation.length > 0 && password !== passwordConfirmation;
 
-  function handleRegister(event) {
+  async function handleRegister(event) {
     event.preventDefault();
 
     if (passwordsDoNotMatch) return;
 
-    onRegister({
-      name: name.trim(),
-      email: email.trim(),
-      password,
-    });
+    setRegisterError("");
+    setIsSubmitting(true);
+
+    try {
+      await onRegister({
+        name: name.trim(),
+        email: email.trim(),
+        password,
+      });
+    } catch (error) {
+      setRegisterError(error.message || "Could not create your account.");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -250,7 +261,10 @@ function RegisterForm({ email, onEmailChange, onRegister }) {
         Icon={Mail}
         id="register-email"
         label="Email"
-        onChange={(event) => onEmailChange(event.target.value)}
+        onChange={(event) => {
+          onEmailChange(event.target.value);
+          setRegisterError("");
+        }}
         placeholder="caio@email.com"
         type="email"
         value={email}
@@ -280,6 +294,9 @@ function RegisterForm({ email, onEmailChange, onRegister }) {
           Passwords need to match.
         </p>
       )}
+      {registerError && (
+        <p className="text-sm font-bold text-red-300">{registerError}</p>
+      )}
 
       <div className="text-sm">
         <Label />
@@ -287,9 +304,9 @@ function RegisterForm({ email, onEmailChange, onRegister }) {
 
       <button
         className="min-h-12 w-full rounded-md border border-[#00c030]/70 bg-[#00c030]/10 px-5 font-medium text-[#9af2aa] transition hover:border-[#00c030] hover:bg-[#00c030]/15 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00c030]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d0d0d] disabled:cursor-not-allowed disabled:border-zinc-700 disabled:bg-zinc-900 disabled:text-zinc-500 disabled:hover:bg-zinc-900 disabled:hover:text-zinc-500"
-        disabled={passwordsDoNotMatch}
+        disabled={passwordsDoNotMatch || isSubmitting}
       >
-        Create account
+        {isSubmitting ? "Creating account..." : "Create account"}
       </button>
     </form>
   );
