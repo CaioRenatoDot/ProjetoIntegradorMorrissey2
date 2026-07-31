@@ -15,7 +15,7 @@ import ResultsSection from "./components/ResultsSection";
 import SearchResultsPage from "./components/SearchResultsPage";
 import SeriesDetailPage from "./components/SeriesDetailPage";
 import { getMostPopularShows, searchShows } from "./services/tvmaze";
-import { deleteAccount, login, register, getMe, updateProfile } from "./services/api";
+import { deleteAccount, login, logout, register, getMe, updateProfile } from "./services/api";
 
 
 function getAuthModeFromHistoryState(state) {
@@ -382,7 +382,15 @@ export default function App() {
   }
 
 
-  function handleLogout() {
+  async function handleLogout() {
+    // Limpa o cookie httpOnly no servidor; o localStorage so guarda a flag de
+    // sessao usada para restaurar a tela ao recarregar a pagina.
+    try {
+      await logout();
+    } catch (error) {
+      console.error("Erro ao encerrar a sessao:", error);
+    }
+
     localStorage.removeItem("watchd_token");
     setCurrentUserName("");
     setCurrentUsername("");

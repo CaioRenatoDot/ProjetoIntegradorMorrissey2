@@ -1,9 +1,9 @@
 const jwt = require("jsonwebtoken");
 const prisma = require("../config/prisma");
+const { getTokenFromRequest } = require("../config/cookie");
 
 async function optionalAuthMiddleware(req, res, next) {
-    const authHeader = req.headers.authorization;
-    const token = authHeader ? authHeader.split(" ")[1] : null;
+    const token = getTokenFromRequest(req);
 
     if (!token) {
         req.user = null;

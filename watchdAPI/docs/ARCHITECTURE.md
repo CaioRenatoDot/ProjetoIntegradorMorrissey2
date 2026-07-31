@@ -4,7 +4,7 @@ A watchdAPI é o backend do Watchd: uma API REST em Express que guarda o que pre
 
 ## Stack
 
-- **Express 5** + **Prisma 7 com SQLite** (banco é um arquivo local, `dev.db`)
+- **Express 5** + **Prisma 7 com PostgreSQL** (sobe pelo Docker Compose, ver `docker-compose.yml`)
 - **JWT** para autenticação (token válido por 7 dias) e **bcrypt** para hash de senha
 
 ## Estrutura
@@ -20,7 +20,8 @@ A watchdAPI é o backend do Watchd: uma API REST em Express que guarda o que pre
 
 ```bash
 npm install
-cp .env.example .env    # troque o JWT_SECRET
-npx prisma migrate dev  # cria o banco
+cp .env.example .env       # troque o JWT_SECRET
+docker compose up -d db    # sobe o Postgres
+npx prisma migrate dev     # cria as tabelas
 npm run dev
 ```

@@ -1,6 +1,7 @@
 const prisma = require("../config/prisma");
 const bcrypt = require("bcrypt")
 const jwt = require("jsonwebtoken");
+const { COOKIE_NAME, cookieOptions } = require("../config/cookie");
 
 function slugify(value) {
     return value
@@ -107,6 +108,10 @@ async function login(req, res) {
         }
     );
 
+    // A sessao vive no cookie httpOnly; o token continua no corpo apenas para
+    // compatibilidade com clientes que ainda usam o header Authorization.
+    res.cookie(COOKIE_NAME, token, cookieOptions);
+
     return res.json({
     message: "Login realizado com sucesso",
     token,
@@ -123,6 +128,14 @@ async function login(req, res) {
 async function me(req, res){
     return res.json({
         user: req.user
+    });
+}
+
+async function logout(req, res) {
+    res.clearCookie(COOKIE_NAME, cookieOptions);
+
+    return res.json({
+        message: "Logout realizado com sucesso."
     });
 }
 
@@ -235,6 +248,8 @@ async function deleteAccount(req, res) {
         }
     });
 
+    res.clearCookie(COOKIE_NAME, cookieOptions);
+
     return res.json({
         message: "Conta excluida com sucesso."
     });
@@ -243,6 +258,7 @@ async function deleteAccount(req, res) {
 module.exports = {
     register,
     login,
+    logout,
     me,
     updateProfile,
     deleteAccount

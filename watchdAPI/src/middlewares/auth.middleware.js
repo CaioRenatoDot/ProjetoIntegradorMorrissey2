@@ -1,20 +1,13 @@
 const jwt = require("jsonwebtoken")
 const prisma = require("../config/prisma")
+const { getTokenFromRequest } = require("../config/cookie")
 
 async function authMiddleware(req, res, next){
-    const authHeader = req.headers.authorization;
-
-    if(!authHeader){
-        return res.status(401).json({
-            message: "Token não informado."
-        });
-    }
-
-    const token = authHeader.split(" ")[1];
+    const token = getTokenFromRequest(req);
 
     if(!token){
         return res.status(401).json({
-            message: "Token invalido"
+            message: "Token não informado."
         });
     }
 
