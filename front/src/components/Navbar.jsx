@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, DoorOpen, LogIn, Search, Settings, User } from "lucide-react";
 import BrandLogo from "./BrandLogo";
+import ClearButton from "./ClearButton";
 import UserAvatar from "./UserAvatar";
 
 export default function Navbar({
@@ -245,22 +246,47 @@ export default function Navbar({
                 strokeWidth={2.4}
               />
             </button>
-            <input
-              id="nav-search"
-              ref={searchInputRef}
-              className={`h-9 min-w-0 rounded border border-transparent bg-[#2a2a2a] text-sm text-white outline-none transition-all duration-300 ease-out placeholder:text-[#aaa] focus:border-[#00c030] ${
+            <div
+              className={`relative flex min-w-0 items-center transition-all duration-300 ease-out ${
                 isSearchFieldExpanded
-                  ? "ml-2 w-[calc(100%-44px)] px-3 opacity-100 md:w-72"
-                  : "w-0 p-0 opacity-0"
+                  ? "ml-2 w-[calc(100%-44px)] opacity-100 md:w-72"
+                  : "w-0 opacity-0"
               }`}
-              minLength="2"
-              onBlur={onSearchClose}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search"
-              required
-              type="search"
-              value={query}
-            />
+            >
+              <input
+                id="nav-search"
+                ref={searchInputRef}
+                className={`h-9 w-full min-w-0 rounded border border-transparent bg-[#2a2a2a] pl-3 text-sm text-white outline-none transition-colors placeholder:text-[#aaa] focus:border-[#00c030] ${
+                  query ? "pr-8" : "pr-3"
+                }`}
+                minLength="2"
+                onBlur={(event) => {
+                  // Se o foco foi para outro elemento do proprio form de busca
+                  // (ex: o botao de limpar, via Tab), nao fecha o campo.
+                  const nextFocusTarget = event.relatedTarget;
+                  if (nextFocusTarget && event.currentTarget.closest("form")?.contains(nextFocusTarget)) {
+                    return;
+                  }
+                  onSearchClose();
+                }}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Search"
+                required
+                type="text"
+                value={query}
+              />
+              {query && (
+                <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                  <ClearButton
+                    label="Clear search"
+                    onClear={() => {
+                      setQuery("");
+                      searchInputRef.current?.focus();
+                    }}
+                  />
+                </div>
+              )}
+            </div>
           </form>
         </div>
       </div>
