@@ -43,6 +43,16 @@ jobs:
         env:
           VITE_API_URL: ${{ vars.VITE_API_URL }}
 
+      # GitHub Pages serve 404.html para qualquer path sem arquivo correspondente.
+      # A rota de perfil publico (/usuario) usa path real, nao hash, entao um
+      # acesso direto ou refresh cai nesse 404 sem nunca carregar o React.
+      # Copiando o index.html (ja com os assets com hash do build atual) para
+      # 404.html, o GitHub serve o proprio app, que le window.location.pathname
+      # e resolve a rota certa no client-side.
+      - name: Create SPA fallback for GitHub Pages
+        working-directory: front
+        run: cp dist/index.html dist/404.html
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
