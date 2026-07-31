@@ -88,8 +88,14 @@ export default function MyWatchlistPage({ isLoggedIn, onBack, onSeriesSelect }) 
           </div>
 
           <div className="grid grid-cols-[repeat(auto-fill,minmax(78px,1fr))] gap-2.5 sm:grid-cols-[repeat(auto-fill,minmax(92px,1fr))] sm:gap-3">
-            {watchlistItems.map((item) => (
-              <SeriesCard item={item} key={item.id} onSeriesSelect={onSeriesSelect} />
+            {watchlistItems.map((item, index) => (
+              <div
+                className="animate-slide-in-up"
+                key={item.id}
+                style={{ animationDelay: `${(index % 18) * 40}ms` }}
+              >
+                <SeriesCard item={item} onSeriesSelect={onSeriesSelect} />
+              </div>
             ))}
           </div>
         </>

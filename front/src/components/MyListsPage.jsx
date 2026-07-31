@@ -1,4 +1,5 @@
 import { Plus } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
 import BackButton from "./BackButton";
 import ListCard from "./ListCard";
@@ -181,15 +182,20 @@ export default function MyListsPage({ isLoggedIn, onBack, onListSelect }) {
             </div>
           ) : lists.length ? (
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {lists.map((list, index) => (
-                <div
-                  className="animate-slide-in-up"
-                  key={list.id}
-                  style={{ animationDelay: `${(index % 6) * 40}ms` }}
-                >
-                  <ListCard list={list} onDelete={handleDelete} onSelect={onListSelect} />
-                </div>
-              ))}
+              <AnimatePresence initial={false}>
+                {lists.map((list) => (
+                  <motion.div
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    key={list.id}
+                    layout
+                    transition={{ duration: 0.2, ease: "easeOut" }}
+                  >
+                    <ListCard list={list} onDelete={handleDelete} onSelect={onListSelect} />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
             </div>
           ) : (
             <div className="rounded border border-slate-800 bg-slate-950 px-5 py-10 text-center">
