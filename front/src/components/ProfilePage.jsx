@@ -11,6 +11,7 @@ import {
   removeFromWatchlist,
   reorderFavorites,
 } from "../services/api";
+import Confetti from "./Confetti";
 import ListPosterStrip from "./ListPosterStrip";
 import RatingStars from "./RatingStars";
 import UserAvatar from "./UserAvatar";
@@ -907,16 +908,24 @@ function FavoriteShelf({
 }) {
   const visibleFavoriteItems = favoriteItems.slice(0, favoriteLimit);
   const emptySlotCount = Math.max(favoriteLimit - visibleFavoriteItems.length, 0);
+  const [showConfetti, setShowConfetti] = useState(false);
 
   return (
-    <section>
+    <section className="relative">
+      <Confetti isActive={showConfetti} onComplete={() => setShowConfetti(false)} />
+
       <ProfileShelfHeader
         action={
           readOnly ? null : (
             <button
               className="min-h-8 rounded border border-slate-700 px-3 text-xs font-black uppercase tracking-wide text-slate-300 transition hover:border-[#00c030] hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
               disabled={favoriteItems.length < 2 || isLoading}
-              onClick={onAdjustToggle}
+              onClick={() => {
+                // So comemora ao FINALIZAR o reordenamento (DONE), nao ao
+                // entrar no modo de ajuste.
+                if (isAdjusting) setShowConfetti(true);
+                onAdjustToggle();
+              }}
               type="button"
             >
               {isAdjusting ? "DONE" : "ADJUST ORDER"}
