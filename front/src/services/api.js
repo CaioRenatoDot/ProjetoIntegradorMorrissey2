@@ -1,5 +1,21 @@
 const API_URL = import.meta.env.VITE_API_URL || "/api";
 
+// O backend responde em portugues; a UI de login/registro esta em ingles,
+// entao traduzimos as mensagens conhecidas antes de exibi-las. "Email nao
+// encontrado" e senha invalida caem na mesma frase para nao revelar se um
+// email esta cadastrado.
+const AUTH_ERROR_TRANSLATIONS = {
+    "Nome, email e senha são obrigatórios.": "Name, email and password are required.",
+    "Usuários já existe. Email em uso": "This email is already registered.",
+    "Email e senha são obrigatórios!": "Email and password are required.",
+    "Email nao encontrado.": "Invalid email or password.",
+    "Email ou senha invalidos.": "Invalid email or password.",
+};
+
+function translateAuthMessage(message, fallback) {
+    return AUTH_ERROR_TRANSLATIONS[message] || fallback;
+}
+
 export async function login(email, password) {
     const response = await fetch(`${API_URL}/auth/login`, {
         credentials: "include",
@@ -13,7 +29,7 @@ export async function login(email, password) {
     const data = await response.json();
 
     if (!response.ok) {
-        throw new Error(data.message || "Erro ao fazer login.")
+        throw new Error(translateAuthMessage(data.message, "Could not sign in."));
     }
 
     return data;
@@ -47,7 +63,7 @@ export async function register(name, email, password) {
     const data = await response.json();
 
     if (!response.ok) {
-        throw new Error(data.message || "Erro ao criar conta.");
+        throw new Error(translateAuthMessage(data.message, "Could not create your account."));
     }
 
     return data;
