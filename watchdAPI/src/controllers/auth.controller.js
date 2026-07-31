@@ -1,29 +1,5 @@
-const prisma = require("../config/prisma");
-const bcrypt = require("bcrypt")
-const jwt = require("jsonwebtoken");
+const authService = require("../services/auth.service");
 const { COOKIE_NAME, cookieOptions } = require("../config/cookie");
-
-function slugify(value) {
-    return value
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[̀-ͯ]/g, "")
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-+|-+$/g, "");
-}
-
-async function generateUniqueUsername(name) {
-    const baseSlug = slugify(name) || "user";
-    let candidate = baseSlug;
-    let suffix = 1;
-
-    while (await prisma.user.findUnique({ where: { username: candidate } })) {
-        suffix += 1;
-        candidate = `${baseSlug}-${suffix}`;
-    }
-
-    return candidate;
-}
 
 async function register(req, res) {
     const { name, email, password } = req.body;
@@ -34,11 +10,7 @@ async function register(req, res) {
         });
     }
 
-    const userAlreadyExists = await prisma.user.findUnique({
-        where: {
-            email
-        }
-    });
+    const userAlreadyExists = await authService.findUserByEmail(email);
 
     if (userAlreadyExists) {
         return res.status(400).json({
@@ -46,17 +18,7 @@ async function register(req, res) {
         })
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10)
-    const username = await generateUniqueUsername(name);
-
-    const user = await prisma.user.create({
-        data: {
-            name,
-            email,
-            password: hashedPassword,
-            username
-        }
-    });
+    const user = await authService.createUser({ name, email, password });
 
     return res.status(201).json({
         message: "Usuário criado com sucesso.",
@@ -78,11 +40,7 @@ async function login(req, res) {
         });
     }
 
-    const user = await prisma.user.findUnique({
-        where: {
-            email
-        }
-    });
+    const user = await authService.findUserByEmail(email);
 
     if (!user) {
         return res.status(400).json({
@@ -90,7 +48,7 @@ async function login(req, res) {
         });
     }
 
-    const passwordIsValid = await bcrypt.compare(password, user.password)
+    const passwordIsValid = await authService.verifyPassword(password, user.password);
 
     if (!passwordIsValid) {
         return res.status(400).json({
@@ -98,15 +56,7 @@ async function login(req, res) {
         });
     }
 
-    const token = jwt.sign({
-        id: user.id,
-        email: user.email
-    },
-        process.env.JWT_SECRET,
-        {
-            expiresIn: "7d"
-        }
-    );
+    const token = authService.signAuthToken(user);
 
     // A sessao vive no cookie httpOnly; o token continua no corpo apenas para
     // compatibilidade com clientes que ainda usam o header Authorization.
@@ -153,14 +103,7 @@ async function updateProfile(req, res) {
             });
         }
 
-        const usernameTaken = await prisma.user.findFirst({
-            where: {
-                username: normalizedUsername,
-                NOT: {
-                    id: req.user.id
-                }
-            }
-        });
+        const usernameTaken = await authService.findUserByUsernameExcludingId(normalizedUsername, req.user.id);
 
         if (usernameTaken) {
             return res.status(400).json({
@@ -185,19 +128,14 @@ async function updateProfile(req, res) {
         }
     }
 
-    const user = await prisma.user.update({
-        where: {
-            id: req.user.id
-        },
-        data: {
-            displayName,
-            location,
-            website,
-            bio,
-            ...(isChangingUsername
-                ? { username: normalizedUsername, usernameChangedAt: new Date() }
-                : {})
-        }
+    const user = await authService.updateProfile(req.user.id, {
+        displayName,
+        location,
+        website,
+        bio,
+        ...(isChangingUsername
+            ? { username: normalizedUsername, usernameChangedAt: new Date() }
+            : {})
     });
 
     return res.json({
@@ -216,9 +154,6 @@ async function updateProfile(req, res) {
     });
 }
 
-
-
-
 async function deleteAccount(req, res) {
     const { password } = req.body;
 
@@ -228,13 +163,9 @@ async function deleteAccount(req, res) {
         });
     }
 
-    const user = await prisma.user.findUnique({
-        where: {
-            id: req.user.id
-        }
-    });
+    const user = await authService.findUserById(req.user.id);
 
-    const passwordIsValid = await bcrypt.compare(password, user.password);
+    const passwordIsValid = await authService.verifyPassword(password, user.password);
 
     if (!passwordIsValid) {
         return res.status(400).json({
@@ -242,11 +173,7 @@ async function deleteAccount(req, res) {
         });
     }
 
-    await prisma.user.delete({
-        where: {
-            id: req.user.id
-        }
-    });
+    await authService.deleteUser(req.user.id);
 
     res.clearCookie(COOKIE_NAME, cookieOptions);
 

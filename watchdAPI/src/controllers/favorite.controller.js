@@ -1,14 +1,7 @@
-const prisma = require("../config/prisma");
+const favoriteService = require("../services/favorite.service");
 
 async function list(req, res) {
-    const items = await prisma.favoriteSeries.findMany({
-        where: {
-            userId: req.user.id,
-        },
-        orderBy: {
-            position: "asc",
-        },
-    });
+    const items = await favoriteService.findManyByUser(req.user.id);
 
     return res.json({ items });
 }
@@ -22,11 +15,7 @@ async function create(req, res) {
         });
     }
 
-    const favoritesCount = await prisma.favoriteSeries.count({
-        where: {
-            userId: req.user.id,
-        },
-    });
+    const favoritesCount = await favoriteService.countByUser(req.user.id);
 
     if (favoritesCount >= 4) {
         return res.status(400).json({
@@ -34,12 +23,7 @@ async function create(req, res) {
         });
     }
 
-    const favoriteAlreadyExists = await prisma.favoriteSeries.findFirst({
-        where: {
-            userId: req.user.id,
-            movieId,
-        },
-    });
+    const favoriteAlreadyExists = await favoriteService.findByUserAndMovie(req.user.id, movieId);
 
     if (favoriteAlreadyExists) {
         return res.status(400).json({
@@ -47,16 +31,14 @@ async function create(req, res) {
         });
     }
 
-    const item = await prisma.favoriteSeries.create({
-        data: {
-            userId: req.user.id,
-            movieId,
-            title,
-            posterUrl,
-            releaseYear,
-            type,
-            position: favoritesCount,
-        },
+    const item = await favoriteService.create({
+        userId: req.user.id,
+        movieId,
+        title,
+        posterUrl,
+        releaseYear,
+        type,
+        position: favoritesCount,
     });
 
     return res.status(201).json({
@@ -68,12 +50,7 @@ async function create(req, res) {
 async function remove(req, res) {
     const { id } = req.params;
 
-    const item = await prisma.favoriteSeries.findFirst({
-        where: {
-            id,
-            userId: req.user.id,
-        },
-    });
+    const item = await favoriteService.findOwnedById(id, req.user.id);
 
     if (!item) {
         return res.status(404).json({
@@ -81,11 +58,7 @@ async function remove(req, res) {
         });
     }
 
-    await prisma.favoriteSeries.delete({
-        where: {
-            id,
-        },
-    });
+    await favoriteService.remove(id);
 
     return res.json({
         message: "Favorito removido com sucesso.",
@@ -101,19 +74,7 @@ async function reorder(req, res) {
         });
     }
 
-    const updates = ids.map((id, index) => {
-        return prisma.favoriteSeries.updateMany({
-            where: {
-                id,
-                userId: req.user.id,
-            },
-            data: {
-                position: index,
-            },
-        });
-    });
-
-    await prisma.$transaction(updates);
+    await favoriteService.reorder(ids, req.user.id);
 
     return res.json({
         message: "Ordem dos favoritos atualizada.",

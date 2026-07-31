@@ -1,34 +1,9 @@
-const prisma = require("../config/prisma");
+const userService = require("../services/user.service");
 
 async function getPublicProfile(req, res) {
     const { username } = req.params;
 
-    const user = await prisma.user.findUnique({
-        where: {
-            username
-        },
-        include: {
-            favoriteSeries: {
-                orderBy: { position: "asc" }
-            },
-            reviews: {
-                orderBy: { updatedAt: "desc" }
-            },
-            lists: {
-                orderBy: { createdAt: "desc" },
-                include: {
-                    items: {
-                        orderBy: { position: "asc" },
-                        take: 4,
-                        select: { posterUrl: true }
-                    },
-                    _count: {
-                        select: { items: true }
-                    }
-                }
-            }
-        }
-    });
+    const user = await userService.findPublicProfileByUsername(username);
 
     if (!user) {
         return res.status(404).json({

@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const prisma = require("../config/prisma");
+const authService = require("../services/auth.service");
 const { getTokenFromRequest } = require("../config/cookie");
 
 async function optionalAuthMiddleware(req, res, next) {
@@ -13,11 +13,7 @@ async function optionalAuthMiddleware(req, res, next) {
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-        const user = await prisma.user.findUnique({
-            where: {
-                id: decoded.id
-            }
-        });
+        const user = await authService.findUserById(decoded.id);
 
         req.user = user
             ? {

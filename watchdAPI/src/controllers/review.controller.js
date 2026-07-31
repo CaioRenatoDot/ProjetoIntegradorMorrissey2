@@ -1,25 +1,9 @@
-const prisma = require("../config/prisma");
+const reviewService = require("../services/review.service");
 
 async function listForMovie(req, res) {
     const { movieId } = req.params;
 
-    const reviews = await prisma.review.findMany({
-        where: {
-            movieId
-        },
-        orderBy: {
-            createdAt: "desc"
-        },
-        include: {
-            user: {
-                select: {
-                    id: true,
-                    name: true,
-                    displayName: true
-                }
-            }
-        }
-    });
+    const reviews = await reviewService.findManyByMovie(movieId);
 
     const items = reviews.map((review) => ({
         id: review.id,
@@ -43,14 +27,7 @@ async function listForMovie(req, res) {
 }
 
 async function listMine(req, res) {
-    const reviews = await prisma.review.findMany({
-        where: {
-            userId: req.user.id
-        },
-        orderBy: {
-            updatedAt: "desc"
-        }
-    });
+    const reviews = await reviewService.findManyByUser(req.user.id);
 
     return res.json({ items: reviews });
 }
@@ -70,41 +47,29 @@ async function upsert(req, res) {
         });
     }
 
-    const existingReview = await prisma.review.findFirst({
-        where: {
-            userId: req.user.id,
-            movieId
-        }
-    });
+    const existingReview = await reviewService.findByUserAndMovie(req.user.id, movieId);
 
     let review;
 
     if (existingReview) {
-        review = await prisma.review.update({
-            where: {
-                id: existingReview.id
-            },
-            data: {
-                rating,
-                text: text || "",
-                title,
-                posterUrl,
-                releaseYear,
-                type
-            }
+        review = await reviewService.update(existingReview.id, {
+            rating,
+            text: text || "",
+            title,
+            posterUrl,
+            releaseYear,
+            type
         });
     } else {
-        review = await prisma.review.create({
-            data: {
-                userId: req.user.id,
-                movieId,
-                title,
-                posterUrl,
-                releaseYear,
-                type,
-                rating,
-                text: text || ""
-            }
+        review = await reviewService.create({
+            userId: req.user.id,
+            movieId,
+            title,
+            posterUrl,
+            releaseYear,
+            type,
+            rating,
+            text: text || ""
         });
     }
 
@@ -117,12 +82,7 @@ async function upsert(req, res) {
 async function remove(req, res) {
     const { id } = req.params;
 
-    const review = await prisma.review.findFirst({
-        where: {
-            id,
-            userId: req.user.id
-        }
-    });
+    const review = await reviewService.findOwnedById(id, req.user.id);
 
     if (!review) {
         return res.status(404).json({
@@ -130,9 +90,7 @@ async function remove(req, res) {
         });
     }
 
-    await prisma.review.delete({
-        where: { id }
-    });
+    await reviewService.remove(id);
 
     return res.json({
         message: "Review removida com sucesso."

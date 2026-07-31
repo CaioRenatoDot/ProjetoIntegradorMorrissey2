@@ -1,4 +1,4 @@
-const prisma = require("../config/prisma");
+const watchlistService = require("../services/watchlist.service");
 
 async function create(req, res) {
     const { movieId, title, posterUrl, releaseYear, type } = req.body;
@@ -9,12 +9,7 @@ async function create(req, res) {
         });
     }
 
-    const itemAlreadyExists = await prisma.watchListItem.findFirst({
-        where: {
-            userId: req.user.id,
-            movieId
-        }
-    });
+    const itemAlreadyExists = await watchlistService.findByUserAndMovie(req.user.id, movieId);
 
     if (itemAlreadyExists) {
         return res.status(400).json({
@@ -22,15 +17,13 @@ async function create(req, res) {
         });
     }
 
-    const item = await prisma.watchListItem.create({
-        data: {
-            userId: req.user.id,
-            movieId,
-            title,
-            posterUrl,
-            releaseYear,
-            type
-        }
+    const item = await watchlistService.create({
+        userId: req.user.id,
+        movieId,
+        title,
+        posterUrl,
+        releaseYear,
+        type
     });
 
     return res.status(201).json({
@@ -40,14 +33,7 @@ async function create(req, res) {
 }
 
 async function list(req, res) {
-    const items = await prisma.watchListItem.findMany({
-        where: {
-            userId: req.user.id
-        },
-        orderBy: {
-            createdAt: "desc"
-        }
-    });
+    const items = await watchlistService.findManyByUser(req.user.id);
 
     return res.json({
         items
@@ -57,12 +43,7 @@ async function list(req, res) {
 async function remove(req, res) {
     const { id } = req.params;
 
-    const item = await prisma.watchListItem.findFirst({
-        where: {
-            id,
-            userId: req.user.id
-        }
-    });
+    const item = await watchlistService.findOwnedById(id, req.user.id);
 
     if (!item) {
         return res.status(404).json({
@@ -70,11 +51,7 @@ async function remove(req, res) {
         });
     }
 
-    await prisma.watchListItem.delete({
-        where: {
-            id
-        }
-    });
+    await watchlistService.remove(id);
 
     return res.json({
         message: "Item foi deletado com sucesso."

@@ -1,24 +1,7 @@
-const prisma = require("../config/prisma")
+const listService = require("../services/list.service");
 
 async function listMine(req, res) {
-    const lists = await prisma.list.findMany({
-        where: {
-            userId: req.user.id
-        },
-        orderBy: {
-            createdAt: "desc"
-        },
-        include: {
-            items: {
-                orderBy: { position: "asc" },
-                take: 4,
-                select: { posterUrl: true }
-            },
-            _count: {
-                select: { items: true }
-            }
-        }
-    });
+    const lists = await listService.findManyByUser(req.user.id);
 
     const items = lists.map((list) => ({
         id: list.id,
@@ -35,17 +18,7 @@ async function listMine(req, res) {
 async function getOne(req, res) {
     const { id } = req.params;
 
-    const list = await prisma.list.findFirst({
-        where: {
-            id,
-            userId: req.user.id
-        },
-        include: {
-            items: {
-                orderBy: { position: "asc" }
-            }
-        }
-    });
+    const list = await listService.findOwnedByIdWithItems(id, req.user.id);
     if (!list) {
         return res.status(404).json({
             message: "Lista nao encontrada."
@@ -63,13 +36,7 @@ async function create(req, res) {
             message: "title e obrigatorio."
         });
     }
-    const list = await prisma.list.create({
-        data: {
-            userId: req.user.id,
-            title,
-            category
-        }
-    });
+    const list = await listService.create(req.user.id, { title, category });
 
     return res.status(201).json({
         message: "Lista criada com sucesso.",
@@ -80,12 +47,7 @@ async function create(req, res) {
 async function remove(req, res) {
     const { id } = req.params;
 
-    const list = await prisma.list.findFirst({
-        where: {
-            id,
-            userId: req.user.id
-        }
-    });
+    const list = await listService.findOwnedById(id, req.user.id);
 
     if (!list) {
         return res.status(404).json({
@@ -93,9 +55,7 @@ async function remove(req, res) {
         });
     }
 
-    await prisma.list.delete({
-        where: { id }
-    });
+    await listService.remove(id);
 
     return res.json({
         message: "Lista removida com sucesso."
@@ -112,12 +72,7 @@ async function addItem(req, res) {
         });
     }
 
-    const list = await prisma.list.findFirst({
-        where: {
-            id,
-            userId: req.user.id
-        }
-    });
+    const list = await listService.findOwnedById(id, req.user.id);
 
     if (!list) {
         return res.status(404).json({
@@ -125,12 +80,7 @@ async function addItem(req, res) {
         });
     }
 
-    const itemAlreadyExists = await prisma.listItem.findFirst({
-        where: {
-            listId: id,
-            movieId
-        }
-    });
+    const itemAlreadyExists = await listService.findItemByMovie(id, movieId);
 
     if (itemAlreadyExists) {
         return res.status(400).json({
@@ -138,20 +88,15 @@ async function addItem(req, res) {
         });
     }
 
-    const itemsCount = await prisma.listItem.count({
-        where: { listId: id }
-    });
+    const itemsCount = await listService.countItems(id);
 
-    const item = await prisma.listItem.create({
-        data: {
-            listId: id,
-            movieId,
-            title,
-            posterUrl,
-            releaseYear,
-            type,
-            position: itemsCount
-        }
+    const item = await listService.addItem(id, {
+        movieId,
+        title,
+        posterUrl,
+        releaseYear,
+        type,
+        position: itemsCount
     });
 
     return res.status(201).json({
@@ -163,12 +108,7 @@ async function addItem(req, res) {
 async function removeItem(req, res) {
     const { id, itemId } = req.params;
 
-    const list = await prisma.list.findFirst({
-        where: {
-            id,
-            userId: req.user.id
-        }
-    });
+    const list = await listService.findOwnedById(id, req.user.id);
 
     if (!list) {
         return res.status(404).json({
@@ -176,12 +116,7 @@ async function removeItem(req, res) {
         });
     }
 
-    const item = await prisma.listItem.findFirst({
-        where: {
-            id: itemId,
-            listId: id
-        }
-    });
+    const item = await listService.findItemInList(itemId, id);
 
     if (!item) {
         return res.status(404).json({
@@ -189,9 +124,7 @@ async function removeItem(req, res) {
         });
     }
 
-    await prisma.listItem.delete({
-        where: { id: itemId }
-    });
+    await listService.removeItem(itemId);
 
     return res.json({
         message: "Item removido da lista."
@@ -199,22 +132,7 @@ async function removeItem(req, res) {
 }
 
 async function listAll(req, res) {
-    const lists = await prisma.list.findMany({
-        orderBy: { createdAt: "desc" },
-        include: {
-            user: {
-                select: { username: true, name: true, displayName: true }
-            },
-            items: {
-                orderBy: { position: "asc" },
-                take: 4,
-                select: { posterUrl: true }
-            },
-            _count: {
-                select: { items: true }
-            }
-        }
-    });
+    const lists = await listService.findAllPublic();
 
     const items = lists.map((list) => ({
         id: list.id,
@@ -233,17 +151,7 @@ async function listAll(req, res) {
 async function getPublicOne(req, res) {
     const { id } = req.params;
 
-    const list = await prisma.list.findFirst({
-        where: { id },
-        include: {
-            user: {
-                select: { username: true, name: true, displayName: true }
-            },
-            items: {
-                orderBy: { position: "asc" }
-            }
-        }
-    });
+    const list = await listService.findPublicById(id);
 
     if (!list) {
         return res.status(404).json({ message: "Lista nao encontrada." });
