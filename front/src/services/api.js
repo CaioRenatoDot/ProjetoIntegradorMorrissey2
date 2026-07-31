@@ -13,7 +13,8 @@ const AUTH_ERROR_TRANSLATIONS = {
 };
 
 function translateAuthMessage(message, fallback) {
-    return AUTH_ERROR_TRANSLATIONS[message] || fallback;
+    if (!message) return fallback;
+    return AUTH_ERROR_TRANSLATIONS[message] || message;
 }
 
 export async function login(email, password) {
