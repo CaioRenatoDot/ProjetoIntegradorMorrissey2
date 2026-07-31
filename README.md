@@ -1,6 +1,6 @@
 # Watchd
 
-Aplicação para registrar, avaliar e organizar séries assistidas, inspirada no Letterboxd. O usuário cria uma conta, monta sua watchlist, escreve reviews com nota, escolhe séries favoritas e organiza listas temáticas — tudo exposto em um perfil público. Os dados das séries vêm da TVMaze; aqui guardamos só o que é do usuário.
+Aplicação para registrar, avaliar e organizar séries assistidas, inspirada no Letterboxd. O usuário cria uma conta, monta sua watchlist, escreve reviews com nota, escolhe séries favoritas e organiza listas temáticas, tudo exposto em um perfil público. Os dados das séries vêm da TVMaze; aqui guardamos só o que é do usuário.
 
 Projeto full stack organizado em duas partes:
 
@@ -11,7 +11,7 @@ Documentação detalhada do back: [arquitetura](watchdAPI/docs/ARCHITECTURE.md),
 
 ## Entidades
 
-Seis entidades, todas ligadas ao `User` com `onDelete: Cascade` — apagou a conta, tudo daquele usuário some junto.
+Seis entidades, todas ligadas ao `User` com `onDelete: Cascade`, ou seja, apagou a conta, tudo daquele usuário some junto.
 
 ```
 User 1──N List 1──N ListItem
@@ -26,7 +26,7 @@ User 1──N List 1──N ListItem
 | `User` | Conta e perfil | `id`, `name`, `email` (único), `username` (único, gerado no cadastro), `password` (hash bcrypt), `usernameChangedAt`, `displayName`, `location`, `website`, `bio` |
 | `List` | Lista temática criada pelo usuário | `id`, `userId` → `User`, `title`, `category` |
 | `ListItem` | Série dentro de uma lista | `id`, `listId` → `List`, `movieId`, `title`, `posterUrl`, `releaseYear`, `type`, `position`. `@@unique([listId, movieId])` |
-| `Review` | Avaliação de uma série | `id`, `userId` → `User`, `movieId`, `rating` (0.5 a 5, meia estrela), `text`. `@@unique([userId, movieId])` — uma por usuário/série |
+| `Review` | Avaliação de uma série | `id`, `userId` → `User`, `movieId`, `rating` (0.5 a 5, meia estrela), `text`. `@@unique([userId, movieId])`, uma por usuário/série |
 | `WatchListItem` | Série no "quero assistir" | `id`, `userId` → `User`, `movieId`, `title`, `posterUrl`, `releaseYear`, `type` |
 | `FavoriteSeries` | Favoritos do perfil (máx. 4) | `id`, `userId` → `User`, `movieId`, `position`. `@@unique([userId, movieId])` |
 
@@ -66,7 +66,7 @@ Ficam em `watchdAPI/.env`, a partir do modelo em [`watchdAPI/.env.example`](watc
 | Variável | Obrigatória | Descrição |
 | --- | --- | --- |
 | `DATABASE_URL` | sim | Conexão do PostgreSQL, ex. `postgresql://watchd:watchd@localhost:5432/watchd?schema=public` |
-| `JWT_SECRET` | sim | Segredo que assina os tokens JWT — troque em produção |
+| `JWT_SECRET` | sim | Segredo que assina os tokens JWT, troque em produção |
 | `PORT` | não | Porta da API (padrão `3000`); em produção quem define é a própria plataforma de deploy |
 | `CORS_ORIGIN` | não | Origem(ns) liberada(s) no CORS, separadas por vírgula se for mais de uma (padrão `http://localhost:5173`) |
 | `NODE_ENV` | não | Quando `production`, o cookie de sessão sai com `Secure` e `SameSite=None` (necessário para front e back em domínios diferentes) |
@@ -92,7 +92,7 @@ npx prisma migrate dev   # cria as tabelas
 npm run dev
 ```
 
-A API sobe em `http://localhost:3000` — confira com `curl http://localhost:3000/health`.
+A API sobe em `http://localhost:3000`, confira com `curl http://localhost:3000/health`.
 
 Para rodar a API também em container, em vez dos dois últimos passos:
 
@@ -131,14 +131,14 @@ npm run dev
 
 O projeto cobre o fluxo principal (contas, listas, reviews, watchlist e favoritos) de ponta a ponta, mas alguns pontos ficaram de fora do escopo desta entrega:
 
-- **Recuperação de senha é só interface** — a tela "Forgot password" existe no front, mas não chama nenhum endpoint; não há envio de email nem rota de reset no back.
-- **`GET /lists/all` não pagina** — devolve todas as listas públicas de uma vez (só limita a 4 pôsteres de prévia por lista). Funciona bem na escala atual, mas cresceria mal com muitos usuários.
-- **CRUD de listas incompleto** — dá para criar, listar e apagar uma lista, e adicionar/remover itens, mas não existe `PUT /lists/:id` para editar título ou categoria de uma lista já criada.
+- **Recuperação de senha é só interface**, a tela "Forgot password" existe no front, mas não chama nenhum endpoint, não há envio de email nem rota de reset no back.
+- **`GET /lists/all` não pagina**, devolve todas as listas públicas de uma vez (só limita a 4 pôsteres de prévia por lista). Funciona bem na escala atual, mas cresceria mal com muitos usuários.
+- **CRUD de listas incompleto**, dá para criar, listar e apagar uma lista, e adicionar/remover itens, mas não existe `PUT /lists/:id` para editar título ou categoria de uma lista já criada.
 - **Sem testes automatizados**, nem no front nem no back.
-- **Rate limiting básico, mas não completo** — login e registro têm limite de tentativas por IP, mas não há bloqueio por conta específica nem CAPTCHA.
-- **Sem autorização por papéis** — todo usuário tem as mesmas permissões; não existe admin ou moderador.
-- **JWT não é revogável no servidor** — o logout limpa o cookie no navegador, mas o token em si continua válido até expirar (7 dias) se tiver sido copiado antes do logout.
-- **Depende diretamente da API pública do TVMaze**, sem cache — se ela cair ou limitar requisições, a busca de séries para de funcionar.
+- **Rate limiting básico, mas não completo**, login e registro têm limite de tentativas por IP, mas não há bloqueio por conta específica nem CAPTCHA.
+- **Sem autorização por papéis**, todo usuário tem as mesmas permissões, não existe admin ou moderador.
+- **JWT não é revogável no servidor**, o logout limpa o cookie no navegador, mas o token em si continua válido até expirar (7 dias) se tiver sido copiado antes do logout.
+- **Depende diretamente da API pública do TVMaze**, sem cache, se ela cair ou limitar requisições, a busca de séries para de funcionar.
 
 Próximos passos, em ordem de prioridade:
 
