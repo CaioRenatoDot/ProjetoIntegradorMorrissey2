@@ -1,8 +1,21 @@
 import { useEffect, useRef, useState } from "react";
+import { motion } from "motion/react";
 import { ChevronDown, DoorOpen, LogIn, Search, Settings, User } from "lucide-react";
 import BrandLogo from "./BrandLogo";
 import ClearButton from "./ClearButton";
 import UserAvatar from "./UserAvatar";
+
+const NAV_UNDERLINE_TRANSITION = { type: "spring", stiffness: 380, damping: 30 };
+
+function NavUnderline() {
+  return (
+    <motion.span
+      className="absolute inset-x-0 bottom-0 h-0.5 bg-[#00c030]"
+      layoutId="nav-active-underline"
+      transition={NAV_UNDERLINE_TRANSITION}
+    />
+  );
+}
 
 export default function Navbar({
   currentUserName,
@@ -26,9 +39,9 @@ export default function Navbar({
   const searchInputRef = useRef(null);
   const userMenuRef = useRef(null);
   const linkClassName =
-    "flex h-full flex-none items-center border-b-2 border-transparent px-2 transition hover:border-[#00c030] hover:text-white md:px-0";
+    "relative flex h-full flex-none items-center border-b-2 border-transparent px-2 transition hover:border-[#00c030] hover:text-white md:px-0";
   const activeLinkClassName =
-    "flex h-full flex-none items-center border-b-2 border-[#00c030] px-2 text-white transition hover:border-[#00c030] hover:text-white md:px-0";
+    "relative flex h-full flex-none items-center border-b-2 border-transparent px-2 text-white transition hover:border-[#00c030] hover:text-white md:px-0";
 
   useEffect(() => {
     if (!isNavSearchOpen) {
@@ -177,6 +190,7 @@ export default function Navbar({
               }}
             >
               Series
+              {activePage === "home" && <NavUnderline />}
             </a>
             <a
               className={
@@ -189,6 +203,7 @@ export default function Navbar({
               }}
             >
               Diary
+              {activePage === "diary" && <NavUnderline />}
             </a>
             <a
               className={
@@ -201,6 +216,7 @@ export default function Navbar({
               }}
             >
               Lists
+              {activePage === "lists" && <NavUnderline />}
             </a>
 
             {isLoggedIn && (
@@ -215,6 +231,7 @@ export default function Navbar({
                 }}
               >
                 My Lists
+                {activePage === "myLists" && <NavUnderline />}
               </a>
             )}
           </div>
