@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import BackButton from "./BackButton";
 import RatingStars from "./RatingStars";
+import { ToastStack, useToasts } from "./Toast";
 import SeriesReviewForm from "./SeriesReviewForm";
 import UserAvatar from "./UserAvatar";
 import { fallbackPoster } from "../data/constants";
@@ -33,20 +34,18 @@ export default function SeriesDetailPage({ onBack, showId }) {
   const [isReviewsLoading, setIsReviewsLoading] = useState(true);
   const [reviewsError, setReviewsError] = useState("");
   const [deletingReviewId, setDeletingReviewId] = useState(null);
-  const [watchlistStatus, setWatchlistStatus] = useState("");
   const [isAddingToWatchlist, setIsAddingToWatchlist] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const [favoriteItemId, setFavoriteItemId] = useState(null);
-  const [favoriteStatus, setFavoriteStatus] = useState("");
   const [isFavoriteLoading, setIsFavoriteLoading] = useState(false);
   const [userLists, setUserLists] = useState([]);
   const [isListsMenuOpen, setIsListsMenuOpen] = useState(false);
   const [isListsLoading, setIsListsLoading] = useState(false);
   const [addingToListId, setAddingToListId] = useState(null);
-  const [listActionStatus, setListActionStatus] = useState("");
   const [newListTitle, setNewListTitle] = useState("");
   const [isCreatingList, setIsCreatingList] = useState(false);
   const listsMenuRef = useRef(null);
+  const { toasts, pushToast, dismissToast } = useToasts();
 
   useEffect(() => {
     let isMounted = true;
@@ -105,8 +104,6 @@ export default function SeriesDetailPage({ onBack, showId }) {
     }
 
     setReviewStatus("");
-    setFavoriteStatus("");
-    setListActionStatus("");
     setIsListsMenuOpen(false);
     fetchReviews();
 
@@ -140,7 +137,7 @@ export default function SeriesDetailPage({ onBack, showId }) {
         }
       } catch (error) {
         if (isMounted) {
-          setFavoriteStatus(error.message);
+          pushToast(error.message, "error");
         }
       }
     }
@@ -248,18 +245,17 @@ export default function SeriesDetailPage({ onBack, showId }) {
     const token = localStorage.getItem("watchd_token");
 
     if (!token) {
-      setWatchlistStatus("You need to be signed in to add this series.");
+      pushToast("You need to be signed in to add this series.", "error");
       return;
     }
 
     setIsAddingToWatchlist(true);
-    setWatchlistStatus("");
 
     try {
       await addToWatchlist(token, buildSeriesPayload());
-      setWatchlistStatus("Series added to your watchlist.");
+      pushToast("Series added to your watchlist.");
     } catch (error) {
-      setWatchlistStatus(error.message);
+      pushToast(error.message, "error");
     } finally {
       setIsAddingToWatchlist(false);
     }
@@ -269,28 +265,27 @@ export default function SeriesDetailPage({ onBack, showId }) {
     const token = localStorage.getItem("watchd_token");
 
     if (!token) {
-      setFavoriteStatus("You need to be signed in to favorite this series.");
+      pushToast("You need to be signed in to favorite this series.", "error");
       return;
     }
 
     setIsFavoriteLoading(true);
-    setFavoriteStatus("");
 
     try {
       if (isFavorite && favoriteItemId) {
         await removeFavorite(token, favoriteItemId);
         setIsFavorite(false);
         setFavoriteItemId(null);
-        setFavoriteStatus("Series removed from your favorites.");
+        pushToast("Series removed from your favorites.");
         return;
       }
 
       const data = await addFavorite(token, buildSeriesPayload());
       setIsFavorite(true);
       setFavoriteItemId(data.item.id);
-      setFavoriteStatus("Series added to your favorites.");
+      pushToast("Series added to your favorites.");
     } catch (error) {
-      setFavoriteStatus(error.message);
+      pushToast(error.message, "error");
     } finally {
       setIsFavoriteLoading(false);
     }
@@ -300,7 +295,7 @@ export default function SeriesDetailPage({ onBack, showId }) {
     const token = localStorage.getItem("watchd_token");
 
     if (!token) {
-      setListActionStatus("You need to be signed in to add this series to a list.");
+      pushToast("You need to be signed in to add this series to a list.", "error");
       return;
     }
 
@@ -309,14 +304,13 @@ export default function SeriesDetailPage({ onBack, showId }) {
 
     if (!willOpen) return;
 
-    setListActionStatus("");
     setIsListsLoading(true);
 
     try {
       const data = await getMyLists(token);
       setUserLists(data.items || []);
     } catch (error) {
-      setListActionStatus(error.message);
+      pushToast(error.message, "error");
     } finally {
       setIsListsLoading(false);
     }
@@ -327,14 +321,13 @@ export default function SeriesDetailPage({ onBack, showId }) {
     if (!token) return;
 
     setAddingToListId(listId);
-    setListActionStatus("");
 
     try {
       await addListItem(token, listId, buildSeriesPayload());
-      setListActionStatus(`Added to "${listTitle}".`);
+      pushToast(`Added to "${listTitle}".`);
       setIsListsMenuOpen(false);
     } catch (error) {
-      setListActionStatus(error.message);
+      pushToast(error.message, "error");
     } finally {
       setAddingToListId(null);
     }
@@ -350,16 +343,15 @@ export default function SeriesDetailPage({ onBack, showId }) {
     if (!token) return;
 
     setIsCreatingList(true);
-    setListActionStatus("");
 
     try {
       const listData = await createList(token, { title: trimmedTitle, category: null });
       await addListItem(token, listData.item.id, buildSeriesPayload());
       setNewListTitle("");
-      setListActionStatus(`Added to "${trimmedTitle}".`);
+      pushToast(`Added to "${trimmedTitle}".`);
       setIsListsMenuOpen(false);
     } catch (error) {
-      setListActionStatus(error.message);
+      pushToast(error.message, "error");
     } finally {
       setIsCreatingList(false);
     }
@@ -402,6 +394,8 @@ export default function SeriesDetailPage({ onBack, showId }) {
 
   return (
     <section className="relative py-8">
+      <ToastStack onDismiss={dismissToast} toasts={toasts} />
+
       {show.image?.original && (
         <div
           aria-hidden="true"
@@ -474,8 +468,8 @@ export default function SeriesDetailPage({ onBack, showId }) {
             >
               {isAddingToWatchlist ? "Adding..." : "Add to Watchlist"}
             </button>
-            <button
-              className={`inline-flex min-h-11 items-center gap-2 rounded border px-5 font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
+            <motion.button
+              className={`inline-flex min-h-11 items-center gap-2 rounded border px-5 font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
                 isFavorite
                   ? "border-[#00c030] bg-[#00c030]/10 text-[#00c030] hover:bg-[#00c030]/20"
                   : "border-slate-700 text-slate-200 hover:border-[#00c030] hover:text-white"
@@ -483,14 +477,21 @@ export default function SeriesDetailPage({ onBack, showId }) {
               disabled={isFavoriteLoading}
               onClick={handleToggleFavorite}
               type="button"
+              whileTap={{ scale: 0.94 }}
             >
-              <Heart
-                aria-hidden="true"
-                className="h-4 w-4"
-                fill={isFavorite ? "currentColor" : "none"}
-              />
+              <motion.span
+                animate={isFavorite ? { scale: [1, 1.4, 1] } : { scale: 1 }}
+                className="grid place-items-center"
+                transition={{ duration: 0.35, ease: "easeOut" }}
+              >
+                <Heart
+                  aria-hidden="true"
+                  className="h-4 w-4 transition-colors"
+                  fill={isFavorite ? "currentColor" : "none"}
+                />
+              </motion.span>
               {isFavoriteLoading ? "Saving..." : isFavorite ? "Favorited" : "Favorite"}
-            </button>
+            </motion.button>
 
             <div className="relative" ref={listsMenuRef}>
               <button
@@ -561,14 +562,6 @@ export default function SeriesDetailPage({ onBack, showId }) {
               </AnimatePresence>
             </div>
           </div>
-
-          {(watchlistStatus || favoriteStatus || listActionStatus) && (
-            <div className="mt-3 space-y-1 text-sm font-bold text-slate-300">
-              {watchlistStatus && <p>{watchlistStatus}</p>}
-              {favoriteStatus && <p>{favoriteStatus}</p>}
-              {listActionStatus && <p>{listActionStatus}</p>}
-            </div>
-          )}
 
           <p className="mt-6 max-w-3xl text-base leading-8 text-slate-400">
             {cleanSummary(show.summary)}
