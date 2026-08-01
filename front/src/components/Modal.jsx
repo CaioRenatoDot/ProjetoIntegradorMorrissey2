@@ -1,4 +1,5 @@
 import { X } from "lucide-react";
+import { motion } from "motion/react";
 import { useEffect } from "react";
 
 export default function Modal({ children, onClose, title }) {
@@ -12,20 +13,26 @@ export default function Modal({ children, onClose, title }) {
   }, [onClose]);
 
   return (
-    <div
+    <motion.div
+      animate={{ opacity: 1 }}
       className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4 backdrop-blur-sm"
+      initial={{ opacity: 0 }}
       onClick={(event) => {
         event.stopPropagation();
         onClose();
       }}
       role="presentation"
+      transition={{ duration: 0.15, ease: "easeOut" }}
     >
-      <div
+      <motion.div
+        animate={{ opacity: 1, scale: 1, y: 0 }}
         aria-label={title}
         aria-modal="true"
         className="max-h-[88vh] w-full max-w-2xl overflow-y-auto rounded border border-slate-700 bg-slate-900 shadow-2xl shadow-black/50"
+        initial={{ opacity: 0, scale: 0.95, y: 12 }}
         onClick={(event) => event.stopPropagation()}
         role="dialog"
+        transition={{ type: "spring", stiffness: 400, damping: 32 }}
       >
         <div className="sticky top-0 flex items-center justify-between border-b border-slate-800 bg-slate-900 px-6 py-5">
           <h2 className="truncate text-2xl font-black text-white">{title}</h2>
@@ -42,7 +49,7 @@ export default function Modal({ children, onClose, title }) {
           </button>
         </div>
         <div className="p-6 sm:p-8">{children}</div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { ChevronDown, DoorOpen, LogIn, Search, Settings, User } from "lucide-react";
 import BrandLogo from "./BrandLogo";
 import ClearButton from "./ClearButton";
@@ -114,10 +114,15 @@ export default function Navbar({
                   />
                 </button>
 
+                <AnimatePresence>
                 {isUserMenuOpen && (
-                  <div
-                    className="absolute left-0 top-full z-50 mt-2 min-w-full overflow-hidden rounded-md border border-zinc-700/80 bg-zinc-900 py-1 shadow-xl shadow-black/50"
+                  <motion.div
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    className="absolute left-0 top-full z-50 mt-2 min-w-full origin-top overflow-hidden rounded-md border border-zinc-700/80 bg-zinc-900 py-1 shadow-xl shadow-black/50"
+                    exit={{ opacity: 0, scale: 0.95, y: -4 }}
+                    initial={{ opacity: 0, scale: 0.95, y: -4 }}
                     role="menu"
+                    transition={{ duration: 0.15, ease: "easeOut" }}
                   >
                     <button
                       className="flex w-full items-center gap-2 whitespace-nowrap px-3 py-2 text-left text-xs font-bold text-slate-200 transition hover:bg-zinc-800 hover:text-white"
@@ -147,8 +152,9 @@ export default function Navbar({
                       <DoorOpen aria-hidden="true" className="h-3.5 w-3.5" strokeWidth={2.4} />
                       Log out
                     </button>
-                  </div>
+                  </motion.div>
                 )}
+                </AnimatePresence>
               </div>
             ) : (
               <>
@@ -178,7 +184,7 @@ export default function Navbar({
         </div>
 
         <div className="flex w-full flex-wrap items-center gap-x-2 border-t border-[#2e2e2e] py-1.5 md:contents md:py-0">
-          <div className="order-1 flex h-11 min-w-0 flex-1 items-center justify-start gap-3 overflow-x-auto text-[12px] font-semibold uppercase tracking-[0.13em] text-[#aaa] sm:gap-4 sm:text-[13px] md:order-2 md:h-16 md:w-auto md:flex-none md:justify-start md:overflow-visible">
+          <div className="no-scrollbar order-1 flex h-11 min-w-0 flex-1 items-center justify-start gap-3 overflow-x-auto text-[12px] font-semibold uppercase tracking-[0.13em] text-[#aaa] sm:gap-4 sm:text-[13px] md:order-2 md:h-16 md:w-auto md:flex-none md:justify-start md:overflow-visible">
             <a
               className={
                 activePage === "home" ? activeLinkClassName : linkClassName

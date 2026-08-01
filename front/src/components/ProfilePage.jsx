@@ -512,7 +512,7 @@ export default function ProfilePage({
                 {!isPublicView && isLoggedIn && (
                   <>
                     <button
-                      className="min-h-8 rounded border border-slate-600 bg-slate-700/80 px-3 text-xs font-black uppercase tracking-wide text-slate-100 transition hover:border-[#00c030] hover:bg-slate-600"
+                      className="min-h-8 rounded border border-slate-600 bg-slate-700/80 px-3 text-xs font-semibold uppercase tracking-wide text-slate-100 transition hover:border-[#00c030] hover:bg-slate-600"
                       onClick={onEditProfileClick}
                       type="button"
                     >
@@ -523,7 +523,7 @@ export default function ProfilePage({
                       <button
                         aria-expanded={isProfileActionsOpen}
                         aria-label="Open profile actions"
-                        className="grid h-8 w-8 place-items-center rounded-full border border-slate-600 bg-slate-800 text-sm font-black leading-none text-slate-200 transition hover:border-[#00c030] hover:bg-slate-700 hover:text-white"
+                        className="grid h-8 w-8 place-items-center rounded-full border border-slate-600 bg-slate-800 text-sm font-semibold leading-none text-slate-200 transition hover:border-[#00c030] hover:bg-slate-700 hover:text-white"
                         onClick={() => setIsProfileActionsOpen((currentValue) => !currentValue)}
                         title="Profile actions"
                         type="button"
@@ -534,7 +534,7 @@ export default function ProfilePage({
                       {isProfileActionsOpen && (
                         <div className="absolute left-0 top-10 z-20 w-48 overflow-hidden rounded border border-slate-600/70 bg-slate-800 py-1 shadow-xl shadow-black/30 sm:left-auto sm:right-0">
                           <button
-                            className="flex min-h-10 w-full items-center gap-2 px-3 text-left text-xs font-black uppercase tracking-wide text-slate-200 transition hover:bg-slate-700 hover:text-white"
+                            className="flex min-h-10 w-full items-center gap-2 px-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-200 transition hover:bg-slate-700 hover:text-white"
                             onClick={handleCopyProfileUrl}
                             type="button"
                           >
@@ -702,7 +702,7 @@ function ProfileTabs({ onDiaryClick, onSeriesClick, onListsClick, onWatchlistCli
   };
 
   return (
-    <nav className="mt-7 overflow-x-auto rounded border border-slate-800 bg-slate-950/30 px-4" aria-label="Profile sections">
+    <nav className="no-scrollbar mt-7 overflow-x-auto rounded border border-slate-800 bg-slate-950/30 px-4" aria-label="Profile sections">
       <div className="mx-auto flex w-max min-w-max items-center justify-center gap-6">
         {tabs.map((tab) => (
           <button
@@ -789,7 +789,7 @@ function ProfileBioPanel({
           action={
             isPublicView ? null : (
               <button
-                className="min-h-8 rounded border border-slate-700 px-3 text-xs font-black uppercase tracking-wide text-slate-300 transition hover:border-[#00c030] hover:text-white"
+                className="min-h-8 rounded border border-slate-700 px-3 text-xs font-semibold uppercase tracking-wide text-slate-300 transition hover:border-[#00c030] hover:text-white"
                 onClick={onViewAllLists}
                 type="button"
               >
@@ -835,7 +835,7 @@ function ProfileBioPanel({
                         {list.itemsCount} {list.itemsCount === 1 ? "title" : "titles"}
                       </span>
                     </div>
-                    <h3 className="mt-2 truncate text-sm font-black text-white">
+                    <h3 className="mt-2 truncate text-sm font-semibold text-white">
                       {list.title}
                     </h3>
                     <p className="mt-1 flex items-center gap-1.5 text-xs font-bold text-slate-500">
@@ -849,7 +849,7 @@ function ProfileBioPanel({
 
             {!isPublicView && userLists.length > listPreviewLimit && (
               <button
-                className="mt-4 inline-flex h-8 w-full items-center justify-center gap-1.5 rounded border border-slate-700 text-xs font-black uppercase tracking-wide text-slate-300 transition hover:border-[#00c030] hover:text-white"
+                className="mt-4 inline-flex h-8 w-full items-center justify-center gap-1.5 rounded border border-slate-700 text-xs font-semibold uppercase tracking-wide text-slate-300 transition hover:border-[#00c030] hover:text-white"
                 onClick={onViewAllLists}
                 type="button"
               >
@@ -879,7 +879,7 @@ function ProfileBioPanel({
                 <Plus aria-hidden="true" className="h-5 w-5" strokeWidth={2.6} />
               </button>
             </div>
-            <p className="relative z-10 mt-3 text-xs font-black uppercase tracking-wide text-slate-300 transition-colors duration-500 group-hover:text-white">
+            <p className="relative z-10 mt-3 text-xs font-semibold uppercase tracking-wide text-slate-300 transition-colors duration-500 group-hover:text-white">
               Create your own list
             </p>
             <p className="relative z-10 mt-3 text-sm font-semibold text-slate-400 transition-colors duration-500 group-hover:text-white/80">
@@ -918,7 +918,7 @@ function FavoriteShelf({
         action={
           readOnly ? null : (
             <button
-              className="min-h-8 rounded border border-slate-700 px-3 text-xs font-black uppercase tracking-wide text-slate-300 transition hover:border-[#00c030] hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+              className="min-h-8 rounded border border-slate-700 px-3 text-xs font-semibold uppercase tracking-wide text-slate-300 transition hover:border-[#00c030] hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
               disabled={favoriteItems.length < 2 || isLoading}
               onClick={() => {
                 // So comemora ao FINALIZAR o reordenamento (DONE), nao ao
@@ -996,7 +996,7 @@ function FavoriteShelf({
               className="grid aspect-[2/3] place-items-center rounded border border-dashed border-slate-800 bg-slate-950/60 text-center"
               key={`empty-favorite-${index}`}
             >
-              <p className="px-3 text-xs font-black uppercase tracking-wide text-slate-600">
+              <p className="px-3 text-xs font-semibold uppercase tracking-wide text-slate-600">
                 Empty slot
               </p>
             </div>
@@ -1140,7 +1140,7 @@ function PosterGrid({
               </button>
             )}
           </div>
-          <h3 className="mt-2 line-clamp-2 text-xs font-black leading-5 text-slate-100">
+          <h3 className="mt-2 line-clamp-2 text-xs font-semibold leading-5 text-slate-200">
             {item.title}
           </h3>
           <p className="mt-1 truncate text-[11px] font-bold uppercase tracking-wide text-slate-500">
@@ -1159,7 +1159,7 @@ function PosterGrid({
           <span className="grid h-16 w-16 place-items-center rounded-full border border-slate-700 bg-[#14181c] text-3xl font-black leading-none text-slate-300 transition group-hover:border-[#00c030] group-hover:text-[#32d85a]">
             ...
           </span>
-          <span className="px-3 text-xs font-black uppercase tracking-wide text-slate-500">
+          <span className="px-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
             {hiddenItemsCount} more
           </span>
         </button>
@@ -1197,12 +1197,12 @@ function ShelfHeader({ action, count, eyebrow, onActionClick, title }) {
         </h2>
       </div>
       <div className="flex flex-wrap items-center justify-end gap-3">
-        <p className="text-[11px] font-black uppercase tracking-wide text-slate-500">
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
           {count}
         </p>
         {action && (
           <button
-            className="min-h-8 rounded border border-slate-700 px-3 text-xs font-black uppercase tracking-wide text-slate-300 transition hover:border-[#00c030] hover:text-white"
+            className="min-h-8 rounded border border-slate-700 px-3 text-xs font-semibold uppercase tracking-wide text-slate-300 transition hover:border-[#00c030] hover:text-white"
             onClick={onActionClick}
             type="button"
           >

@@ -72,7 +72,7 @@ function SearchResultRow({ onSelect, show }) {
 
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <h2 className="text-base font-black leading-6 text-white transition group-hover:text-[#32d85a] sm:text-lg">
+            <h2 className="text-base font-semibold leading-6 text-white transition group-hover:text-[#32d85a] sm:text-lg">
               {show.name}
             </h2>
             <span className="text-sm font-bold text-slate-500">{year}</span>
@@ -86,11 +86,11 @@ function SearchResultRow({ onSelect, show }) {
         </div>
 
         <div className="col-start-2 flex flex-wrap items-center gap-3 sm:col-start-auto sm:justify-end">
-          <span className="inline-flex min-h-8 items-center gap-1 rounded border border-slate-700 bg-slate-950 px-3 text-xs font-black text-[#32d85a]">
+          <span className="inline-flex min-h-8 items-center gap-1 rounded border border-slate-700 bg-slate-950 px-3 text-xs font-semibold tabular-nums text-[#32d85a]">
             <Star aria-hidden="true" className="h-3.5 w-3.5" fill="currentColor" />
             {rating}
           </span>
-          <span className="inline-flex min-h-8 items-center rounded border border-[#00c030]/50 bg-[#00c030]/10 px-3 text-xs font-black uppercase tracking-wide text-[#32d85a] transition group-hover:bg-[#00c030]/20">
+          <span className="inline-flex min-h-8 items-center rounded border border-[#00c030]/50 bg-[#00c030]/10 px-3 text-xs font-semibold uppercase tracking-wide text-[#32d85a] transition group-hover:bg-[#00c030]/20">
             Open log
           </span>
         </div>

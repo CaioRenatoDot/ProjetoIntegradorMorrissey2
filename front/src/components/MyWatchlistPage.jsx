@@ -54,7 +54,7 @@ export default function MyWatchlistPage({ isLoggedIn, onBack, onSeriesSelect }) 
       <BackButton onBack={onBack} />
 
       <header className="mb-6 border-b border-slate-800 pb-6">
-        <p className="text-sm font-black uppercase tracking-[0.18em] text-[#00c030]">
+        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#00c030]">
           Watchlist
         </p>
         <h1 className="mt-2 text-2xl font-black text-white sm:text-4xl">
@@ -79,7 +79,7 @@ export default function MyWatchlistPage({ isLoggedIn, onBack, onSeriesSelect }) 
       ) : watchlistItems.length ? (
         <>
           <div className="mb-4 flex items-center justify-between gap-4">
-            <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
               To Watch
             </p>
             <p className="text-xs font-bold uppercase tracking-wide text-slate-500">

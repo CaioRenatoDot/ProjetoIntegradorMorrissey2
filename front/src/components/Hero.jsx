@@ -76,7 +76,7 @@ export default function Hero({
             type="search"
             value={query}
           />
-          <button className="group inline-flex min-h-11 flex-none items-center justify-center gap-2 rounded-md bg-[#00c030] px-4 text-sm font-black uppercase tracking-wide text-white/85 shadow-lg shadow-[#00c030]/25 transition duration-300 hover:bg-[#32d85a] hover:text-white hover:shadow-xl hover:shadow-[#00c030]/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00c030]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 active:scale-95 sm:px-6">
+          <button className="group inline-flex min-h-11 flex-none items-center justify-center gap-2 rounded-md bg-[#00c030] px-4 text-sm font-semibold text-white shadow-lg shadow-[#00c030]/25 transition duration-300 hover:bg-[#32d85a] hover:shadow-xl hover:shadow-[#00c030]/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00c030]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 active:scale-95 sm:px-6">
             <Search
               aria-hidden="true"
               className="h-4 w-4 transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110"

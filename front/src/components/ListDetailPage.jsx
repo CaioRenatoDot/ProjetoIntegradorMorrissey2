@@ -1,4 +1,5 @@
 import { Trash2 } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
 import BackButton from "./BackButton";
 import { fallbackPoster } from "../data/constants";
@@ -108,7 +109,7 @@ export default function ListDetailPage({ isPublic, listId, onBack, onSeriesSelec
 
         {!isPublic && list && (
           <button
-            className="inline-flex min-h-9 items-center gap-2 rounded border border-red-900/60 px-3 text-xs font-black uppercase tracking-wide text-red-300 transition hover:border-red-500 hover:bg-red-500/10 hover:text-red-200 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex min-h-9 items-center gap-2 rounded border border-red-900/60 px-3 text-xs font-semibold uppercase tracking-wide text-red-300 transition hover:border-red-500 hover:bg-red-500/10 hover:text-red-200 disabled:cursor-not-allowed disabled:opacity-60"
             disabled={isDeleting}
             onClick={handleDeleteList}
             type="button"
@@ -120,7 +121,7 @@ export default function ListDetailPage({ isPublic, listId, onBack, onSeriesSelec
       </div>
 
       <header className="mb-8 border-b border-slate-800 pb-6">
-        <p className="text-sm font-black uppercase tracking-[0.18em] text-[#00c030]">
+        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#00c030]">
           {isPublic ? "Community List" : "Your List"}
         </p>
         <h1 className="mt-3 text-3xl font-black text-white sm:text-5xl">
@@ -155,9 +156,15 @@ export default function ListDetailPage({ isPublic, listId, onBack, onSeriesSelec
         </section>
       ) : list?.items.length ? (
         <section className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-4 sm:grid-cols-[repeat(auto-fill,minmax(180px,1fr))] lg:gap-5">
+          <AnimatePresence initial={false}>
           {list.items.map((item) => (
-            <article
+            <motion.article
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              initial={{ opacity: 0, scale: 0.9 }}
               key={item.id}
+              layout
+              transition={{ duration: 0.2, ease: "easeOut" }}
               className="group relative overflow-hidden rounded border border-slate-700 bg-slate-900 shadow-sm transition hover:-translate-y-1 hover:border-emerald-500 hover:shadow-xl hover:shadow-emerald-950/30"
             >
               {!isPublic && (
@@ -187,7 +194,7 @@ export default function ListDetailPage({ isPublic, listId, onBack, onSeriesSelec
                   alt={`Poster for ${item.title}`}
                 />
                 <div className="p-4">
-                  <h2 className="line-clamp-2 text-sm font-black text-slate-50">
+                  <h2 className="line-clamp-2 text-sm font-semibold text-slate-100">
                     {item.title}
                   </h2>
                   <p className="mt-1 text-xs font-bold text-slate-400">
@@ -195,8 +202,9 @@ export default function ListDetailPage({ isPublic, listId, onBack, onSeriesSelec
                   </p>
                 </div>
               </button>
-            </article>
+            </motion.article>
           ))}
+          </AnimatePresence>
         </section>
       ) : (
         <div className="rounded border border-slate-800 bg-slate-950 px-5 py-10 text-center">

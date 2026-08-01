@@ -18,7 +18,7 @@ export default function ResultsSection({
         className="mb-6 flex items-end justify-between gap-4 border-b border-slate-800 pb-5"
       >
         <div>
-          <p className="text-sm font-black uppercase tracking-[0.18em] text-[#00c030]">
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#00c030]">
             {hasSearched ? "Search results" : "SERIES"}
           </p>
           <h2 className="mt-3 text-2xl font-black text-white sm:text-3xl">
@@ -55,7 +55,7 @@ export default function ResultsSection({
       {!hasSearched && !isLoading && hasMore && (
         <div className="mt-8 flex justify-center">
           <button
-            className="group relative inline-flex min-h-11 items-center justify-center gap-2 overflow-hidden rounded border border-slate-700 px-6 text-sm font-black uppercase tracking-wide text-slate-300 transition-colors duration-300 hover:border-[#00c030] hover:text-white"
+            className="group relative inline-flex min-h-11 items-center justify-center gap-2 overflow-hidden rounded border border-slate-700 px-6 text-sm font-semibold uppercase tracking-wide text-slate-300 transition-colors duration-300 hover:border-[#00c030] hover:text-white"
             onClick={onShowMore}
             type="button"
           >

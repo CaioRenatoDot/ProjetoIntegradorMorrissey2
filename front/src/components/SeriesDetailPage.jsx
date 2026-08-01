@@ -1,4 +1,5 @@
 import { Calendar, Heart, ListPlus, Star, Trash2 } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import BackButton from "./BackButton";
 import RatingStars from "./RatingStars";
@@ -18,7 +19,7 @@ import {
   saveReview,
 } from "../services/api";
 import { getShowById } from "../services/tvmaze";
-import { cleanSummary, getGenres } from "../utils/format";
+import { cleanSummary } from "../utils/format";
 
 export default function SeriesDetailPage({ onBack, showId }) {
   const [show, setShow] = useState(null);
@@ -400,41 +401,61 @@ export default function SeriesDetailPage({ onBack, showId }) {
   const imdbCode = show.externals?.imdb;
 
   return (
-    <section className="py-8">
+    <section className="relative py-8">
+      {show.image?.original && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute left-1/2 top-0 h-[440px] w-dvw -translate-x-1/2 overflow-hidden sm:h-[480px]"
+        >
+          <img
+            alt=""
+            className="h-full w-full scale-110 object-cover object-[center_20%] opacity-45 blur-xl"
+            src={show.image.original}
+          />
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(20,24,28,0.28)_0%,rgba(20,24,28,0.55)_45%,rgba(20,24,28,0.9)_78%,#14181c_100%)]" />
+        </div>
+      )}
+
+      <div className="relative">
       <BackButton onBack={onBack} />
 
       <div className="grid items-start gap-8 md:grid-cols-[280px_1fr] lg:grid-cols-[340px_1fr]">
-        <div className="relative mx-auto w-full max-w-56 self-start overflow-hidden rounded border border-slate-700 bg-slate-900 shadow-2xl shadow-black/30 sm:max-w-72 md:mx-0 md:max-w-[340px]">
+        <div className="relative mx-auto w-full max-w-56 self-start overflow-hidden rounded border border-slate-600/60 bg-slate-900 shadow-2xl shadow-black/50 ring-1 ring-white/10 sm:max-w-72 md:mx-0 md:max-w-[340px]">
           <img
             className="aspect-[2/3] w-full object-cover"
             src={show.image?.original || show.image?.medium || fallbackPoster}
             alt={`Poster for ${show.name}`}
           />
-          <div className="absolute left-3 top-3 inline-flex items-center gap-1 rounded bg-slate-950/90 px-3 py-2 text-sm font-black text-emerald-400">
+          <div className="absolute left-3 top-3 inline-flex items-center gap-1 rounded bg-slate-950/90 px-3 py-2 text-sm font-semibold tabular-nums text-emerald-400">
             <Star size={16} fill="currentColor" />
             Rating {rating}
           </div>
         </div>
 
         <div className="flex flex-col justify-center">
-          <p className="text-sm font-black uppercase tracking-wide text-emerald-400">
+          <p className="text-sm font-semibold uppercase tracking-wide text-emerald-400">
             Series details
           </p>
           <h1 className="mt-3 text-4xl font-black text-white sm:text-5xl">
             {show.name}
           </h1>
 
-          <div className="mt-5 flex flex-wrap gap-3 text-sm font-bold text-slate-300">
-            <span className="inline-flex min-h-9 items-center gap-2 rounded border border-slate-700 bg-slate-900 px-3">
+          <div className="mt-5 flex flex-wrap gap-2.5 text-sm font-medium text-slate-300">
+            <span className="inline-flex min-h-9 items-center gap-2 rounded border border-slate-700/80 bg-slate-900/70 px-3 backdrop-blur-sm">
               <Calendar size={16} />
               {releaseDate}
             </span>
-            <span className="inline-flex min-h-9 items-center rounded border border-slate-700 bg-slate-900 px-3">
-              {getGenres(show)}
-            </span>
+            {(show.genres?.length ? show.genres : ["No genre"]).map((genre) => (
+              <span
+                className="inline-flex min-h-9 items-center rounded border border-slate-700/80 bg-slate-900/70 px-3 backdrop-blur-sm"
+                key={genre}
+              >
+                {genre}
+              </span>
+            ))}
             {imdbCode && (
               <a
-                className="inline-flex min-h-9 items-center rounded border border-slate-700 bg-slate-900 px-3 text-slate-300 transition hover:border-emerald-500 hover:text-white"
+                className="inline-flex min-h-9 items-center rounded border border-slate-700/80 bg-slate-900/70 px-3 text-slate-300 backdrop-blur-sm transition hover:border-emerald-500 hover:text-white"
                 href={`https://www.imdb.com/title/${imdbCode}/`}
                 rel="noreferrer"
                 target="_blank"
@@ -446,7 +467,7 @@ export default function SeriesDetailPage({ onBack, showId }) {
 
           <div className="mt-6 flex flex-wrap gap-3">
             <button
-              className="min-h-11 rounded bg-[#00c030] px-5 font-black text-white transition hover:bg-[#32d85a] disabled:cursor-not-allowed disabled:bg-zinc-700"
+              className="min-h-11 rounded bg-[#00c030] px-5 font-semibold text-white transition hover:bg-[#32d85a] disabled:cursor-not-allowed disabled:bg-zinc-700"
               disabled={isAddingToWatchlist}
               onClick={handleAddToWatchlist}
               type="button"
@@ -454,7 +475,7 @@ export default function SeriesDetailPage({ onBack, showId }) {
               {isAddingToWatchlist ? "Adding..." : "Add to Watchlist"}
             </button>
             <button
-              className={`inline-flex min-h-11 items-center gap-2 rounded border px-5 font-black transition disabled:cursor-not-allowed disabled:opacity-60 ${
+              className={`inline-flex min-h-11 items-center gap-2 rounded border px-5 font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
                 isFavorite
                   ? "border-[#00c030] bg-[#00c030]/10 text-[#00c030] hover:bg-[#00c030]/20"
                   : "border-slate-700 text-slate-200 hover:border-[#00c030] hover:text-white"
@@ -474,7 +495,7 @@ export default function SeriesDetailPage({ onBack, showId }) {
             <div className="relative" ref={listsMenuRef}>
               <button
                 aria-expanded={isListsMenuOpen}
-                className="inline-flex min-h-11 items-center gap-2 rounded border border-slate-700 px-5 font-black text-slate-200 transition hover:border-[#00c030] hover:text-white"
+                className="inline-flex min-h-11 items-center gap-2 rounded border border-slate-700 px-5 font-semibold text-slate-200 transition hover:border-[#00c030] hover:text-white"
                 onClick={handleToggleListsMenu}
                 type="button"
               >
@@ -482,8 +503,15 @@ export default function SeriesDetailPage({ onBack, showId }) {
                 Add to List
               </button>
 
+              <AnimatePresence>
               {isListsMenuOpen && (
-                <div className="absolute left-0 top-full z-20 mt-2 w-72 overflow-hidden rounded border border-slate-700 bg-slate-900 shadow-xl shadow-black/40">
+                <motion.div
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  className="absolute left-0 top-full z-20 mt-2 w-72 max-w-[calc(100vw-2.5rem)] origin-top overflow-hidden rounded border border-slate-700 bg-slate-900 shadow-xl shadow-black/40"
+                  exit={{ opacity: 0, scale: 0.95, y: -4 }}
+                  initial={{ opacity: 0, scale: 0.95, y: -4 }}
+                  transition={{ duration: 0.15, ease: "easeOut" }}
+                >
                   {isListsLoading ? (
                     <div className="p-4 text-sm font-bold text-slate-400">Loading your lists...</div>
                   ) : userLists.length ? (
@@ -521,15 +549,16 @@ export default function SeriesDetailPage({ onBack, showId }) {
                       value={newListTitle}
                     />
                     <button
-                      className="min-h-9 flex-none rounded bg-[#00c030] px-3 text-xs font-black uppercase tracking-wide text-white transition hover:bg-[#32d85a] disabled:cursor-not-allowed disabled:bg-zinc-700"
+                      className="min-h-9 flex-none rounded bg-[#00c030] px-3 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-[#32d85a] disabled:cursor-not-allowed disabled:bg-zinc-700"
                       disabled={!newListTitle.trim() || isCreatingList}
                       type="submit"
                     >
                       {isCreatingList ? "..." : "Create"}
                     </button>
                   </form>
-                </div>
+                </motion.div>
               )}
+              </AnimatePresence>
             </div>
           </div>
 
@@ -556,11 +585,12 @@ export default function SeriesDetailPage({ onBack, showId }) {
           />
         </div>
       </div>
+      </div>
 
       <section className="mt-10 border-t border-slate-800 pt-8">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <p className="text-sm font-black uppercase tracking-wide text-emerald-400">
+            <p className="text-sm font-semibold uppercase tracking-wide text-emerald-400">
               Community
             </p>
             <h2 className="mt-1 text-2xl font-black text-white">Reviews</h2>
@@ -619,10 +649,10 @@ function ReviewCard({ isDeleting, onDelete, review }) {
         <div className="flex items-center gap-3">
           <UserAvatar name={review.user.name} size="sm" />
           <div className="min-w-0">
-            <p className="flex flex-wrap items-center gap-2 text-sm font-black text-white">
+            <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-white">
               {review.user.name}
               {review.isMine && (
-                <span className="rounded bg-[#00c030]/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-[#32d85a]">
+                <span className="rounded bg-[#00c030]/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#32d85a]">
                   Your review
                 </span>
               )}

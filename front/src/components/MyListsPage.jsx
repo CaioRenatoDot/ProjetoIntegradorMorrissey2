@@ -106,7 +106,7 @@ export default function MyListsPage({ isLoggedIn, onBack, onListSelect }) {
       <BackButton onBack={onBack} />
 
       <header className="mb-8 border-b border-slate-800 pb-8">
-        <p className="text-sm font-black uppercase tracking-[0.18em] text-[#00c030]">
+        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#00c030]">
           Your lists
         </p>
         <h1 className="mt-3 text-3xl font-black text-white sm:text-5xl">
@@ -131,7 +131,7 @@ export default function MyListsPage({ isLoggedIn, onBack, onListSelect }) {
             onSubmit={handleCreate}
           >
             <label className="flex-1">
-              <span className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
                 Title
               </span>
               <input
@@ -143,7 +143,7 @@ export default function MyListsPage({ isLoggedIn, onBack, onListSelect }) {
             </label>
 
             <label className="flex-1">
-              <span className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
                 Category
               </span>
               <input

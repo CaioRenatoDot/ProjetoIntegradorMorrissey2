@@ -41,7 +41,7 @@ export default function ListPage({ onListSelect, onCreatorSelect }) {
   return (
     <section id="lists" className="py-8 sm:py-12">
       <header className="mb-8 border-b border-slate-800 pb-8">
-        <p className="text-sm font-black uppercase tracking-[0.18em] text-[#00c030]">
+        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#00c030]">
           Lists
         </p>
         <h1 className="mt-3 text-3xl font-black text-white sm:text-5xl">
@@ -83,7 +83,7 @@ export default function ListPage({ onListSelect, onCreatorSelect }) {
           {hasMore && (
             <div className="mt-8 flex justify-center">
               <button
-                className="group relative inline-flex min-h-11 items-center justify-center gap-2 overflow-hidden rounded border border-slate-700 px-6 text-sm font-black uppercase tracking-wide text-slate-300 transition-colors duration-300 hover:border-[#00c030] hover:text-white"
+                className="group relative inline-flex min-h-11 items-center justify-center gap-2 overflow-hidden rounded border border-slate-700 px-6 text-sm font-semibold uppercase tracking-wide text-slate-300 transition-colors duration-300 hover:border-[#00c030] hover:text-white"
                 onClick={() => setVisibleCount((prev) => prev + PAGE_SIZE)}
                 type="button"
               >

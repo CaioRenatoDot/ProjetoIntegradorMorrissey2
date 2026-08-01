@@ -94,7 +94,7 @@ export default function DiaryPage({ currentUserName, isLoggedIn, onBack, onSerie
       <BackButton onBack={onBack} />
 
       <header className="mb-8 border-b border-slate-800 pb-8">
-        <p className="text-sm font-black uppercase tracking-[0.18em] text-[#00c030]">
+        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#00c030]">
           Diary
         </p>
         <h1 className="mt-3 text-3xl font-black text-white sm:text-5xl">
@@ -126,7 +126,7 @@ export default function DiaryPage({ currentUserName, isLoggedIn, onBack, onSerie
       ) : diaryRows.length ? (
         <div className="overflow-hidden rounded border border-slate-800 bg-slate-950 shadow-xl shadow-black/20">
           <div
-            className={`${rowGridClass} border-b border-slate-800 bg-slate-900/80 py-3 text-[11px] font-black uppercase tracking-[0.14em] text-slate-500`}
+            className={`${rowGridClass} border-b border-slate-800 bg-slate-900/80 py-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500`}
           >
             <p>Month</p>
             <p>Day</p>
@@ -190,7 +190,7 @@ function DiaryRow({
       <div>
         {showMonth && (
           <div className="w-12 rounded-md border border-slate-700 bg-slate-800 py-1.5 text-center shadow-md shadow-black/40 sm:w-14">
-            <p className="text-xs font-black uppercase leading-tight tracking-wide text-slate-100">
+            <p className="text-xs font-semibold uppercase leading-tight tracking-wide text-slate-100">
               {monthLabel}
             </p>
             <p className="text-[10px] font-bold leading-tight text-slate-400">
@@ -217,7 +217,7 @@ function DiaryRow({
           />
         </button>
         <button
-          className="truncate text-left text-base font-black text-white transition hover:text-[#32d85a] disabled:cursor-default disabled:hover:text-white sm:text-lg"
+          className="truncate text-left text-base font-semibold text-white transition hover:text-[#32d85a] disabled:cursor-default disabled:hover:text-white sm:text-lg"
           disabled={!isClickable}
           onClick={handleOpenSeries}
           type="button"

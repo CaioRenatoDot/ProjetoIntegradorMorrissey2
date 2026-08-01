@@ -3,6 +3,7 @@
 @layer base {
   html {
     font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    scrollbar-color: #3c4653 #14181c;
   }
 
   body,
@@ -11,6 +12,15 @@
   textarea,
   select {
     font-family: inherit;
+  }
+}
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  &::-webkit-scrollbar {
+    display: none;
   }
 }
 

@@ -61,19 +61,19 @@ export default function ListCard({ list, onSelect, onCreatorSelect, onDelete }) 
             <button
               type="button"
               onClick={() => onCreatorSelect?.(list.creatorUsername)}
-              className="font-black text-slate-200 underline-offset-2 transition hover:text-[#00c030] hover:underline"
+              className="font-semibold text-slate-200 underline-offset-2 transition hover:text-[#00c030] hover:underline"
             >
               {list.creator}
             </button>
           ) : (
-            <span className="font-black text-slate-300">{list.creator}</span>
+            <span className="font-semibold text-slate-300">{list.creator}</span>
           )}
         </p>
       ) : (
         list.createdAt && (
           <p className="px-5 pb-5 pt-2 text-sm font-semibold text-slate-400">
             Created on{" "}
-            <span className="font-black text-slate-300">
+            <span className="font-semibold text-slate-300">
               {dateFormatter.format(new Date(list.createdAt))}
             </span>
           </p>

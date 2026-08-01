@@ -116,7 +116,7 @@ export default function EditProfilePage({
           size="lg"
         />
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.22em] text-[#00c030]">
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#00c030]">
             Account settings
           </p>
           <h1 className="mt-1 text-3xl font-black text-white">Edit Profile</h1>
@@ -191,7 +191,7 @@ export default function EditProfilePage({
             <SectionTitle Icon={FileText} title="Bio" />
 
             <label className="block">
-              <span className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
                 About
               </span>
               <textarea
@@ -217,7 +217,7 @@ export default function EditProfilePage({
 
             <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
               <label className="flex-1">
-                <span className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
                   Confirm your password
                 </span>
                 <input
@@ -230,7 +230,7 @@ export default function EditProfilePage({
               </label>
 
               <button
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded border border-red-900/60 px-4 text-sm font-black uppercase tracking-wide text-red-300 transition hover:border-red-500 hover:bg-red-500/10 hover:text-red-200 disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded border border-red-900/60 px-4 text-sm font-semibold uppercase tracking-wide text-red-300 transition hover:border-red-500 hover:bg-red-500/10 hover:text-red-200 disabled:cursor-not-allowed disabled:opacity-50"
                 disabled={!deletePassword || isDeleting}
                 onClick={handleDeleteClick}
                 type="button"
@@ -255,7 +255,7 @@ export default function EditProfilePage({
 
           <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
             <button
-              className="min-h-10 rounded border border-slate-700 px-4 text-sm font-black uppercase tracking-wide text-slate-300 transition hover:border-slate-500 hover:text-white"
+              className="min-h-10 rounded border border-slate-700 px-4 text-sm font-semibold uppercase tracking-wide text-slate-300 transition hover:border-slate-500 hover:text-white"
               onClick={onBack}
               type="button"
             >
@@ -340,7 +340,7 @@ function ProfileSelectField({ Icon, label, value, ...selectProps }) {
 
   return (
     <label className="block">
-      <span className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">
+      <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
         {label}
       </span>
       <div className="relative mt-2">
@@ -371,7 +371,7 @@ function ProfileSelectField({ Icon, label, value, ...selectProps }) {
 function ProfileField({ Icon, label, ...inputProps }) {
   return (
     <label className="block">
-      <span className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">
+      <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
         {label}
       </span>
       <div className="relative mt-2">

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { AnimatePresence, MotionConfig, motion } from "motion/react";
 import DiaryPage from "./components/DiaryPage";
 import EditProfilePage from "./components/EditProfilePage";
 import Hero from "./components/Hero";
@@ -542,7 +543,18 @@ export default function App() {
     }
   }
 
+  const pageKey = isLoginVisible
+    ? `auth`
+    : activePage === "details"
+      ? `details-${selectedShowId}`
+      : activePage === "listDetails"
+        ? `list-${selectedListId}`
+        : activePage === "publicProfile"
+          ? `user-${selectedUsername}`
+          : activePage;
+
   return (
+    <MotionConfig reducedMotion="user">
     <main className="min-h-screen overflow-x-clip bg-[#14181c] text-slate-100">
       {!isLoginVisible && (
         <Navbar
@@ -568,9 +580,17 @@ export default function App() {
         className={
           isLoginVisible
             ? "w-full overflow-hidden"
-            : "mx-auto w-full max-w-1360px px-4 pb-10 sm:px-6 lg:px-8"
+            : "mx-auto w-full max-w-340 px-4 pb-10 sm:px-6 lg:px-8"
         }
       >
+        <AnimatePresence initial={false} mode="wait">
+        <motion.div
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          initial={{ opacity: 0, y: 8 }}
+          key={pageKey}
+          transition={{ duration: 0.18, ease: "easeOut" }}
+        >
         {isLoginVisible ? (
           <LoginScreen
             email={loginEmail}
@@ -778,12 +798,15 @@ export default function App() {
             />
           </>
         )}
+        </motion.div>
+        </AnimatePresence>
       </div>
 
       {!isLoginVisible && activePage === "home" && !selectedShowId && (
         <HomeFooter />
       )}
     </main>
+    </MotionConfig>
   );
 }
 

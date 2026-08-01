@@ -76,7 +76,7 @@ export default function LoginScreen({
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(0,192,48,0.18),transparent_28%),linear-gradient(90deg,rgba(0,0,0,0.72),transparent_48%,rgba(0,0,0,0.72))]" />
 
         <div className="absolute left-10 top-8 z-20">
-          <p className="text-sm font-black uppercase tracking-wide text-[#00c030]">
+          <p className="text-sm font-semibold uppercase tracking-wide text-[#00c030]">
             {authCopy.eyebrow}
           </p>
           <h2 className="mt-2 max-w-md text-3xl font-black leading-tight text-white">
@@ -115,7 +115,7 @@ export default function LoginScreen({
               }`}
           >
             <div className="mb-6 lg:hidden">
-              <p className="text-xs font-black uppercase tracking-wide text-[#00c030]">
+              <p className="text-xs font-semibold uppercase tracking-wide text-[#00c030]">
                 {authCopy.eyebrow}
               </p>
               <p className="mt-2 text-lg font-black leading-tight text-white">
