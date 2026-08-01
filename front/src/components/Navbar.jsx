@@ -39,9 +39,9 @@ export default function Navbar({
   const searchInputRef = useRef(null);
   const userMenuRef = useRef(null);
   const linkClassName =
-    "relative flex h-full flex-none items-center border-b-2 border-transparent px-2 transition hover:border-[#00c030] hover:text-white md:px-0";
+    "relative flex h-full flex-none items-center border-b-2 border-transparent px-1 transition hover:border-[#00c030] hover:text-white sm:px-2 md:px-0";
   const activeLinkClassName =
-    "relative flex h-full flex-none items-center border-b-2 border-transparent px-2 text-white transition hover:border-[#00c030] hover:text-white md:px-0";
+    "relative flex h-full flex-none items-center border-b-2 border-transparent px-1 text-white transition hover:border-[#00c030] hover:text-white sm:px-2 md:px-0";
 
   useEffect(() => {
     if (!isNavSearchOpen) {
@@ -184,7 +184,7 @@ export default function Navbar({
         </div>
 
         <div className="flex w-full flex-wrap items-center gap-x-2 border-t border-[#2e2e2e] py-1.5 md:contents md:py-0">
-          <div className="no-scrollbar order-1 flex h-11 min-w-0 flex-1 items-center justify-start gap-3 overflow-x-auto text-[12px] font-semibold uppercase tracking-[0.13em] text-[#aaa] sm:gap-4 sm:text-[13px] md:order-2 md:h-16 md:w-auto md:flex-none md:justify-start md:overflow-visible">
+          <div className="no-scrollbar order-1 flex h-11 min-w-0 flex-1 items-center justify-start gap-2.5 overflow-x-auto text-[11px] font-semibold uppercase tracking-[0.06em] text-[#aaa] sm:gap-4 sm:text-[13px] sm:tracking-[0.13em] md:order-2 md:h-16 md:w-auto md:flex-none md:justify-start md:overflow-visible">
             <a
               className={
                 activePage === "home" ? activeLinkClassName : linkClassName
