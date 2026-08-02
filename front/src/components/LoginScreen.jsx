@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Eye, EyeOff, KeyRound, Lock, Mail, MailCheck, User } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail, User } from "lucide-react";
 import { fallbackPoster, rowShiftLeft, rowShiftRight } from "../data/constants";
 import { getMostPopularShows } from "../services/tvmaze";
 import BrandLogo from "./BrandLogo";
@@ -20,7 +20,6 @@ export default function LoginScreen({
   const [renderedMode, setRenderedMode] = useState(mode);
   const [isModeVisible, setIsModeVisible] = useState(true);
   const isRenderedRegisterMode = renderedMode === "register";
-  const isRenderedForgotMode = renderedMode === "forgot";
   const authCopy = getAuthCopy(renderedMode);
   const [posterRows, setPosterRows] = useState([]);
   const [isRowsLoading, setIsRowsLoading] = useState(true);
@@ -132,13 +131,7 @@ export default function LoginScreen({
               {authCopy.description}
             </p>
 
-            {isRenderedForgotMode ? (
-              <ForgotPasswordForm
-                email={email}
-                onEmailChange={onEmailChange}
-                onModeChange={onModeChange}
-              />
-            ) : isRenderedRegisterMode ? (
+            {isRenderedRegisterMode ? (
               <RegisterForm
                 email={email}
                 onEmailChange={onEmailChange}
@@ -149,7 +142,6 @@ export default function LoginScreen({
                 email={email}
                 onEmailChange={onEmailChange}
                 onLogin={onLogin}
-                onModeChange={onModeChange}
               />
             )}
 
@@ -180,18 +172,6 @@ function getAuthCopy(mode) {
       switchLabel: "Already have an account?",
       switchMode: "login",
       title: "Create your account",
-    };
-  }
-
-  if (mode === "forgot") {
-    return {
-      description: "Enter your email and we will send a reset link.",
-      eyebrow: "Back in one step",
-      feature: "Reset your password and return to your watchlist.",
-      switchAction: "Sign in",
-      switchLabel: "Remembered your password?",
-      switchMode: "login",
-      title: "Forgot password",
     };
   }
 
@@ -319,7 +299,7 @@ function RegisterForm({ email, onEmailChange, onRegister }) {
   );
 }
 
-function LoginForm({ email, onEmailChange, onLogin, onModeChange }) {
+function LoginForm({ email, onEmailChange, onLogin }) {
   const [password, setPassword] = useState("");
   const [loginError, setLoginError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -372,15 +352,8 @@ function LoginForm({ email, onEmailChange, onLogin, onModeChange }) {
         <p className="text-sm font-bold text-red-300">{loginError}</p>
       )}
 
-      <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
+      <div className="text-sm">
         <Label />
-        <button
-          className="font-medium text-[#9af2aa] transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00c030]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d0d0d]"
-          onClick={() => onModeChange("forgot")}
-          type="button"
-        >
-          Forgot password
-        </button>
       </div>
 
       <button
@@ -388,58 +361,6 @@ function LoginForm({ email, onEmailChange, onLogin, onModeChange }) {
         disabled={isSubmitting}
       >
         {isSubmitting ? "Signing in..." : "Sign in"}
-      </button>
-    </form>
-  );
-}
-
-function ForgotPasswordForm({ email, onEmailChange, onModeChange }) {
-  const [isSent, setIsSent] = useState(false);
-
-  function handleResetRequest(event) {
-    event.preventDefault();
-    setIsSent(true);
-  }
-
-  return (
-    <form className="mt-6 space-y-4" onSubmit={handleResetRequest}>
-      <LoginField
-        Icon={Mail}
-        id="forgot-email"
-        label="Email"
-        onChange={(event) => {
-          onEmailChange(event.target.value);
-          setIsSent(false);
-        }}
-        placeholder="caio@email.com"
-        type="email"
-        value={email}
-      />
-
-      {isSent && (
-        <div className="flex items-start gap-3 rounded-md border border-[#00c030]/30 bg-[#00c030]/10 p-4 text-sm leading-6 text-slate-200">
-          <MailCheck
-            aria-hidden="true"
-            className="mt-0.5 h-5 w-5 flex-none text-[#00c030]"
-            strokeWidth={2.4}
-          />
-          <p>
-            If this email is registered, a reset link is on its way.
-          </p>
-        </div>
-      )}
-
-      <button className="flex min-h-12 w-full items-center justify-center gap-2 rounded-md border border-[#00c030]/70 bg-[#00c030]/10 px-5 font-medium text-[#9af2aa] transition hover:border-[#00c030] hover:bg-[#00c030]/15 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00c030]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d0d0d]">
-        <KeyRound aria-hidden="true" className="h-4 w-4" strokeWidth={2.5} />
-        Send reset link
-      </button>
-
-      <button
-        className="min-h-12 w-full rounded-md border border-zinc-800 px-5 font-medium text-slate-300 transition hover:border-zinc-600 hover:bg-zinc-900/70 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d0d0d]"
-        onClick={() => onModeChange("login")}
-        type="button"
-      >
-        Back to sign in
       </button>
     </form>
   );
