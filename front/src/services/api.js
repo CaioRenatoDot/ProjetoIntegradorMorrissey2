@@ -17,13 +17,29 @@ function translateAuthMessage(message, fallback) {
     return AUTH_ERROR_TRANSLATIONS[message] || message;
 }
 
+// A sessao vive no cookie httpOnly, mas o front e a API ficam em dominios
+// diferentes (GitHub Pages x Railway), o que torna esse cookie "de terceiros".
+// Navegadores em janela anonima/InPrivate bloqueiam esse tipo de cookie, e a
+// sessao morreria. Por isso mandamos tambem o token no header Authorization,
+// que o backend aceita como alternativa quando nao ha cookie.
+function authHeaders(extraHeaders) {
+    const headers = { ...extraHeaders };
+    const token = localStorage.getItem("watchd_token");
+
+    if (token) {
+        headers.Authorization = `Bearer ${token}`;
+    }
+
+    return headers;
+}
+
 export async function login(email, password) {
     const response = await fetch(`${API_URL}/auth/login`, {
         credentials: "include",
         method: "POST",
-        headers: {
+        headers: authHeaders({
             "Content-Type": "application/json",
-        },
+        }),
         body: JSON.stringify({ email, password }),
     });
 
@@ -40,6 +56,7 @@ export async function login(email, password) {
 export async function logout() {
     const response = await fetch(`${API_URL}/auth/logout`, {
         credentials: "include",
+        headers: authHeaders(),
         method: "POST",
     });
 
@@ -56,9 +73,9 @@ export async function register(name, email, password) {
     const response = await fetch(`${API_URL}/auth/register`, {
         credentials: "include",
         method: "POST",
-        headers: {
+        headers: authHeaders({
             "Content-Type": "application/json",
-        },
+        }),
         body: JSON.stringify({ name, email, password }),
     });
     const data = await response.json();
@@ -73,6 +90,7 @@ export async function register(name, email, password) {
 export async function getMe(token) {
     const response = await fetch(`${API_URL}/auth/me`, {
         credentials: "include",
+        headers: authHeaders(),
     });
 
     const data = await response.json();
@@ -87,6 +105,7 @@ export async function getMe(token) {
 export async function getWatchlist(token) {
     const response = await fetch(`${API_URL}/watchlist`, {
         credentials: "include",
+        headers: authHeaders(),
     });
 
     const data = await response.json();
@@ -101,9 +120,9 @@ export async function addToWatchlist(token, item) {
     const response = await fetch(`${API_URL}/watchlist`, {
         credentials: "include",
         method: "POST",
-        headers: {
+        headers: authHeaders({
             "Content-Type": "application/json",
-        },
+        }),
         body: JSON.stringify(item),
 
     });
@@ -122,6 +141,7 @@ export async function removeFromWatchlist(token, itemId) {
     const response = await fetch(`${API_URL}/watchlist/${itemId}`, {
         method: "DELETE",
         credentials: "include",
+        headers: authHeaders(),
     });
 
     const data = await response.json();
@@ -136,6 +156,7 @@ export async function removeFromWatchlist(token, itemId) {
 export async function getFavorites(token) {
     const response = await fetch(`${API_URL}/favorites`, {
         credentials: "include",
+        headers: authHeaders(),
     });
 
     const data = await response.json();
@@ -151,9 +172,9 @@ export async function addFavorite(token, item) {
     const response = await fetch(`${API_URL}/favorites`, {
         credentials: "include",
         method: "POST",
-        headers: {
+        headers: authHeaders({
             "Content-Type": "application/json",
-        },
+        }),
         body: JSON.stringify(item),
     });
 
@@ -170,6 +191,7 @@ export async function removeFavorite(token, favoriteId) {
     const response = await fetch(`${API_URL}/favorites/${favoriteId}`, {
         method: "DELETE",
         credentials: "include",
+        headers: authHeaders(),
     });
 
     const data = await response.json();
@@ -185,9 +207,9 @@ export async function reorderFavorites(token, ids) {
     const response = await fetch(`${API_URL}/favorites/reorder`, {
         credentials: "include",
         method: "PUT",
-        headers: {
+        headers: authHeaders({
             "Content-Type": "application/json",
-        },
+        }),
         body: JSON.stringify({ ids }),
     });
 
@@ -204,9 +226,9 @@ export async function updateProfile(token, profile){
     const response = await fetch(`${API_URL}/auth/me`, {
         credentials: "include",
         method: "PUT",
-        headers: {
+        headers: authHeaders({
             "Content-Type" : "application/json",
-        },
+        }),
         body: JSON.stringify(profile),
     });
 
@@ -223,9 +245,9 @@ export async function deleteAccount(token, password) {
     const response = await fetch(`${API_URL}/auth/me`, {
         credentials: "include",
         method: "DELETE",
-        headers: {
+        headers: authHeaders({
             "Content-Type": "application/json",
-        },
+        }),
         body: JSON.stringify({ password }),
     });
 
@@ -243,6 +265,7 @@ export async function getReviews(movieId) {
     // proprio usuario.
     const response = await fetch(`${API_URL}/reviews/${movieId}`, {
         credentials: "include",
+        headers: authHeaders(),
     });
 
     const data = await response.json();
@@ -257,6 +280,7 @@ export async function getReviews(movieId) {
 export async function getMyReviews(token) {
     const response = await fetch(`${API_URL}/reviews/mine`, {
         credentials: "include",
+        headers: authHeaders(),
     });
 
     const data = await response.json();
@@ -272,9 +296,9 @@ export async function saveReview(token, review) {
     const response = await fetch(`${API_URL}/reviews`, {
         credentials: "include",
         method: "POST",
-        headers: {
+        headers: authHeaders({
             "Content-Type": "application/json",
-        },
+        }),
         body: JSON.stringify(review),
     });
 
@@ -291,6 +315,7 @@ export async function deleteReview(token, reviewId) {
     const response = await fetch(`${API_URL}/reviews/${reviewId}`, {
         method: "DELETE",
         credentials: "include",
+        headers: authHeaders(),
     });
 
     const data = await response.json();
@@ -305,6 +330,7 @@ export async function deleteReview(token, reviewId) {
 export async function getMyLists(token) {
     const response = await fetch(`${API_URL}/lists`, {
         credentials: "include",
+        headers: authHeaders(),
     });
 
     const data = await response.json();
@@ -319,6 +345,7 @@ export async function getMyLists(token) {
 export async function getList(token, listId) {
     const response = await fetch(`${API_URL}/lists/${listId}`, {
         credentials: "include",
+        headers: authHeaders(),
     });
 
     const data = await response.json();
@@ -334,9 +361,9 @@ export async function createList(token, { title, category }) {
     const response = await fetch(`${API_URL}/lists`, {
         credentials: "include",
         method: "POST",
-        headers: {
+        headers: authHeaders({
             "Content-Type": "application/json",
-        },
+        }),
         body: JSON.stringify({ title, category }),
     });
 
@@ -353,6 +380,7 @@ export async function deleteList(token, listId) {
     const response = await fetch(`${API_URL}/lists/${listId}`, {
         method: "DELETE",
         credentials: "include",
+        headers: authHeaders(),
     });
 
     const data = await response.json();
@@ -368,9 +396,9 @@ export async function addListItem(token, listId, item) {
     const response = await fetch(`${API_URL}/lists/${listId}/items`, {
         credentials: "include",
         method: "POST",
-        headers: {
+        headers: authHeaders({
             "Content-Type": "application/json",
-        },
+        }),
         body: JSON.stringify(item),
     });
 
@@ -387,6 +415,7 @@ export async function removeListItem(token, listId, itemId) {
     const response = await fetch(`${API_URL}/lists/${listId}/items/${itemId}`, {
         method: "DELETE",
         credentials: "include",
+        headers: authHeaders(),
     });
 
     const data = await response.json();

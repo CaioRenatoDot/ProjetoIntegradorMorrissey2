@@ -138,6 +138,7 @@ O projeto cobre o fluxo principal (contas, listas, reviews, watchlist e favorito
 - **Rate limiting básico, mas não completo**, login e registro têm limite de tentativas por IP, mas não há bloqueio por conta específica nem CAPTCHA.
 - **Sem autorização por papéis**, todo usuário tem as mesmas permissões, não existe admin ou moderador.
 - **JWT não é revogável no servidor**, o logout limpa o cookie no navegador, mas o token em si continua válido até expirar (7 dias) se tiver sido copiado antes do logout.
+- **O cookie de sessão é "de terceiros" em produção**, porque o front (GitHub Pages) e a API (Railway) ficam em domínios diferentes. Navegadores em janela anônima bloqueiam esse tipo de cookie, então a API também aceita o token pelo header `Authorization`, usado como reserva quando o cookie não chega. Hospedar os dois sob o mesmo domínio eliminaria essa necessidade.
 - **Depende diretamente da API pública do TVMaze**, sem cache, se ela cair ou limitar requisições, a busca de séries para de funcionar.
 
 Próximos passos, em ordem de prioridade:
