@@ -32,6 +32,8 @@ async function register(req, res) {
 }
 
 async function login(req, res) {
+    // O campo continua chegando como "email" para nao quebrar quem ja consome
+    // a API, mas aceita tambem o username.
     const { email, password } = req.body;
 
     if (!email || !password) {
@@ -40,11 +42,11 @@ async function login(req, res) {
         });
     }
 
-    const user = await authService.findUserByEmail(email);
+    const user = await authService.findUserByEmailOrUsername(email);
 
     if (!user) {
         return res.status(400).json({
-            message: "Email nao encontrado."
+            message: "Email ou senha invalidos."
         });
     }
 

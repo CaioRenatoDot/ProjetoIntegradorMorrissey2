@@ -28,6 +28,21 @@ async function findUserByEmail(email) {
     return prisma.user.findUnique({ where: { email } });
 }
 
+// O login aceita email ou username, como a tela promete. A presenca do "@"
+// decide onde procurar; o username e sempre salvo em minusculas, entao
+// normalizamos a entrada para nao depender de como o usuario digitou.
+async function findUserByEmailOrUsername(identifier) {
+    const normalized = identifier.trim();
+
+    if (normalized.includes("@")) {
+        return findUserByEmail(normalized);
+    }
+
+    return prisma.user.findUnique({
+        where: { username: normalized.toLowerCase() }
+    });
+}
+
 async function findUserById(id) {
     return prisma.user.findUnique({ where: { id } });
 }
@@ -72,6 +87,7 @@ async function deleteUser(userId) {
 
 module.exports = {
     findUserByEmail,
+    findUserByEmailOrUsername,
     findUserById,
     findUserByUsernameExcludingId,
     createUser,
