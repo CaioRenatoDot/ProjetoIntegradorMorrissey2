@@ -1,6 +1,27 @@
 const authService = require("../services/auth.service");
 const { COOKIE_NAME, cookieOptions } = require("../config/cookie");
 
+// Exigencia minima de senha. O front tem a mesma regra para dar retorno
+// imediato, mas quem barra de verdade e aqui: o front pode ser contornado
+// chamando a API direto.
+const PASSWORD_MIN_LENGTH = 8;
+
+function validatePassword(password) {
+    if (password.length < PASSWORD_MIN_LENGTH) {
+        return `A senha precisa ter pelo menos ${PASSWORD_MIN_LENGTH} caracteres.`;
+    }
+
+    if (!/[a-zA-Z]/.test(password)) {
+        return "A senha precisa ter pelo menos uma letra.";
+    }
+
+    if (!/\d/.test(password)) {
+        return "A senha precisa ter pelo menos um numero.";
+    }
+
+    return null;
+}
+
 async function register(req, res) {
     const { name, email, password } = req.body;
 
@@ -8,6 +29,12 @@ async function register(req, res) {
         return res.status(400).json({
             message: "Nome, email e senha são obrigatórios."
         });
+    }
+
+    const passwordError = validatePassword(password);
+
+    if (passwordError) {
+        return res.status(400).json({ message: passwordError });
     }
 
     const userAlreadyExists = await authService.findUserByEmail(email);

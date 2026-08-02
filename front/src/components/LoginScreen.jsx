@@ -4,7 +4,9 @@ import { fallbackPoster, rowShiftLeft, rowShiftRight } from "../data/constants";
 import { getMostPopularShows } from "../services/tvmaze";
 import BrandLogo from "./BrandLogo";
 import Label from "./Label";
+import PasswordStrengthMeter from "./PasswordStrengthMeter";
 import SkeletonPosterRow from "./SkeletonPosterRow";
+import { evaluatePassword, PASSWORD_MIN_LENGTH } from "../utils/passwordStrength";
 
 export default function LoginScreen({
   email,
@@ -224,11 +226,13 @@ function RegisterForm({ email, onEmailChange, onRegister }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const passwordsDoNotMatch =
     passwordConfirmation.length > 0 && password !== passwordConfirmation;
+  const { isValid: isPasswordStrongEnough } = evaluatePassword(password);
+  const isPasswordTooWeak = password.length > 0 && !isPasswordStrongEnough;
 
   async function handleRegister(event) {
     event.preventDefault();
 
-    if (passwordsDoNotMatch) return;
+    if (passwordsDoNotMatch || !isPasswordStrongEnough) return;
 
     setRegisterError("");
     setIsSubmitting(true);
@@ -269,21 +273,24 @@ function RegisterForm({ email, onEmailChange, onRegister }) {
         type="email"
         value={email}
       />
-      <LoginField
-        Icon={Lock}
-        id="register-password"
-        label="Password"
-        minLength="6"
-        onChange={(event) => setPassword(event.target.value)}
-        placeholder="Create a password"
-        type="password"
-        value={password}
-      />
+      <div>
+        <LoginField
+          Icon={Lock}
+          id="register-password"
+          label="Password"
+          minLength={PASSWORD_MIN_LENGTH}
+          onChange={(event) => setPassword(event.target.value)}
+          placeholder="Create a password"
+          type="password"
+          value={password}
+        />
+        <PasswordStrengthMeter password={password} />
+      </div>
       <LoginField
         Icon={Lock}
         id="register-confirm-password"
         label="Confirm password"
-        minLength="6"
+        minLength={PASSWORD_MIN_LENGTH}
         onChange={(event) => setPasswordConfirmation(event.target.value)}
         placeholder="Repeat your password"
         type="password"
@@ -304,7 +311,7 @@ function RegisterForm({ email, onEmailChange, onRegister }) {
 
       <button
         className="min-h-12 w-full rounded-md border border-[#00c030]/70 bg-[#00c030]/10 px-5 font-medium text-[#9af2aa] transition hover:border-[#00c030] hover:bg-[#00c030]/15 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00c030]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d0d0d] disabled:cursor-not-allowed disabled:border-zinc-700 disabled:bg-zinc-900 disabled:text-zinc-500 disabled:hover:bg-zinc-900 disabled:hover:text-zinc-500"
-        disabled={passwordsDoNotMatch || isSubmitting}
+        disabled={passwordsDoNotMatch || isPasswordTooWeak || !password || isSubmitting}
       >
         {isSubmitting ? "Creating account..." : "Create account"}
       </button>

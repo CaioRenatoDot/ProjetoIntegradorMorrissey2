@@ -10,6 +10,9 @@ const AUTH_ERROR_TRANSLATIONS = {
     "Email e senha são obrigatórios!": "Email and password are required.",
     "Email nao encontrado.": "Invalid email or password.",
     "Email ou senha invalidos.": "Invalid email or password.",
+    "A senha precisa ter pelo menos 8 caracteres.": "Password must be at least 8 characters long.",
+    "A senha precisa ter pelo menos uma letra.": "Password must contain at least one letter.",
+    "A senha precisa ter pelo menos um numero.": "Password must contain at least one number.",
 };
 
 function translateAuthMessage(message, fallback) {
