@@ -413,14 +413,18 @@ export default function App() {
         ? window.history.state
         : {};
 
-    window.history.pushState(
-      {
-        ...currentState,
-        watchdAuthMode: mode,
-      },
-      "",
-      window.location.href
-    );
+    const nextState = { ...currentState, watchdAuthMode: mode };
+
+    // Alternar entre login e cadastro apenas troca o modo da entrada atual.
+    // Empilhar uma entrada por troca deixava entradas antigas no historico, e
+    // o history.back() do login bem-sucedido caia numa delas, reabrindo a tela
+    // de cadastro em vez de sair do fluxo de autenticacao.
+    if (currentHistoryMode) {
+      window.history.replaceState(nextState, "", window.location.href);
+      return;
+    }
+
+    window.history.pushState(nextState, "", window.location.href);
   }
 
   function handleAuthModeChange(mode) {
