@@ -19,10 +19,11 @@ import {
   removeFavorite,
   saveReview,
 } from "../services/api";
-import { getShowById } from "../services/tvmaze";
+import SeriesCard from "./SeriesCard";
+import { getShowById, getSimilarShows } from "../services/tvmaze";
 import { cleanSummary } from "../utils/format";
 
-export default function SeriesDetailPage({ onBack, showId }) {
+export default function SeriesDetailPage({ onBack, onSeriesSelect, showId }) {
   const [show, setShow] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -44,6 +45,8 @@ export default function SeriesDetailPage({ onBack, showId }) {
   const [addingToListId, setAddingToListId] = useState(null);
   const [newListTitle, setNewListTitle] = useState("");
   const [isCreatingList, setIsCreatingList] = useState(false);
+  const [similarShows, setSimilarShows] = useState([]);
+  const [isSimilarLoading, setIsSimilarLoading] = useState(false);
   const listsMenuRef = useRef(null);
   const { toasts, pushToast, dismissToast } = useToasts();
 
@@ -148,6 +151,35 @@ export default function SeriesDetailPage({ onBack, showId }) {
       isMounted = false;
     };
   }, [showId]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function fetchSimilarShows() {
+      if (!show) {
+        setSimilarShows([]);
+        return;
+      }
+
+      setIsSimilarLoading(true);
+
+      try {
+        const items = await getSimilarShows(show, { limit: 5 });
+        if (isMounted) setSimilarShows(items);
+      } catch (error) {
+        // Sugestao e conteudo secundario: se falhar, a secao apenas nao aparece.
+        if (isMounted) setSimilarShows([]);
+      } finally {
+        if (isMounted) setIsSimilarLoading(false);
+      }
+    }
+
+    fetchSimilarShows();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [show]);
 
   useEffect(() => {
     if (!isListsMenuOpen) return undefined;
@@ -627,6 +659,44 @@ export default function SeriesDetailPage({ onBack, showId }) {
           </p>
         )}
       </section>
+
+      {(isSimilarLoading || similarShows.length > 0) && (
+        <section className="mt-10 border-t border-slate-800 pt-8">
+          <p className="text-sm font-semibold uppercase tracking-wide text-emerald-400">
+            More like this
+          </p>
+          <h2 className="mt-1 text-2xl font-black text-white">
+            Similar series
+          </h2>
+          <p className="mt-2 text-sm text-slate-400">
+            Picked by the genres {show.name} shares with them.
+          </p>
+
+          {/* 5 colunas em qualquer tela: no celular os posteres ficam menores,
+              mas as cinco sugestoes aparecem juntas sem precisar rolar. */}
+          <div className="mt-6 grid grid-cols-5 gap-2 sm:gap-4">
+            {isSimilarLoading
+              ? Array.from({ length: 5 }, (_, index) => (
+                  <div key={index}>
+                    <div className="aspect-2/3 animate-pulse rounded border border-slate-800 bg-slate-900" />
+                    <div className="mt-2 h-3 w-3/4 animate-pulse rounded bg-slate-800" />
+                  </div>
+                ))
+              : similarShows.map((similarShow, index) => (
+                  <div
+                    className="animate-slide-in-up"
+                    key={similarShow.id}
+                    style={{ animationDelay: `${index * 50}ms` }}
+                  >
+                    <SeriesCard
+                      onSelect={() => onSeriesSelect?.(similarShow.id)}
+                      show={similarShow}
+                    />
+                  </div>
+                ))}
+          </div>
+        </section>
+      )}
     </section>
   );
 }

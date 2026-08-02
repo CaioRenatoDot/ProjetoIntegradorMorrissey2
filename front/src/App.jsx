@@ -706,6 +706,7 @@ export default function App() {
           />
         ) : activePage === "details" && selectedShowId ? (
           <SeriesDetailPage
+            onSeriesSelect={(showId) => handleSeriesSelect(showId, detailReturnPage)}
             onBack={() => {
               const historyState = window.history.state;
               if (
