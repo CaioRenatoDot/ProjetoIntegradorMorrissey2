@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { KeyRound, Lock, Mail, MailCheck, User } from "lucide-react";
+import { Eye, EyeOff, KeyRound, Lock, Mail, MailCheck, User } from "lucide-react";
 import { fallbackPoster, rowShiftLeft, rowShiftRight } from "../data/constants";
 import { getMostPopularShows } from "../services/tvmaze";
 import BrandLogo from "./BrandLogo";
@@ -446,6 +446,9 @@ function ForgotPasswordForm({ email, onEmailChange, onModeChange }) {
 }
 
 function LoginField({ Icon, id, label, ...inputProps }) {
+  const [isPasswordRevealed, setIsPasswordRevealed] = useState(false);
+  const isPasswordField = inputProps.type === "password";
+
   return (
     <div>
       <label className="mb-2 block text-sm font-bold text-slate-300" htmlFor={id}>
@@ -458,11 +461,32 @@ function LoginField({ Icon, id, label, ...inputProps }) {
           strokeWidth={2.4}
         />
         <input
-          className="min-h-12 w-full min-w-0 rounded-md border border-zinc-800 bg-zinc-900 px-4 pl-11 text-base text-slate-50 outline-none transition placeholder:text-slate-500 focus:border-[#00c030] focus:bg-black focus:ring-4 focus:ring-[#00c030]/15 sm:text-sm"
+          className={`min-h-12 w-full min-w-0 rounded-md border border-zinc-800 bg-zinc-900 px-4 pl-11 text-base text-slate-50 outline-none transition placeholder:text-slate-500 focus:border-[#00c030] focus:bg-black focus:ring-4 focus:ring-[#00c030]/15 sm:text-sm ${
+            isPasswordField ? "pr-12" : ""
+          }`}
           id={id}
           required
           {...inputProps}
+          type={isPasswordField && isPasswordRevealed ? "text" : inputProps.type}
         />
+
+        {isPasswordField && (
+          <button
+            aria-label={isPasswordRevealed ? "Hide password" : "Show password"}
+            className="absolute right-2 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-md text-slate-500 transition hover:bg-zinc-800 hover:text-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00c030]/70"
+            onClick={() => setIsPasswordRevealed((current) => !current)}
+            // Evita que o botao roube o foco do campo: assim da para continuar
+            // digitando logo depois de espiar a senha.
+            onMouseDown={(event) => event.preventDefault()}
+            type="button"
+          >
+            {isPasswordRevealed ? (
+              <EyeOff aria-hidden="true" className="h-4 w-4" strokeWidth={2.2} />
+            ) : (
+              <Eye aria-hidden="true" className="h-4 w-4" strokeWidth={2.2} />
+            )}
+          </button>
+        )}
       </div>
     </div>
   );
