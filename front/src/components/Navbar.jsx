@@ -36,8 +36,24 @@ export default function Navbar({
 }) {
   const [isSearchFieldExpanded, setIsSearchFieldExpanded] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isPageScrolled, setIsPageScrolled] = useState(false);
   const searchInputRef = useRef(null);
   const userMenuRef = useRef(null);
+
+  // Na pagina de uma serie a navbar fica transparente assim que a pagina sai
+  // do topo, deixando o poster de fundo aparecer por tras dela.
+  const isTransparent = activePage === "details" && isPageScrolled;
+
+  useEffect(() => {
+    function handleScroll() {
+      setIsPageScrolled(window.scrollY > 8);
+    }
+
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
   const linkClassName =
     "relative flex h-full flex-none items-center border-b-2 border-transparent px-1 transition hover:border-[#00c030] hover:text-white sm:px-2 md:px-0";
   const activeLinkClassName =
@@ -84,7 +100,16 @@ export default function Navbar({
   }
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-[#2e2e2e] bg-[#1a1a1a]">
+    <nav
+      className={`sticky top-0 z-50 border-b transition-colors duration-300 ${
+        isTransparent
+          ? // Sem fundo proprio: o conteudo aparece por tras. O blur forte e o
+            // veu escuro so garantem que os links continuem legiveis sobre
+            // qualquer poster ou botao que passe por baixo.
+            "border-transparent bg-linear-to-b from-black/70 to-black/20 backdrop-blur-xl"
+          : "border-[#2e2e2e] bg-[#1a1a1a]"
+      }`}
+    >
       <div className="mx-auto flex max-w-6xl flex-col px-4 sm:px-5 md:min-h-16 md:flex-row md:items-center md:gap-x-6 md:px-4 md:py-0">
         <div className="flex min-h-16 w-full items-center justify-between gap-3 md:min-h-14 md:contents">
           <BrandLogo className="order-1 min-w-0 md:mr-6" />
