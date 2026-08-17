@@ -18,6 +18,15 @@
   select {
     font-family: inherit;
   }
+
+  /* O Tailwind v4 deixou de aplicar cursor: pointer em botoes (a v3 aplicava),
+     entao tudo que era clicavel passou a mostrar a seta comum. Restaurado aqui.
+     Botoes desabilitados ficam de fora para nao parecerem clicaveis. */
+  button:not(:disabled),
+  [role="button"]:not(:disabled),
+  label:has(input[type="checkbox"]:not(:disabled)) {
+    cursor: pointer;
+  }
 }
 
 @utility no-scrollbar {
