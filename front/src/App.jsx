@@ -3,6 +3,7 @@ import { AnimatePresence, MotionConfig, motion } from "motion/react";
 import DiaryPage from "./components/DiaryPage";
 import EditProfilePage from "./components/EditProfilePage";
 import Hero from "./components/Hero";
+import AccessibilityMenu from "./components/AccessibilityMenu";
 import HomeFooter from "./components/HomeFooter";
 import ListDetailPage from "./components/ListDetailPage";
 import ListPage from "./components/ListPage";
@@ -810,6 +811,9 @@ export default function App() {
       {!isLoginVisible && activePage === "home" && !selectedShowId && (
         <HomeFooter />
       )}
+
+      {/* Fica fora da transicao de pagina para nao piscar ao navegar. */}
+      <AccessibilityMenu />
     </main>
     </MotionConfig>
   );

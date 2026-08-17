@@ -29,6 +29,107 @@
   }
 }
 
+/* ==========================================================================
+   Preferencias de acessibilidade
+   As classes abaixo entram no <html> pelo menu de acessibilidade e ficam
+   salvas no navegador. Usam !important porque precisam vencer as utilidades
+   do Tailwind aplicadas diretamente nos elementos.
+   ========================================================================== */
+
+/* --- Texto maior ---------------------------------------------------------
+   A maior parte do projeto usa classes de texto do Tailwind, que sao em rem
+   e por isso acompanham a fonte raiz. Os poucos tamanhos fixos em px nao
+   acompanham, entao sao ajustados na mao logo abaixo. */
+html.a11y-large-text {
+  font-size: 125%;
+}
+
+/* A navbar tem largura apertada e some fora da tela quando tudo cresce, o que
+   deixava o botao de criar conta cortado, isto e, o recurso de acessibilidade
+   tirava o acesso a um botao. Permitir a quebra em mais de uma linha resolve em
+   qualquer largura, sem precisar reduzir o aumento do texto. */
+html.a11y-large-text nav > div,
+html.a11y-large-text nav > div > div {
+  flex-wrap: wrap !important;
+  row-gap: 0.5rem;
+}
+
+html.a11y-large-text .text-\[10px\] {
+  font-size: 0.8rem !important;
+}
+
+html.a11y-large-text .text-\[11px\] {
+  font-size: 0.85rem !important;
+}
+
+html.a11y-large-text .text-\[13px\] {
+  font-size: 0.95rem !important;
+}
+
+/* --- Alto contraste ------------------------------------------------------ */
+html.a11y-high-contrast body {
+  background-color: #000 !important;
+  color: #fff !important;
+}
+
+/* Textos apagados passam a ter contraste alto contra o fundo preto. */
+html.a11y-high-contrast .text-slate-300,
+html.a11y-high-contrast .text-slate-400,
+html.a11y-high-contrast .text-slate-500,
+html.a11y-high-contrast .text-slate-600,
+html.a11y-high-contrast .text-slate-700,
+html.a11y-high-contrast .text-zinc-500,
+html.a11y-high-contrast .text-\[\#aaa\] {
+  color: #f1f1f1 !important;
+}
+
+/* Bordas discretas ficam visiveis, para separar bem as areas da tela. */
+html.a11y-high-contrast [class*="border-slate-"],
+html.a11y-high-contrast [class*="border-zinc-"] {
+  border-color: #9aa4b2 !important;
+}
+
+/* Fundos escuros viram preto puro para nao competir com o texto.
+   Dentro de seletor de atributo o valor e literal: nao leva escape. */
+html.a11y-high-contrast [class*="bg-slate-9"],
+html.a11y-high-contrast [class*="bg-zinc-9"],
+html.a11y-high-contrast [class*="bg-[#14181c]"],
+html.a11y-high-contrast [class*="bg-[#1a1a1a]"],
+html.a11y-high-contrast [class*="bg-[#2a2a2a]"],
+html.a11y-high-contrast [class*="bg-[#0d0d0d]"],
+html.a11y-high-contrast [class*="bg-[#050505]"] {
+  background-color: #000 !important;
+}
+
+/* O verde da marca clareia para passar no contraste sobre preto. */
+html.a11y-high-contrast .text-\[\#00c030\],
+html.a11y-high-contrast .text-emerald-400,
+html.a11y-high-contrast .text-\[\#7ee895\],
+html.a11y-high-contrast .text-\[\#9af2aa\],
+html.a11y-high-contrast .text-\[\#32d85a\] {
+  color: #5cff8f !important;
+}
+
+/* Desfoques e degrades atrapalham a leitura: viram fundo solido. */
+html.a11y-high-contrast .backdrop-blur-sm,
+html.a11y-high-contrast .backdrop-blur-md,
+html.a11y-high-contrast .backdrop-blur-xl {
+  backdrop-filter: none !important;
+  background-color: #000 !important;
+  background-image: none !important;
+}
+
+/* O poster desfocado no topo da pagina de serie e puramente decorativo. */
+html.a11y-high-contrast [aria-hidden="true"] img.blur-xl {
+  display: none !important;
+}
+
+/* Foco sempre bem visivel ao navegar pelo teclado. */
+html.a11y-high-contrast *:focus-visible {
+  outline: 3px solid #5cff8f !important;
+  outline-offset: 2px !important;
+}
+
 @keyframes marquee {
   from {
     transform: translateX(0);
