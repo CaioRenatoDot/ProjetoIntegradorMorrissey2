@@ -1,4 +1,5 @@
 const watchlistService = require("../services/watchlist.service");
+const { SERIES_FIELDS, validateTextFields } = require("../utils/validation");
 
 async function create(req, res) {
     const { movieId, title, posterUrl, releaseYear, type } = req.body;
@@ -7,6 +8,12 @@ async function create(req, res) {
         return res.status(400).json({
             message: "movieId, title e type sao obrigatorios"
         });
+    }
+
+    const fieldsError = validateTextFields(req.body, SERIES_FIELDS);
+
+    if (fieldsError) {
+        return res.status(400).json({ message: fieldsError });
     }
 
     const itemAlreadyExists = await watchlistService.findByUserAndMovie(req.user.id, movieId);

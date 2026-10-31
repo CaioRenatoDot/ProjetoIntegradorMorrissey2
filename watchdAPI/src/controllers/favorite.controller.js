@@ -1,4 +1,5 @@
 const favoriteService = require("../services/favorite.service");
+const { SERIES_FIELDS, validateTextFields } = require("../utils/validation");
 
 const FAVORITES_LIMIT = 4;
 
@@ -15,6 +16,12 @@ async function create(req, res) {
         return res.status(400).json({
             message: "movieId, title e type sao obrigatorios.",
         });
+    }
+
+    const fieldsError = validateTextFields(req.body, SERIES_FIELDS);
+
+    if (fieldsError) {
+        return res.status(400).json({ message: fieldsError });
     }
 
     const favoriteAlreadyExists = await favoriteService.findByUserAndMovie(req.user.id, movieId);

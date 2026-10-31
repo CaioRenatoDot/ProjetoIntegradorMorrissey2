@@ -1,12 +1,20 @@
 const authService = require("../services/auth.service");
 const { COOKIE_NAME, cookieOptions } = require("../config/cookie");
+const { LIMITS, validateTextFields } = require("../utils/validation");
 
 // Exigencia minima de senha. O front tem a mesma regra para dar retorno
 // imediato, mas quem barra de verdade e aqui: o front pode ser contornado
 // chamando a API direto.
 const PASSWORD_MIN_LENGTH = 8;
+// O bcrypt so considera os primeiros 72 bytes; acima disso o resto da senha
+// seria ignorado sem o usuario saber.
+const PASSWORD_MAX_BYTES = 72;
 
 function validatePassword(password) {
+    if (typeof password !== "string") {
+        return "A senha precisa ser texto.";
+    }
+
     if (password.length < PASSWORD_MIN_LENGTH) {
         return `A senha precisa ter pelo menos ${PASSWORD_MIN_LENGTH} caracteres.`;
     }
@@ -19,6 +27,10 @@ function validatePassword(password) {
         return "A senha precisa ter pelo menos um numero.";
     }
 
+    if (Buffer.byteLength(password, "utf8") > PASSWORD_MAX_BYTES) {
+        return `A senha pode ter no maximo ${PASSWORD_MAX_BYTES} caracteres.`;
+    }
+
     return null;
 }
 
@@ -29,6 +41,15 @@ async function register(req, res) {
         return res.status(400).json({
             message: "Nome, email e senha são obrigatórios."
         });
+    }
+
+    const fieldsError = validateTextFields(req.body, {
+        name: LIMITS.name,
+        email: LIMITS.email
+    });
+
+    if (fieldsError) {
+        return res.status(400).json({ message: fieldsError });
     }
 
     const passwordError = validatePassword(password);
@@ -63,7 +84,7 @@ async function login(req, res) {
     // a API, mas aceita tambem o username.
     const { email, password } = req.body;
 
-    if (!email || !password) {
+    if (!email || !password || typeof email !== "string" || typeof password !== "string") {
         return res.status(400).json({
             message: "Email e senha são obrigatórios!"
         });
@@ -120,6 +141,18 @@ async function logout(req, res) {
 
 async function updateProfile(req, res) {
     const { displayName, location, website, bio, username } = req.body;
+
+    const fieldsError = validateTextFields(req.body, {
+        displayName: LIMITS.displayName,
+        location: LIMITS.location,
+        website: LIMITS.website,
+        bio: LIMITS.bio,
+        username: 30
+    });
+
+    if (fieldsError) {
+        return res.status(400).json({ message: fieldsError });
+    }
 
     let normalizedUsername;
 
@@ -186,7 +219,7 @@ async function updateProfile(req, res) {
 async function deleteAccount(req, res) {
     const { password } = req.body;
 
-    if (!password) {
+    if (!password || typeof password !== "string") {
         return res.status(400).json({
             message: "Informe sua senha para excluir a conta."
         });

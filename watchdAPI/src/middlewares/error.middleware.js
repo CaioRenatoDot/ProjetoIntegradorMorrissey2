@@ -47,6 +47,12 @@ function errorHandler(error, req, res, next) {
         });
     }
 
+    if (error.type === "entity.too.large") {
+        return res.status(413).json({
+            message: "Corpo da requisicao muito grande."
+        });
+    }
+
     return res.status(500).json({
         message: "Erro interno no servidor."
     });

@@ -1,4 +1,5 @@
 const listService = require("../services/list.service");
+const { LIMITS, SERIES_FIELDS, validateTextFields } = require("../utils/validation");
 
 async function listMine(req, res) {
     const lists = await listService.findManyByUser(req.user.id);
@@ -36,6 +37,15 @@ async function create(req, res) {
             message: "title e obrigatorio."
         });
     }
+
+    const fieldsError = validateTextFields(req.body, {
+        title: LIMITS.listTitle,
+        category: LIMITS.listCategory
+    });
+
+    if (fieldsError) {
+        return res.status(400).json({ message: fieldsError });
+    }
     const list = await listService.create(req.user.id, { title, category });
 
     return res.status(201).json({
@@ -70,6 +80,12 @@ async function addItem(req, res) {
         return res.status(400).json({
             message: "movieId, title e type sao obrigatorios."
         });
+    }
+
+    const fieldsError = validateTextFields(req.body, SERIES_FIELDS);
+
+    if (fieldsError) {
+        return res.status(400).json({ message: fieldsError });
     }
 
     const list = await listService.findOwnedById(id, req.user.id);
