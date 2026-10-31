@@ -154,6 +154,14 @@ async function updateProfile(req, res) {
         return res.status(400).json({ message: fieldsError });
     }
 
+    // O site vira link no perfil publico; aceitar so http(s) impede que
+    // alguem salve um "javascript:..." que rodaria no clique de outra pessoa.
+    if (website && !/^https?:\/\/\S+$/i.test(website)) {
+        return res.status(400).json({
+            message: "O website precisa comecar com http:// ou https://."
+        });
+    }
+
     let normalizedUsername;
 
     if (username !== undefined) {

@@ -758,7 +758,18 @@ function ProfileBioPanel({
               {website && (
                 <p className="flex min-w-0 items-center gap-2">
                   <Link aria-hidden="true" className="h-4 w-4 flex-none text-slate-500" />
-                  <span className="truncate">{website}</span>
+                  {/^https?:\/\//i.test(website) ? (
+                    <a
+                      className="truncate transition hover:text-white"
+                      href={website}
+                      rel="noopener noreferrer"
+                      target="_blank"
+                    >
+                      {website.replace(/^https?:\/\//i, "")}
+                    </a>
+                  ) : (
+                    <span className="truncate">{website}</span>
+                  )}
                 </p>
               )}
             </div>

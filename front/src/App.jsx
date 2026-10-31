@@ -116,6 +116,14 @@ function getDefaultProfileDetails(displayName = "") {
   };
 }
 
+// A API so aceita site com http(s); quem digita "meusite.com" ganha o
+// https:// automaticamente em vez de um erro.
+function normalizeWebsite(website) {
+  const trimmed = website.trim();
+  if (!trimmed || /^https?:\/\//i.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
+}
+
 function mapUserToProfileDetails(user) {
   const defaults = getDefaultProfileDetails(user.name);
 
@@ -520,7 +528,7 @@ export default function App() {
     const normalizedProfile = {
       displayName: nextProfile.displayName.trim() || currentUserName,
       location: nextProfile.location.trim(),
-      website: nextProfile.website.trim(),
+      website: normalizeWebsite(nextProfile.website),
       bio: nextProfile.bio.trim(),
       ...(nextProfile.username ? { username: nextProfile.username } : {}),
     };
