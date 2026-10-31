@@ -7,7 +7,8 @@ async function authMiddleware(req, res, next){
 
     if(!token){
         return res.status(401).json({
-            message: "Token não informado."
+            code: "UNAUTHENTICATED",
+            message: "Token nao informado."
         });
     }
 
@@ -18,7 +19,8 @@ async function authMiddleware(req, res, next){
 
         if(!user){
             return res.status(401).json({
-                message: "Usuário não encontrado."
+                code: "UNAUTHENTICATED",
+                message: "Usuario nao encontrado."
             });
         }
 
@@ -39,6 +41,7 @@ async function authMiddleware(req, res, next){
         
     } catch (error) {
         return res.status(401).json({
+            code: "UNAUTHENTICATED",
             message: "Token invalido ou expirado."
         });
     }

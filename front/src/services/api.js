@@ -2,24 +2,29 @@ import { getSessionToken } from "./session";
 
 const API_URL = import.meta.env.VITE_API_URL || "/api";
 
-// O backend responde em portugues; a UI de login/registro esta em ingles,
-// entao traduzimos as mensagens conhecidas antes de exibi-las. "Email nao
-// encontrado" e senha invalida caem na mesma frase para nao revelar se um
-// email esta cadastrado.
-const AUTH_ERROR_TRANSLATIONS = {
-    "Nome, email e senha são obrigatórios.": "Name, email and password are required.",
-    "Usuários já existe. Email em uso": "This email is already registered.",
-    "Email e senha são obrigatórios!": "Email and password are required.",
-    "Email nao encontrado.": "Invalid email or password.",
-    "Email ou senha invalidos.": "Invalid email or password.",
-    "A senha precisa ter pelo menos 8 caracteres.": "Password must be at least 8 characters long.",
-    "A senha precisa ter pelo menos uma letra.": "Password must contain at least one letter.",
-    "A senha precisa ter pelo menos um numero.": "Password must contain at least one number.",
+// O backend responde em portugues e a UI esta em ingles. Cada erro da API
+// traz um "code" estavel, e a traducao e feita por ele: comparar o texto da
+// mensagem quebrava a traducao sempre que uma frase mudava no backend.
+const ERROR_TRANSLATIONS = {
+    MISSING_FIELDS: "Please fill in all required fields.",
+    INVALID_FIELD: "One of the fields is invalid or too long.",
+    EMAIL_IN_USE: "This email is already registered.",
+    INVALID_CREDENTIALS: "Invalid email or password.",
+    PASSWORD_TOO_SHORT: "Password must be at least 8 characters long.",
+    PASSWORD_NO_LETTER: "Password must contain at least one letter.",
+    PASSWORD_NO_NUMBER: "Password must contain at least one number.",
+    PASSWORD_TOO_LONG: "Password must be at most 72 characters long.",
+    TOO_MANY_ATTEMPTS: "Too many login attempts. Please try again in a few minutes.",
+    TOO_MANY_ACCOUNTS: "Too many accounts created from this network. Please try again later.",
+    UNAUTHENTICATED: "Your session has expired. Please sign in again.",
+    ALREADY_EXISTS: "This item already exists.",
+    CONFLICT: "Could not save right now. Please try again.",
+    PAYLOAD_TOO_LARGE: "The content you sent is too large.",
+    INTERNAL_ERROR: "Something went wrong on our side. Please try again.",
 };
 
-function translateAuthMessage(message, fallback) {
-    if (!message) return fallback;
-    return AUTH_ERROR_TRANSLATIONS[message] || message;
+function getErrorMessage(data, fallback) {
+    return ERROR_TRANSLATIONS[data.code] || data.message || fallback;
 }
 
 // A sessao vive no cookie httpOnly, mas o front e a API ficam em dominios
@@ -54,7 +59,7 @@ async function readJson(response) {
 
 // Centraliza o que toda chamada fazia igual: cookie, header de auth, corpo
 // em JSON e erro com a mensagem do backend (ou a de fallback).
-async function request(path, { method = "GET", body, errorMessage, translate } = {}) {
+async function request(path, { method = "GET", body, errorMessage } = {}) {
     let response;
 
     try {
@@ -71,10 +76,7 @@ async function request(path, { method = "GET", body, errorMessage, translate } =
     const data = await readJson(response);
 
     if (!response.ok) {
-        const message = translate
-            ? translateAuthMessage(data.message, errorMessage)
-            : data.message || errorMessage;
-        throw new Error(message);
+        throw new Error(getErrorMessage(data, errorMessage));
     }
 
     return data;
@@ -85,7 +87,6 @@ export function login(email, password) {
         method: "POST",
         body: { email, password },
         errorMessage: "Could not sign in.",
-        translate: true,
     });
 }
 
@@ -101,7 +102,6 @@ export function register(name, email, password) {
         method: "POST",
         body: { name, email, password },
         errorMessage: "Could not create your account.",
-        translate: true,
     });
 }
 

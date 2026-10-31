@@ -10,25 +10,33 @@ const PASSWORD_MIN_LENGTH = 8;
 // seria ignorado sem o usuario saber.
 const PASSWORD_MAX_BYTES = 72;
 
+// Cada erro de autenticacao leva um "code" estavel alem da mensagem. O front
+// traduz pelo code, entao a mensagem pode mudar sem quebrar a traducao.
 function validatePassword(password) {
     if (typeof password !== "string") {
-        return "A senha precisa ser texto.";
+        return { code: "INVALID_FIELD", message: "A senha precisa ser texto." };
     }
 
     if (password.length < PASSWORD_MIN_LENGTH) {
-        return `A senha precisa ter pelo menos ${PASSWORD_MIN_LENGTH} caracteres.`;
+        return {
+            code: "PASSWORD_TOO_SHORT",
+            message: `A senha precisa ter pelo menos ${PASSWORD_MIN_LENGTH} caracteres.`
+        };
     }
 
     if (!/[a-zA-Z]/.test(password)) {
-        return "A senha precisa ter pelo menos uma letra.";
+        return { code: "PASSWORD_NO_LETTER", message: "A senha precisa ter pelo menos uma letra." };
     }
 
     if (!/\d/.test(password)) {
-        return "A senha precisa ter pelo menos um numero.";
+        return { code: "PASSWORD_NO_NUMBER", message: "A senha precisa ter pelo menos um numero." };
     }
 
     if (Buffer.byteLength(password, "utf8") > PASSWORD_MAX_BYTES) {
-        return `A senha pode ter no maximo ${PASSWORD_MAX_BYTES} caracteres.`;
+        return {
+            code: "PASSWORD_TOO_LONG",
+            message: `A senha pode ter no maximo ${PASSWORD_MAX_BYTES} caracteres.`
+        };
     }
 
     return null;
@@ -39,7 +47,8 @@ async function register(req, res) {
 
     if (!name || !email || !password) {
         return res.status(400).json({
-            message: "Nome, email e senha são obrigatórios."
+            code: "MISSING_FIELDS",
+            message: "Nome, email e senha sao obrigatorios."
         });
     }
 
@@ -49,21 +58,22 @@ async function register(req, res) {
     });
 
     if (fieldsError) {
-        return res.status(400).json({ message: fieldsError });
+        return res.status(400).json({ code: "INVALID_FIELD", message: fieldsError });
     }
 
     const passwordError = validatePassword(password);
 
     if (passwordError) {
-        return res.status(400).json({ message: passwordError });
+        return res.status(400).json(passwordError);
     }
 
     const userAlreadyExists = await authService.findUserByEmail(email);
 
     if (userAlreadyExists) {
         return res.status(400).json({
-            message: "Usuários já existe. Email em uso"
-        })
+            code: "EMAIL_IN_USE",
+            message: "Esse email ja esta cadastrado."
+        });
     }
 
     const user = await authService.createUser({ name, email, password });
@@ -86,22 +96,21 @@ async function login(req, res) {
 
     if (!email || !password || typeof email !== "string" || typeof password !== "string") {
         return res.status(400).json({
-            message: "Email e senha são obrigatórios!"
+            code: "MISSING_FIELDS",
+            message: "Email e senha sao obrigatorios."
         });
     }
 
     const user = await authService.findUserByEmailOrUsername(email);
+    const passwordIsValid = user
+        ? await authService.verifyPassword(password, user.password)
+        : false;
 
-    if (!user) {
-        return res.status(400).json({
-            message: "Email ou senha invalidos."
-        });
-    }
-
-    const passwordIsValid = await authService.verifyPassword(password, user.password);
-
+    // Mesmo erro para email inexistente e senha errada, para nao revelar
+    // quais emails estao cadastrados.
     if (!passwordIsValid) {
         return res.status(400).json({
+            code: "INVALID_CREDENTIALS",
             message: "Email ou senha invalidos."
         });
     }

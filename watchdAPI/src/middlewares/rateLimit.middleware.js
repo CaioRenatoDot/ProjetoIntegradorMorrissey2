@@ -8,7 +8,7 @@ const loginLimiter = rateLimit({
     limit: 20,
     standardHeaders: true,
     legacyHeaders: false,
-    message: { message: "Too many login attempts. Please try again in a few minutes." }
+    message: { code: "TOO_MANY_ATTEMPTS", message: "Muitas tentativas de login. Tente novamente em alguns minutos." }
 });
 
 const registerLimiter = rateLimit({
@@ -16,7 +16,7 @@ const registerLimiter = rateLimit({
     limit: 10,
     standardHeaders: true,
     legacyHeaders: false,
-    message: { message: "Too many accounts created from this network. Please try again later." }
+    message: { code: "TOO_MANY_ACCOUNTS", message: "Muitas contas criadas a partir desta rede. Tente novamente mais tarde." }
 });
 
 module.exports = { loginLimiter, registerLimiter };
