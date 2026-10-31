@@ -577,6 +577,7 @@ export default function SeriesDetailPage({ onBack, onSeriesSelect, showId }) {
                   >
                     <input
                       className="min-h-9 w-full min-w-0 rounded border border-slate-700 bg-[#14181c] px-3 text-sm font-semibold text-white outline-none transition placeholder:text-slate-600 focus:border-[#00c030]"
+                      maxLength={80}
                       onChange={(event) => setNewListTitle(event.target.value)}
                       placeholder="New list name"
                       value={newListTitle}

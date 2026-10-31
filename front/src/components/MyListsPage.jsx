@@ -136,6 +136,7 @@ export default function MyListsPage({ isLoggedIn, onBack, onListSelect }) {
               </span>
               <input
                 className="mt-2 min-h-11 w-full rounded border border-slate-700 bg-[#14181c] px-3 text-sm font-semibold text-white outline-none transition placeholder:text-slate-600 focus:border-[#00c030]"
+                maxLength={80}
                 onChange={(event) => setTitle(event.target.value)}
                 placeholder="Series to Watch at Night"
                 value={title}
@@ -148,6 +149,7 @@ export default function MyListsPage({ isLoggedIn, onBack, onListSelect }) {
               </span>
               <input
                 className="mt-2 min-h-11 w-full rounded border border-slate-700 bg-[#14181c] px-3 text-sm font-semibold text-white outline-none transition placeholder:text-slate-600 focus:border-[#00c030]"
+                maxLength={40}
                 onChange={(event) => setCategory(event.target.value)}
                 placeholder="Suspense"
                 value={category}

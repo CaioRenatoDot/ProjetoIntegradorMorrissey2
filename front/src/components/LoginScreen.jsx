@@ -236,6 +236,7 @@ function RegisterForm({ email, onEmailChange, onRegister }) {
         Icon={User}
         id="register-name"
         label="Name"
+        maxLength={60}
         onChange={(event) => setName(event.target.value)}
         placeholder="Your name"
         type="text"
