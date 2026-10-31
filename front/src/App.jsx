@@ -34,15 +34,23 @@ function getAuthModeFromHistoryState(state) {
 
 const BASE_PATH = import.meta.env.BASE_URL;
 
+// Uma tabela so para os dois sentidos (pagina -> hash e hash -> pagina):
+// antes eram dois ifs separados e a watchlist so existia em um deles, entao
+// recarregar a pagina da watchlist voltava para a home.
+const PAGE_HASHES = {
+  diary: "#diary",
+  mySeries: "#my-series",
+  myWatchlist: "#my-watchlist",
+  lists: "#lists",
+  myLists: "#my-lists",
+  profile: "#profile",
+  editProfile: "#edit-profile",
+  search: "#search",
+};
+
 function getPageFromHash(hash) {
-  if (hash === "#diary") return "diary";
-  if (hash === "#my-series") return "mySeries";
-  if (hash === "#lists") return "lists";
-  if (hash === "#my-lists") return "myLists";
-  if (hash === "#profile") return "profile";
-  if (hash === "#edit-profile") return "editProfile";
-  if (hash === "#search") return "search";
-  return "home";
+  const page = Object.keys(PAGE_HASHES).find((key) => PAGE_HASHES[key] === hash);
+  return page || "home";
 }
 
 function getUsernameFromPath(pathname) {
@@ -58,14 +66,7 @@ function getRouteFromLocation() {
 }
 
 function getHashFromPage(page) {
-  if (page === "diary") return "#diary";
-  if (page === "mySeries") return "#my-series";
-  if (page === "lists") return "#lists";
-  if (page === "myLists") return "#my-lists";
-  if (page === "profile") return "#profile";
-  if (page === "editProfile") return "#edit-profile";
-  if (page === "search") return "#search";
-  return "#catalog";
+  return PAGE_HASHES[page] || "#catalog";
 }
 
 function easeInOutCubic(progress) {
