@@ -1,9 +1,7 @@
-import { Bookmark, Clipboard, GripVertical, Heart, Link, ListChecks, MapPin, Plus, Star, Trash2 } from "lucide-react";
+import { Bookmark, Clipboard, Heart, ListChecks, Star } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { fallbackPoster } from "../data/constants";
 import {
   getFavorites,
-  getList,
   getMyLists,
   getMyReviews,
   getPublicProfile,
@@ -11,15 +9,16 @@ import {
   removeFromWatchlist,
   reorderFavorites,
 } from "../services/api";
-import Confetti from "./Confetti";
-import ListPosterStrip from "./ListPosterStrip";
-import RatingStars from "./RatingStars";
 import UserAvatar from "./UserAvatar";
+import FavoriteShelf from "./profile/FavoriteShelf";
+import PosterGrid from "./profile/PosterGrid";
+import ProfileBioPanel from "./profile/ProfileBioPanel";
+import { EmptyState, PosterSkeletonGrid, ProfileTabs, ShelfHeader, StatCell } from "./profile/ProfileShared";
+import RecentActivityShelf from "./profile/RecentActivityShelf";
+import { getSessionToken } from "../services/session";
 
-const favoriteLimit = 4;
 const watchlistPreviewLimit = 8;
 const recentActivityLimit = 4;
-const listPreviewLimit = 3;
 
 export default function ProfilePage({
   currentUserName,
@@ -132,7 +131,7 @@ export default function ProfilePage({
         return;
       }
 
-      const token = localStorage.getItem("watchd_token");
+      const token = getSessionToken();
 
       if (!token) {
         setUserLists([]);
@@ -144,8 +143,16 @@ export default function ProfilePage({
       setListsError("");
 
       try {
-        const data = await getMyLists(token);
-        if (isMounted) setUserLists(data.items || []);
+        const data = await getMyLists();
+        if (isMounted) {
+          const items = data.items || [];
+          // GET /lists ja traz os 4 primeiros posteres de cada lista, entao nao
+          // precisa buscar cada lista de novo so para montar a previa.
+          setUserLists(items);
+          setListPreviewImages(
+            Object.fromEntries(items.map((list) => [list.id, list.previewPosters || []]))
+          );
+        }
       } catch (error) {
         if (isMounted) {
           setUserLists([]);
@@ -162,47 +169,6 @@ export default function ProfilePage({
       isMounted = false;
     };
   }, [isLoggedIn]);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    async function fetchListPreviews() {
-      if (isPublicView) return;
-
-      if (!userLists.length) {
-        setListPreviewImages({});
-        return;
-      }
-
-      const token = localStorage.getItem("watchd_token");
-      if (!token) return;
-
-      const previewEntries = await Promise.all(
-        userLists.slice(0, listPreviewLimit).map(async (list) => {
-          try {
-            const data = await getList(token, list.id);
-            const posters = (data.list.items || [])
-              .slice(0, 4)
-              .map((item) => item.posterUrl || "");
-
-            return [list.id, posters];
-          } catch {
-            return [list.id, []];
-          }
-        })
-      );
-
-      if (isMounted) {
-        setListPreviewImages(Object.fromEntries(previewEntries));
-      }
-    }
-
-    fetchListPreviews();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [userLists]);
 
   useEffect(() => {
     if (!isProfileActionsOpen) return undefined;
@@ -237,7 +203,7 @@ export default function ProfilePage({
         return;
       }
 
-      const token = localStorage.getItem("watchd_token");
+      const token = getSessionToken();
 
       if (!token) {
         setFavoriteItems([]);
@@ -249,7 +215,7 @@ export default function ProfilePage({
       setFavoriteError("");
 
       try {
-        const data = await getFavorites(token);
+        const data = await getFavorites();
         if (isMounted) setFavoriteItems(data.items || []);
       } catch (error) {
         if (isMounted) {
@@ -281,7 +247,7 @@ export default function ProfilePage({
         return;
       }
 
-      const token = localStorage.getItem("watchd_token");
+      const token = getSessionToken();
 
       if (!token) {
         setRecentActivityItems([]);
@@ -294,7 +260,7 @@ export default function ProfilePage({
       setRecentActivityError("");
 
       try {
-        const data = await getMyReviews(token);
+        const data = await getMyReviews();
 
         if (!isMounted) return;
 
@@ -341,7 +307,7 @@ export default function ProfilePage({
         return;
       }
 
-      const token = localStorage.getItem("watchd_token");
+      const token = getSessionToken();
 
       if (!token) {
         setWatchlistItems([]);
@@ -355,7 +321,7 @@ export default function ProfilePage({
       setWatchlistStatus("");
 
       try {
-        const data = await getWatchlist(token);
+        const data = await getWatchlist();
         if (isMounted) setWatchlistItems(data.items || []);
       } catch (error) {
         if (isMounted) {
@@ -375,7 +341,7 @@ export default function ProfilePage({
   }, [isLoggedIn]);
 
   async function handleRemoveWatchlistItem(itemId) {
-    const token = localStorage.getItem("watchd_token");
+    const token = getSessionToken();
 
     if (!token) {
       setWatchlistError("Sign in again to update your watchlist.");
@@ -387,7 +353,7 @@ export default function ProfilePage({
     setWatchlistStatus("");
 
     try {
-      await removeFromWatchlist(token, itemId);
+      await removeFromWatchlist(itemId);
       setWatchlistItems((currentItems) => {
         return currentItems.filter((item) => item.id !== itemId);
       });
@@ -402,7 +368,7 @@ export default function ProfilePage({
   async function handleFavoriteDrop(targetMovieId) {
     if (!draggedFavoriteId || draggedFavoriteId === targetMovieId) return;
 
-    const token = localStorage.getItem("watchd_token");
+    const token = getSessionToken();
 
     if (!token) {
       setFavoriteError("Sign in again to update your favorites.");
@@ -673,578 +639,3 @@ export default function ProfilePage({
     </section>
   );
 }
-
-function ProfileShelfHeader({ action, title }) {
-  return (
-    <header className="mb-4 flex items-center justify-between gap-4 border-b border-slate-700 pb-2">
-      <h2 className="text-sm font-medium uppercase tracking-[0.22em] text-[#9abbd1]">
-        {title}
-      </h2>
-      {action}
-    </header>
-  );
-}
-
-function ProfileTabs({ onDiaryClick, onSeriesClick, onListsClick, onWatchlistClick }) {
-  const tabs = [
-    "Profile",
-    "Series",
-    "Diary",
-    "Watchlist",
-    "Lists",
-  ];
-
-  const tabHandlers = {
-    Series: onSeriesClick,
-    Diary: onDiaryClick,
-    Lists: onListsClick,
-    Watchlist: onWatchlistClick,
-  };
-
-  return (
-    <nav className="no-scrollbar mt-7 overflow-x-auto rounded border border-slate-800 bg-slate-950/30 px-4" aria-label="Profile sections">
-      <div className="mx-auto flex w-max min-w-max items-center justify-center gap-6">
-        {tabs.map((tab) => (
-          <button
-            className={`relative min-h-12 text-sm font-semibold transition hover:text-white ${
-              tab === "Profile" ? "text-white" : "text-slate-400"
-            }`}
-            key={tab}
-            onClick={tabHandlers[tab]}
-            type="button"
-          >
-            {tab}
-            {tab === "Profile" && (
-              <span className="absolute bottom-0 left-0 h-0.5 w-full bg-[#00c030]" />
-            )}
-          </button>
-        ))}
-      </div>
-    </nav>
-  );
-}
-
-function ProfileBioPanel({
-  currentUserName,
-  isListsLoading,
-  isPublicView,
-  listPreviewImages,
-  listsError,
-  onListSelect,
-  onViewAllLists,
-  profileDetails,
-  stats,
-  userLists,
-}) {
-  const bio =
-    profileDetails?.bio ||
-    `${currentUserName} is building a shelf of favorite series, recent ratings, and titles saved for later.`;
-  const location = profileDetails?.location || "";
-  const website = profileDetails?.website || "";
-
-  return (
-    <aside className="space-y-8 lg:pt-[76px]">
-      <section>
-        <ProfileShelfHeader title="Bio" />
-        <div className="space-y-4 text-sm font-semibold leading-6 text-slate-400">
-          {(location || website) && (
-            <div className="space-y-2">
-              {location && (
-                <p className="flex items-center gap-2">
-                  <MapPin aria-hidden="true" className="h-4 w-4 text-slate-500" />
-                  {location}
-                </p>
-              )}
-              {website && (
-                <p className="flex min-w-0 items-center gap-2">
-                  <Link aria-hidden="true" className="h-4 w-4 flex-none text-slate-500" />
-                  <span className="truncate">{website}</span>
-                </p>
-              )}
-            </div>
-          )}
-          <p>{bio}</p>
-        </div>
-      </section>
-
-      <section>
-        <ProfileShelfHeader title="Profile Stats" />
-        <div className="grid grid-cols-2 gap-x-6 gap-y-4">
-          {stats.map((stat) => (
-            <div key={stat.label}>
-              <p className="text-2xl font-black leading-none text-white">
-                {stat.value}
-              </p>
-              <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">
-                {stat.label}
-              </p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section>
-        <ProfileShelfHeader
-          title="Created Lists"
-          action={
-            isPublicView ? null : (
-              <button
-                className="min-h-8 rounded border border-slate-700 px-3 text-xs font-semibold uppercase tracking-wide text-slate-300 transition hover:border-[#00c030] hover:text-white"
-                onClick={onViewAllLists}
-                type="button"
-              >
-                View all
-              </button>
-            )
-          }
-        />
-
-        {listsError && (
-          <p className="mb-4 rounded border border-red-900 bg-red-950/50 px-4 py-3 text-sm font-bold text-red-200">
-            {listsError}
-          </p>
-        )}
-
-        {isListsLoading ? (
-          <div className="space-y-4">
-            {Array.from({ length: 2 }, (_, index) => (
-              <div className="h-40 animate-pulse rounded border border-slate-800 bg-slate-900" key={index} />
-            ))}
-          </div>
-        ) : userLists.length ? (
-          <>
-            <div className="space-y-4">
-              {userLists.slice(0, listPreviewLimit).map((list) => (
-                <button
-                  aria-label={`Open list ${list.title}`}
-                  className="group block w-full overflow-hidden rounded border border-slate-800 bg-slate-950/60 text-left transition hover:-translate-y-1 hover:border-[#00c030] hover:shadow-lg hover:shadow-black/30"
-                  key={list.id}
-                  onClick={() => onListSelect(list.id)}
-                  type="button"
-                >
-                  <ListPosterStrip posters={listPreviewImages[list.id]} />
-
-                  <div className="p-3">
-                    <div className="flex flex-wrap items-center gap-2">
-                      {list.category && (
-                        <span className="inline-flex h-6 items-center rounded-md border border-white/10 bg-zinc-900/80 px-2 text-[11px] font-medium uppercase tracking-wide text-slate-200 shadow-sm shadow-black/20">
-                          {list.category}
-                        </span>
-                      )}
-                      <span className="text-[11px] font-bold uppercase tracking-wide text-slate-500">
-                        {list.itemsCount} {list.itemsCount === 1 ? "title" : "titles"}
-                      </span>
-                    </div>
-                    <h3 className="mt-2 truncate text-sm font-semibold text-white">
-                      {list.title}
-                    </h3>
-                    <p className="mt-1 flex items-center gap-1.5 text-xs font-bold text-slate-500">
-                      <ListChecks aria-hidden="true" className="h-3.5 w-3.5 text-slate-600" />
-                      Created by {currentUserName}
-                    </p>
-                  </div>
-                </button>
-              ))}
-            </div>
-
-            {!isPublicView && userLists.length > listPreviewLimit && (
-              <button
-                className="mt-4 inline-flex h-8 w-full items-center justify-center gap-1.5 rounded border border-slate-700 text-xs font-semibold uppercase tracking-wide text-slate-300 transition hover:border-[#00c030] hover:text-white"
-                onClick={onViewAllLists}
-                type="button"
-              >
-                Show more
-                <Plus aria-hidden="true" className="h-3.5 w-3.5" strokeWidth={2.6} />
-              </button>
-            )}
-          </>
-        ) : isPublicView ? (
-          <EmptyState
-            title="No lists yet"
-            description={`${currentUserName} hasn't created any lists yet.`}
-          />
-        ) : (
-          <div className="group relative overflow-hidden rounded border border-slate-800 bg-slate-950/60 px-4 py-6 text-center">
-            <div className="relative mx-auto h-12 w-12">
-              <span
-                aria-hidden="true"
-                className="absolute inset-0 rounded-full bg-[#00c030] transition-transform duration-1250 ease-in-out group-hover:scale-[16]"
-              />
-              <button
-                aria-label="Create your own list"
-                className="relative z-10 grid h-12 w-12 place-items-center rounded-full text-white"
-                onClick={onViewAllLists}
-                type="button"
-              >
-                <Plus aria-hidden="true" className="h-5 w-5" strokeWidth={2.6} />
-              </button>
-            </div>
-            <p className="relative z-10 mt-3 text-xs font-semibold uppercase tracking-wide text-slate-300 transition-colors duration-500 group-hover:text-white">
-              Create your own list
-            </p>
-            <p className="relative z-10 mt-3 text-sm font-semibold text-slate-400 transition-colors duration-500 group-hover:text-white/80">
-              You don't have any lists yet
-            </p>
-          </div>
-        )}
-
-      </section>
-    </aside>
-  );
-}
-
-function FavoriteShelf({
-  draggedFavoriteId,
-  error,
-  favoriteItems,
-  isAdjusting,
-  isLoading,
-  onAdjustToggle,
-  onDragEnd,
-  onDragStart,
-  onDrop,
-  onSeriesSelect,
-  readOnly,
-}) {
-  const visibleFavoriteItems = favoriteItems.slice(0, favoriteLimit);
-  const emptySlotCount = Math.max(favoriteLimit - visibleFavoriteItems.length, 0);
-  const [showConfetti, setShowConfetti] = useState(false);
-
-  return (
-    <section className="relative">
-      <Confetti isActive={showConfetti} onComplete={() => setShowConfetti(false)} />
-
-      <ProfileShelfHeader
-        action={
-          readOnly ? null : (
-            <button
-              className="min-h-8 rounded border border-slate-700 px-3 text-xs font-semibold uppercase tracking-wide text-slate-300 transition hover:border-[#00c030] hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
-              disabled={favoriteItems.length < 2 || isLoading}
-              onClick={() => {
-                // So comemora ao FINALIZAR o reordenamento (DONE), nao ao
-                // entrar no modo de ajuste.
-                if (isAdjusting) setShowConfetti(true);
-                onAdjustToggle();
-              }}
-              type="button"
-            >
-              {isAdjusting ? "DONE" : "ADJUST ORDER"}
-            </button>
-          )
-        }
-        title="Favorite Series"
-      />
-
-      {error && (
-        <p className="mb-4 rounded border border-red-900 bg-red-950/50 px-4 py-3 text-sm font-bold text-red-200">
-          {error}
-        </p>
-      )}
-
-      {isLoading ? (
-        <PosterSkeletonGrid count={4} variant="large" />
-      ) : visibleFavoriteItems.length ? (
-        <div className="grid grid-cols-4 gap-2 sm:gap-4">
-          {visibleFavoriteItems.map((item) => (
-            <button
-              aria-label={`Open details for ${item.title}`}
-              className={`group min-w-0 text-left ${
-                isAdjusting ? "cursor-grab active:cursor-grabbing" : ""
-              }`}
-              draggable={isAdjusting}
-              key={item.id}
-              onClick={() => {
-                if (!isAdjusting) onSeriesSelect?.(Number(item.movieId), "profile");
-              }}
-              onDragEnd={onDragEnd}
-              onDragOver={(event) => {
-                if (isAdjusting) event.preventDefault();
-              }}
-              onDragStart={(event) => {
-                event.dataTransfer.effectAllowed = "move";
-                onDragStart(item.movieId);
-              }}
-              onDrop={(event) => {
-                event.preventDefault();
-                onDrop(item.movieId);
-              }}
-              type="button"
-            >
-              <div
-                className={`relative overflow-hidden rounded border bg-slate-950 shadow-lg shadow-black/30 transition group-hover:-translate-y-1 group-hover:border-[#00c030] ${
-                  draggedFavoriteId === item.movieId
-                    ? "border-[#00c030] opacity-60"
-                    : "border-slate-700"
-                }`}
-              >
-                {isAdjusting && (
-                  <span className="absolute right-2 top-2 z-10 grid h-7 w-7 place-items-center rounded bg-slate-950/90 text-[#00c030]">
-                    <GripVertical aria-hidden="true" className="h-4 w-4" />
-                  </span>
-                )}
-                <img
-                  alt={`Poster for ${item.title}`}
-                  className="aspect-[2/3] w-full object-cover"
-                  src={item.posterUrl || fallbackPoster}
-                />
-              </div>
-            </button>
-          ))}
-
-          {Array.from({ length: emptySlotCount }, (_, index) => (
-            <div
-              className="grid aspect-[2/3] place-items-center rounded border border-dashed border-slate-800 bg-slate-950/60 text-center"
-              key={`empty-favorite-${index}`}
-            >
-              <p className="px-3 text-xs font-semibold uppercase tracking-wide text-slate-600">
-                Empty slot
-              </p>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <EmptyState
-          title="No favorite series yet"
-          description="Open a series detail page and mark it as Favorite."
-        />
-      )}
-    </section>
-  );
-}
-
-function RecentActivityShelf({ error, isLoading, items, onSeriesSelect }) {
-  return (
-    <section>
-      <ProfileShelfHeader
-        action={
-          <span className="text-xs font-medium uppercase tracking-[0.22em] text-slate-400">
-            All
-          </span>
-        }
-        title="Recent Activity"
-      />
-
-      {error && (
-        <p className="mb-4 rounded border border-red-900 bg-red-950/50 px-4 py-3 text-sm font-bold text-red-200">
-          {error}
-        </p>
-      )}
-
-      {isLoading ? (
-        <PosterSkeletonGrid count={4} variant="large" />
-      ) : items.length ? (
-        <div className="grid grid-cols-4 gap-2 sm:gap-4">
-          {items.map((item) => (
-            <ActivityCard
-              item={item}
-              key={item.movieId}
-              onSeriesSelect={onSeriesSelect}
-            />
-          ))}
-        </div>
-      ) : (
-        <EmptyState
-          title="No recent activity yet"
-          description="Rate or review a series to make it appear here."
-        />
-      )}
-    </section>
-  );
-}
-
-function ActivityCard({ item, onSeriesSelect }) {
-  return (
-    <article className="group min-w-0">
-      <button
-        aria-label={`Open details for ${item.title}`}
-        className="block w-full text-left"
-        onClick={() => onSeriesSelect?.(Number(item.movieId), "profile")}
-        type="button"
-      >
-        <div className="overflow-hidden rounded border border-slate-700 bg-slate-950 shadow-lg shadow-black/30 transition group-hover:-translate-y-1 group-hover:border-[#00c030]">
-          <img
-            alt={`Poster for ${item.title}`}
-            className="aspect-[2/3] w-full object-cover"
-            src={item.posterUrl || fallbackPoster}
-          />
-        </div>
-        <div className="mt-2 flex items-center gap-1 text-slate-500">
-          <RatingStars rating={item.rating} size={14} />
-          {item.review && (
-            <Heart
-              aria-hidden="true"
-              className="ml-1 h-3.5 w-3.5"
-              fill="currentColor"
-            />
-          )}
-          <ListChecks aria-hidden="true" className="h-3.5 w-3.5" />
-        </div>
-      </button>
-    </article>
-  );
-}
-
-function PosterGrid({
-  emptyDescription,
-  emptyTitle,
-  isExpanded = true,
-  items,
-  onExpand,
-  onRemoveItem,
-  onSeriesSelect,
-  previewLimit,
-  removingItemId,
-}) {
-  if (!items.length) {
-    return <EmptyState title={emptyTitle} description={emptyDescription} />;
-  }
-
-  const hasMoreItems = !isExpanded && previewLimit && items.length > previewLimit;
-  const visibleItems = hasMoreItems ? items.slice(0, previewLimit) : items;
-  const hiddenItemsCount = Math.max(items.length - visibleItems.length, 0);
-
-  return (
-    <div className="grid grid-cols-[repeat(auto-fill,minmax(82px,1fr))] gap-4 sm:grid-cols-[repeat(auto-fill,minmax(104px,1fr))]">
-      {visibleItems.map((item) => (
-        <div className="group min-w-0" key={item.id || item.movieId}>
-          <div className="relative">
-            <button
-              aria-label={`Open details for ${item.title}`}
-              className="block w-full text-left"
-              onClick={() => onSeriesSelect?.(Number(item.movieId), "profile")}
-              type="button"
-            >
-              <div className="overflow-hidden rounded border border-slate-700 bg-slate-950 shadow-lg shadow-black/30 transition group-hover:-translate-y-1 group-hover:border-[#00c030] group-hover:shadow-[#00c030]/10">
-                <img
-                  alt={`Poster for ${item.title}`}
-                  className="aspect-[2/3] w-full object-cover"
-                  src={item.posterUrl || fallbackPoster}
-                />
-              </div>
-            </button>
-
-            {onRemoveItem && (
-              <button
-                aria-label={`Remove ${item.title} from Watchlist`}
-                className="absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-full border border-red-400/40 bg-slate-950/90 text-red-200 opacity-100 shadow-lg shadow-black/40 transition hover:border-red-300 hover:bg-red-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-60 sm:opacity-0 sm:group-hover:opacity-100"
-                disabled={removingItemId === item.id}
-                onClick={() => onRemoveItem(item.id)}
-                title="Remove from Watchlist"
-                type="button"
-              >
-                {removingItemId === item.id ? (
-                  <span className="text-xs font-black">...</span>
-                ) : (
-                  <Trash2 aria-hidden="true" className="h-4 w-4" />
-                )}
-              </button>
-            )}
-          </div>
-          <h3 className="mt-2 line-clamp-2 text-xs font-semibold leading-5 text-slate-200">
-            {item.title}
-          </h3>
-          <p className="mt-1 truncate text-[11px] font-bold uppercase tracking-wide text-slate-500">
-            {item.releaseYear || item.type}
-          </p>
-        </div>
-      ))}
-
-      {hasMoreItems && (
-        <button
-          aria-label="View full Watchlist"
-          className="group grid aspect-[2/3] place-items-center rounded border border-slate-800 bg-slate-950 text-center transition hover:border-[#00c030] hover:bg-slate-900"
-          onClick={onExpand}
-          type="button"
-        >
-          <span className="grid h-16 w-16 place-items-center rounded-full border border-slate-700 bg-[#14181c] text-3xl font-black leading-none text-slate-300 transition group-hover:border-[#00c030] group-hover:text-[#32d85a]">
-            ...
-          </span>
-          <span className="px-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
-            {hiddenItemsCount} more
-          </span>
-        </button>
-      )}
-    </div>
-  );
-}
-
-function StatCell({ isFirst, stat }) {
-  return (
-    <div
-      className={`px-4 text-center sm:px-5 ${
-        isFirst ? "" : "border-l border-slate-700/60"
-      }`}
-    >
-      <p className="text-2xl font-black leading-none text-white sm:text-3xl">
-        {stat.value}
-      </p>
-      <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">
-        {stat.label}
-      </p>
-    </div>
-  );
-}
-
-function ShelfHeader({ action, count, eyebrow, onActionClick, title }) {
-  return (
-    <header className="mb-4 flex items-center justify-between gap-4 border-b border-slate-700 pb-2">
-      <div className="min-w-0">
-        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
-          {eyebrow}
-        </p>
-        <h2 className="mt-1 text-sm font-medium uppercase tracking-[0.22em] text-[#9abbd1]">
-          {title}
-        </h2>
-      </div>
-      <div className="flex flex-wrap items-center justify-end gap-3">
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-          {count}
-        </p>
-        {action && (
-          <button
-            className="min-h-8 rounded border border-slate-700 px-3 text-xs font-semibold uppercase tracking-wide text-slate-300 transition hover:border-[#00c030] hover:text-white"
-            onClick={onActionClick}
-            type="button"
-          >
-            {action}
-          </button>
-        )}
-      </div>
-    </header>
-  );
-}
-
-function PosterSkeletonGrid({ count = 8, variant = "default" }) {
-  const gridClassName =
-    variant === "large"
-      ? "grid grid-cols-4 gap-2 sm:gap-4"
-      : "grid grid-cols-[repeat(auto-fill,minmax(82px,1fr))] gap-4 sm:grid-cols-[repeat(auto-fill,minmax(104px,1fr))]";
-
-  return (
-    <div className={gridClassName}>
-      {Array.from({ length: count }, (_, index) => (
-        <div key={index}>
-          <div className="aspect-[2/3] animate-pulse rounded border border-slate-800 bg-slate-900" />
-          <div className="mt-2 h-3 w-4/5 animate-pulse rounded bg-slate-800" />
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function EmptyState({ description, title }) {
-  return (
-    <div className="rounded border border-slate-800 bg-slate-950/60 px-5 py-8 text-center">
-      <h2 className="text-lg font-black text-white">{title}</h2>
-      <p className="mt-2 text-sm text-slate-400">{description}</p>
-    </div>
-  );
-}
-
-
-
-
-
-
-
-

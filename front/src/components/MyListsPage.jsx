@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import BackButton from "./BackButton";
 import ListCard from "./ListCard";
 import { createList, deleteList, getMyLists } from "../services/api";
+import { getSessionToken } from "../services/session";
 
 export default function MyListsPage({ isLoggedIn, onBack, onListSelect }) {
   const [lists, setLists] = useState([]);
@@ -24,7 +25,7 @@ export default function MyListsPage({ isLoggedIn, onBack, onListSelect }) {
         return;
       }
 
-      const token = localStorage.getItem("watchd_token");
+      const token = getSessionToken();
 
       if (!token) {
         setLists([]);
@@ -36,7 +37,7 @@ export default function MyListsPage({ isLoggedIn, onBack, onListSelect }) {
       setError("");
 
       try {
-        const data = await getMyLists(token);
+        const data = await getMyLists();
         if (isMounted) setLists(data.items);
       } catch (requestError) {
         if (isMounted) {
@@ -61,7 +62,7 @@ export default function MyListsPage({ isLoggedIn, onBack, onListSelect }) {
     const trimmedTitle = title.trim();
     if (!trimmedTitle) return;
 
-    const token = localStorage.getItem("watchd_token");
+    const token = getSessionToken();
     if (!token) {
       setCreateError("Sign in again to create a list.");
       return;
@@ -71,7 +72,7 @@ export default function MyListsPage({ isLoggedIn, onBack, onListSelect }) {
     setCreateError("");
 
     try {
-      const data = await createList(token, {
+      const data = await createList({
         title: trimmedTitle,
         category: category.trim() || null,
       });
@@ -90,11 +91,11 @@ export default function MyListsPage({ isLoggedIn, onBack, onListSelect }) {
   }
 
   async function handleDelete(listId) {
-    const token = localStorage.getItem("watchd_token");
+    const token = getSessionToken();
     if (!token) return;
 
     try {
-      await deleteList(token, listId);
+      await deleteList(listId);
       setLists((currentLists) => currentLists.filter((list) => list.id !== listId));
     } catch (requestError) {
       setError(requestError.message);
@@ -136,6 +137,7 @@ export default function MyListsPage({ isLoggedIn, onBack, onListSelect }) {
               </span>
               <input
                 className="mt-2 min-h-11 w-full rounded border border-slate-700 bg-[#14181c] px-3 text-sm font-semibold text-white outline-none transition placeholder:text-slate-600 focus:border-[#00c030]"
+                maxLength={80}
                 onChange={(event) => setTitle(event.target.value)}
                 placeholder="Series to Watch at Night"
                 value={title}
@@ -148,6 +150,7 @@ export default function MyListsPage({ isLoggedIn, onBack, onListSelect }) {
               </span>
               <input
                 className="mt-2 min-h-11 w-full rounded border border-slate-700 bg-[#14181c] px-3 text-sm font-semibold text-white outline-none transition placeholder:text-slate-600 focus:border-[#00c030]"
+                maxLength={40}
                 onChange={(event) => setCategory(event.target.value)}
                 placeholder="Suspense"
                 value={category}

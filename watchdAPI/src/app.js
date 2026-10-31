@@ -30,7 +30,9 @@ app.use(cors({
   origin: allowedOrigins,
   credentials: true
 }));
-app.use(express.json());
+// Nenhuma rota recebe mais que alguns KB; o padrao de 100kb so abria espaco
+// para payloads gigantes.
+app.use(express.json({ limit: "20kb" }));
 app.use(cookieParser());
 
 app.get("/", (req, res) => {

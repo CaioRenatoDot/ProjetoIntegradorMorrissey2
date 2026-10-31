@@ -60,9 +60,11 @@ async function removeItem(itemId) {
     return prisma.listItem.delete({ where: { id: itemId } });
 }
 
-async function findAllPublic() {
+async function findAllPublic({ skip = 0, take }) {
     return prisma.list.findMany({
-        orderBy: { createdAt: "desc" },
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+        skip,
+        take,
         include: {
             user: { select: { username: true, name: true, displayName: true } },
             items: {

@@ -1,31 +1,39 @@
 {
+  "name": "watchd-front",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Front-end do Watchd: catalogo de series, reviews, watchlist e listas.",
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "lint": "eslint .",
+    "test": "vitest run",
     "preview": "vite preview"
   },
   "dependencies": {
-    "@tailwindcss/vite": "latest",
-    "@vitejs/plugin-react": "latest",
     "lucide-react": "^1.16.0",
     "motion": "^12.43.0",
-    "react": "latest",
-    "react-dom": "latest",
-    "tailwindcss": "latest",
-    "vite": "latest"
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6"
   },
-  "name": "projetointegradormorrissey2",
-  "version": "1.0.0",
-  "description": "<p align=\"center\">   <img src=\"public/assets/watchedlabel.png\" alt=\"Logo do Watchd\" width=\"120\" /> </p>",
-  "main": "vite.config.js",
-  "directories": {
-    "doc": "docs"
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@tailwindcss/vite": "^4.3.0",
+    "@vitejs/plugin-react": "^6.0.2",
+    "eslint": "^9.39.1",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^16.5.0",
+    "tailwindcss": "^4.3.0",
+    "vite": "^8.0.14",
+    "vitest": "^5.0.5"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/CaioRenatoDot/ProjetoIntegradorMorrissey2.git"
   },
-  "author": "",
+  "author": "CaioRenatoDot",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/CaioRenatoDot/ProjetoIntegradorMorrissey2/issues"

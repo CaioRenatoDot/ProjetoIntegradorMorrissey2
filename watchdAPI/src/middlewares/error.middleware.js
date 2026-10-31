@@ -8,6 +8,7 @@ function asyncHandler(controller) {
 
 function notFoundHandler(req, res) {
     return res.status(404).json({
+        code: "ROUTE_NOT_FOUND",
         message: "Rota nao encontrada."
     });
 }
@@ -22,6 +23,7 @@ function errorHandler(error, req, res, next) {
     // Violacao de unicidade do Prisma (ex.: email ou username ja em uso).
     if (error.code === "P2002") {
         return res.status(400).json({
+            code: "ALREADY_EXISTS",
             message: "Esse registro ja existe."
         });
     }
@@ -29,17 +31,36 @@ function errorHandler(error, req, res, next) {
     // Registro nao encontrado em update/delete.
     if (error.code === "P2025") {
         return res.status(404).json({
+            code: "NOT_FOUND",
             message: "Registro nao encontrado."
+        });
+    }
+
+    // Conflito entre transacoes concorrentes (ex.: dois favoritos ao mesmo
+    // tempo). Repetir a acao resolve.
+    if (error.code === "P2034") {
+        return res.status(409).json({
+            code: "CONFLICT",
+            message: "Conflito ao salvar. Tente novamente."
         });
     }
 
     if (error.type === "entity.parse.failed") {
         return res.status(400).json({
+            code: "INVALID_JSON",
             message: "JSON invalido no corpo da requisicao."
         });
     }
 
+    if (error.type === "entity.too.large") {
+        return res.status(413).json({
+            code: "PAYLOAD_TOO_LARGE",
+            message: "Corpo da requisicao muito grande."
+        });
+    }
+
     return res.status(500).json({
+        code: "INTERNAL_ERROR",
         message: "Erro interno no servidor."
     });
 }

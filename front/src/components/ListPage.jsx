@@ -9,22 +9,34 @@ export default function ListPage({ onListSelect, onCreatorSelect }) {
   const [lists, setLists] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
+  // A API pagina as listas; cada "Show more" busca a proxima pagina e
+  // acrescenta ao que ja esta na tela.
   useEffect(() => {
     let isMounted = true;
+    const isFirstPage = page === 1;
 
     async function fetchLists() {
-      setIsLoading(true);
+      if (isFirstPage) setIsLoading(true);
+      else setIsLoadingMore(true);
       setError("");
 
       try {
-        const data = await getAllLists();
-        if (isMounted) setLists(data.items);
+        const data = await getAllLists({ page, limit: PAGE_SIZE });
+        if (!isMounted) return;
+
+        setLists((current) => (isFirstPage ? data.items : [...current, ...data.items]));
+        setHasMore(Boolean(data.hasMore));
       } catch (requestError) {
         if (isMounted) setError(requestError.message);
       } finally {
-        if (isMounted) setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+          setIsLoadingMore(false);
+        }
       }
     }
 
@@ -33,10 +45,7 @@ export default function ListPage({ onListSelect, onCreatorSelect }) {
     return () => {
       isMounted = false;
     };
-  }, []);
-
-  const visibleLists = lists.slice(0, visibleCount);
-  const hasMore = visibleCount < lists.length;
+  }, [page]);
 
   return (
     <section id="lists" className="py-8 sm:py-12">
@@ -69,7 +78,7 @@ export default function ListPage({ onListSelect, onCreatorSelect }) {
       ) : lists.length ? (
         <>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {visibleLists.map((list, index) => (
+            {lists.map((list, index) => (
               <div
                 key={list.id}
                 className="animate-slide-in-up"
@@ -84,11 +93,12 @@ export default function ListPage({ onListSelect, onCreatorSelect }) {
             <div className="mt-8 flex justify-center">
               <button
                 className="group relative inline-flex min-h-11 items-center justify-center gap-2 overflow-hidden rounded border border-slate-700 px-6 text-sm font-semibold uppercase tracking-wide text-slate-300 transition-colors duration-300 hover:border-[#00c030] hover:text-white"
-                onClick={() => setVisibleCount((prev) => prev + PAGE_SIZE)}
+                disabled={isLoadingMore}
+                onClick={() => setPage((current) => current + 1)}
                 type="button"
               >
                 <span className="absolute inset-0 -z-10 origin-bottom scale-y-0 bg-[#00c030]/10 transition-transform duration-300 ease-out group-hover:scale-y-100" />
-                <span className="leading-none">Show more</span>
+                <span className="leading-none">{isLoadingMore ? "Loading..." : "Show more"}</span>
                 <ChevronDown
                   aria-hidden="true"
                   className="h-4 w-4 flex-none"

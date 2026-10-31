@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import BackButton from "./BackButton";
 import UserAvatar from "./UserAvatar";
 import { countries } from "../data/countries";
+import { useConfirm } from "./ConfirmDialog";
 
 const maxBioLength = 240;
 
@@ -33,6 +34,7 @@ export default function EditProfilePage({
   profileDetails,
   saveError,
 }) {
+  const [confirm, confirmDialog] = useConfirm();
   const [deletePassword, setDeletePassword] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
@@ -61,9 +63,12 @@ export default function EditProfilePage({
   }
 
   async function handleDeleteClick() {
-    if (!window.confirm("Delete your account? All your data (favorites, watchlist, reviews and lists) will be permanently removed.")) {
-      return;
-    }
+    const confirmed = await confirm({
+      title: "Delete your account?",
+      description: "All your data (favorites, watchlist, reviews and lists) will be permanently removed.",
+      confirmLabel: "Delete account",
+    });
+    if (!confirmed) return;
 
     setIsDeleting(true);
     setDeleteError("");
@@ -107,6 +112,7 @@ export default function EditProfilePage({
 
   return (
     <section className="mx-auto max-w-6xl py-7 sm:py-10">
+      {confirmDialog}
       <BackButton onBack={onBack} />
 
       <header className="flex flex-col gap-5 border-b border-slate-800 pb-6 sm:flex-row sm:items-center">

@@ -3,14 +3,17 @@ import { useEffect, useState } from "react";
 import { fallbackPoster } from "../data/constants";
 import { deleteReview, getFavorites, getMyReviews } from "../services/api";
 import BackButton from "./BackButton";
+import { useConfirm } from "./ConfirmDialog";
 import Modal from "./Modal";
 import RatingStars from "./RatingStars";
 import UserAvatar from "./UserAvatar";
+import { getSessionToken } from "../services/session";
 
 const rowGridClass =
   "grid grid-cols-[3rem_2.25rem_minmax(0,1fr)_5.5rem_2.75rem] items-center gap-3 px-3 sm:grid-cols-[4rem_2.5rem_minmax(0,1fr)_4.5rem_7rem_4.5rem_4rem] sm:gap-4 sm:px-5";
 
 export default function DiaryPage({ currentUserName, isLoggedIn, onBack, onSeriesSelect }) {
+  const [confirm, confirmDialog] = useConfirm();
   const [reviews, setReviews] = useState([]);
   const [favoriteMovieIds, setFavoriteMovieIds] = useState(() => new Set());
   const [isLoading, setIsLoading] = useState(false);
@@ -27,7 +30,7 @@ export default function DiaryPage({ currentUserName, isLoggedIn, onBack, onSerie
         return;
       }
 
-      const token = localStorage.getItem("watchd_token");
+      const token = getSessionToken();
 
       if (!token) {
         setReviews([]);
@@ -39,7 +42,7 @@ export default function DiaryPage({ currentUserName, isLoggedIn, onBack, onSerie
       setError("");
 
       try {
-        const data = await getMyReviews(token);
+        const data = await getMyReviews();
         if (isMounted) setReviews(data.items);
       } catch (requestError) {
         if (isMounted) {
@@ -51,11 +54,12 @@ export default function DiaryPage({ currentUserName, isLoggedIn, onBack, onSerie
       }
 
       try {
-        const favoritesData = await getFavorites(token);
+        const favoritesData = await getFavorites();
         if (isMounted) {
           setFavoriteMovieIds(new Set(favoritesData.items.map((item) => item.movieId)));
         }
       } catch {
+        // Favoritos so destacam itens do diario; se falhar, o diario segue sem o destaque.
       }
     }
 
@@ -67,16 +71,20 @@ export default function DiaryPage({ currentUserName, isLoggedIn, onBack, onSerie
   }, [isLoggedIn]);
 
   async function handleDeleteReview(reviewId) {
-    const token = localStorage.getItem("watchd_token");
+    const token = getSessionToken();
     if (!token) return false;
 
-    if (!window.confirm("Delete this review? This cannot be undone.")) return false;
+    const confirmed = await confirm({
+      title: "Delete this review?",
+      description: "This cannot be undone.",
+    });
+    if (!confirmed) return false;
 
     setDeletingReviewId(reviewId);
     setError("");
 
     try {
-      await deleteReview(token, reviewId);
+      await deleteReview(reviewId);
       setReviews((currentReviews) => currentReviews.filter((item) => item.id !== reviewId));
       return true;
     } catch (requestError) {
@@ -91,6 +99,7 @@ export default function DiaryPage({ currentUserName, isLoggedIn, onBack, onSerie
 
   return (
     <section id="diary" className="py-8 sm:py-12">
+      {confirmDialog}
       <BackButton onBack={onBack} />
 
       <header className="mb-8 border-b border-slate-800 pb-8">

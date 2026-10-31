@@ -12,9 +12,12 @@ A watchdAPI é o backend do Watchd: uma API REST em Express que guarda o que pre
 - `server.js`: entrada, só carrega o `.env` e sobe o servidor.
 - `src/app.js`: monta o Express (CORS, JSON, health check) e pluga as rotas.
 - `src/routes/`: mapa de cada recurso — qual caminho chama qual controller e o que exige login.
-- `src/controllers/`: onde a lógica mora (validação, banco, resposta).
+- `src/controllers/`: validação da entrada e montagem da resposta.
+- `src/services/`: acesso ao banco pelo Prisma.
+- `src/utils/validation.js`: limites de tamanho e tipo dos campos de texto.
 - `src/middlewares/`: `auth` (exige token, senão 401) e `optionalAuth` (token é opcional, só preenche `req.user` se tiver).
 - `prisma/`: schema dos modelos e migrações do banco.
+- `test/`: testes com `node:test` + supertest (`npm test`); os services são mockados, então não precisa de banco.
 
 ## Rodando local
 

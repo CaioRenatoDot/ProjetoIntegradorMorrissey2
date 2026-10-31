@@ -1,22 +1,42 @@
 const authService = require("../services/auth.service");
 const { COOKIE_NAME, cookieOptions } = require("../config/cookie");
+const { LIMITS, validateTextFields } = require("../utils/validation");
 
 // Exigencia minima de senha. O front tem a mesma regra para dar retorno
 // imediato, mas quem barra de verdade e aqui: o front pode ser contornado
 // chamando a API direto.
 const PASSWORD_MIN_LENGTH = 8;
+// O bcrypt so considera os primeiros 72 bytes; acima disso o resto da senha
+// seria ignorado sem o usuario saber.
+const PASSWORD_MAX_BYTES = 72;
 
+// Cada erro de autenticacao leva um "code" estavel alem da mensagem. O front
+// traduz pelo code, entao a mensagem pode mudar sem quebrar a traducao.
 function validatePassword(password) {
+    if (typeof password !== "string") {
+        return { code: "INVALID_FIELD", message: "A senha precisa ser texto." };
+    }
+
     if (password.length < PASSWORD_MIN_LENGTH) {
-        return `A senha precisa ter pelo menos ${PASSWORD_MIN_LENGTH} caracteres.`;
+        return {
+            code: "PASSWORD_TOO_SHORT",
+            message: `A senha precisa ter pelo menos ${PASSWORD_MIN_LENGTH} caracteres.`
+        };
     }
 
     if (!/[a-zA-Z]/.test(password)) {
-        return "A senha precisa ter pelo menos uma letra.";
+        return { code: "PASSWORD_NO_LETTER", message: "A senha precisa ter pelo menos uma letra." };
     }
 
     if (!/\d/.test(password)) {
-        return "A senha precisa ter pelo menos um numero.";
+        return { code: "PASSWORD_NO_NUMBER", message: "A senha precisa ter pelo menos um numero." };
+    }
+
+    if (Buffer.byteLength(password, "utf8") > PASSWORD_MAX_BYTES) {
+        return {
+            code: "PASSWORD_TOO_LONG",
+            message: `A senha pode ter no maximo ${PASSWORD_MAX_BYTES} caracteres.`
+        };
     }
 
     return null;
@@ -27,22 +47,33 @@ async function register(req, res) {
 
     if (!name || !email || !password) {
         return res.status(400).json({
-            message: "Nome, email e senha são obrigatórios."
+            code: "MISSING_FIELDS",
+            message: "Nome, email e senha sao obrigatorios."
         });
+    }
+
+    const fieldsError = validateTextFields(req.body, {
+        name: LIMITS.name,
+        email: LIMITS.email
+    });
+
+    if (fieldsError) {
+        return res.status(400).json({ code: "INVALID_FIELD", message: fieldsError });
     }
 
     const passwordError = validatePassword(password);
 
     if (passwordError) {
-        return res.status(400).json({ message: passwordError });
+        return res.status(400).json(passwordError);
     }
 
     const userAlreadyExists = await authService.findUserByEmail(email);
 
     if (userAlreadyExists) {
         return res.status(400).json({
-            message: "Usuários já existe. Email em uso"
-        })
+            code: "EMAIL_IN_USE",
+            message: "Esse email ja esta cadastrado."
+        });
     }
 
     const user = await authService.createUser({ name, email, password });
@@ -63,24 +94,23 @@ async function login(req, res) {
     // a API, mas aceita tambem o username.
     const { email, password } = req.body;
 
-    if (!email || !password) {
+    if (!email || !password || typeof email !== "string" || typeof password !== "string") {
         return res.status(400).json({
-            message: "Email e senha são obrigatórios!"
+            code: "MISSING_FIELDS",
+            message: "Email e senha sao obrigatorios."
         });
     }
 
     const user = await authService.findUserByEmailOrUsername(email);
+    const passwordIsValid = user
+        ? await authService.verifyPassword(password, user.password)
+        : false;
 
-    if (!user) {
-        return res.status(400).json({
-            message: "Email ou senha invalidos."
-        });
-    }
-
-    const passwordIsValid = await authService.verifyPassword(password, user.password);
-
+    // Mesmo erro para email inexistente e senha errada, para nao revelar
+    // quais emails estao cadastrados.
     if (!passwordIsValid) {
         return res.status(400).json({
+            code: "INVALID_CREDENTIALS",
             message: "Email ou senha invalidos."
         });
     }
@@ -120,6 +150,26 @@ async function logout(req, res) {
 
 async function updateProfile(req, res) {
     const { displayName, location, website, bio, username } = req.body;
+
+    const fieldsError = validateTextFields(req.body, {
+        displayName: LIMITS.displayName,
+        location: LIMITS.location,
+        website: LIMITS.website,
+        bio: LIMITS.bio,
+        username: 30
+    });
+
+    if (fieldsError) {
+        return res.status(400).json({ message: fieldsError });
+    }
+
+    // O site vira link no perfil publico; aceitar so http(s) impede que
+    // alguem salve um "javascript:..." que rodaria no clique de outra pessoa.
+    if (website && !/^https?:\/\/\S+$/i.test(website)) {
+        return res.status(400).json({
+            message: "O website precisa comecar com http:// ou https://."
+        });
+    }
 
     let normalizedUsername;
 
@@ -186,7 +236,7 @@ async function updateProfile(req, res) {
 async function deleteAccount(req, res) {
     const { password } = req.body;
 
-    if (!password) {
+    if (!password || typeof password !== "string") {
         return res.status(400).json({
             message: "Informe sua senha para excluir a conta."
         });

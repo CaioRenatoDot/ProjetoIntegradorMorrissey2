@@ -22,8 +22,11 @@ import {
 import SeriesCard from "./SeriesCard";
 import { getShowById, getSimilarShows } from "../services/tvmaze";
 import { cleanSummary } from "../utils/format";
+import { getSessionToken } from "../services/session";
+import { useConfirm } from "./ConfirmDialog";
 
 export default function SeriesDetailPage({ onBack, onSeriesSelect, showId }) {
+  const [confirm, confirmDialog] = useConfirm();
   const [show, setShow] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -89,8 +92,7 @@ export default function SeriesDetailPage({ onBack, onSeriesSelect, showId }) {
       setReviewsError("");
 
       try {
-        const token = localStorage.getItem("watchd_token");
-        const data = await getReviews(showId, token);
+        const data = await getReviews(showId);
 
         if (!isMounted) return;
 
@@ -119,7 +121,7 @@ export default function SeriesDetailPage({ onBack, onSeriesSelect, showId }) {
     let isMounted = true;
 
     async function fetchFavoriteState() {
-      const token = localStorage.getItem("watchd_token");
+      const token = getSessionToken();
 
       setIsFavorite(false);
       setFavoriteItemId(null);
@@ -129,7 +131,7 @@ export default function SeriesDetailPage({ onBack, onSeriesSelect, showId }) {
       }
 
       try {
-        const data = await getFavorites(token);
+        const data = await getFavorites();
         const favoriteItem = data.items.find((item) => {
           return item.movieId === String(showId);
         });
@@ -215,7 +217,7 @@ export default function SeriesDetailPage({ onBack, onSeriesSelect, showId }) {
   async function handleSaveReview(event) {
     event.preventDefault();
 
-    const token = localStorage.getItem("watchd_token");
+    const token = getSessionToken();
 
     if (!token) {
       setReviewStatus("You need to be signed in to save a review.");
@@ -233,13 +235,13 @@ export default function SeriesDetailPage({ onBack, onSeriesSelect, showId }) {
     setReviewStatus("");
 
     try {
-      await saveReview(token, {
+      await saveReview({
         ...buildSeriesPayload(),
         rating: userRating,
         text: trimmedReview,
       });
 
-      const data = await getReviews(showId, token);
+      const data = await getReviews(showId);
 
       setReviews(data.items);
       setReview(trimmedReview);
@@ -252,16 +254,20 @@ export default function SeriesDetailPage({ onBack, onSeriesSelect, showId }) {
   }
 
   async function handleDeleteReview(reviewId) {
-    const token = localStorage.getItem("watchd_token");
+    const token = getSessionToken();
     if (!token) return;
 
-    if (!window.confirm("Delete this review? This cannot be undone.")) return;
+    const confirmed = await confirm({
+      title: "Delete this review?",
+      description: "This cannot be undone.",
+    });
+    if (!confirmed) return;
 
     setDeletingReviewId(reviewId);
     setReviewStatus("");
 
     try {
-      await deleteReview(token, reviewId);
+      await deleteReview(reviewId);
       setReviews((currentReviews) => currentReviews.filter((item) => item.id !== reviewId));
       setUserRating(0);
       setReview("");
@@ -274,7 +280,7 @@ export default function SeriesDetailPage({ onBack, onSeriesSelect, showId }) {
 
 
   async function handleAddToWatchlist() {
-    const token = localStorage.getItem("watchd_token");
+    const token = getSessionToken();
 
     if (!token) {
       pushToast("You need to be signed in to add this series.", "error");
@@ -284,7 +290,7 @@ export default function SeriesDetailPage({ onBack, onSeriesSelect, showId }) {
     setIsAddingToWatchlist(true);
 
     try {
-      await addToWatchlist(token, buildSeriesPayload());
+      await addToWatchlist(buildSeriesPayload());
       pushToast("Series added to your watchlist.");
     } catch (error) {
       pushToast(error.message, "error");
@@ -294,7 +300,7 @@ export default function SeriesDetailPage({ onBack, onSeriesSelect, showId }) {
   }
 
   async function handleToggleFavorite() {
-    const token = localStorage.getItem("watchd_token");
+    const token = getSessionToken();
 
     if (!token) {
       pushToast("You need to be signed in to favorite this series.", "error");
@@ -305,14 +311,14 @@ export default function SeriesDetailPage({ onBack, onSeriesSelect, showId }) {
 
     try {
       if (isFavorite && favoriteItemId) {
-        await removeFavorite(token, favoriteItemId);
+        await removeFavorite(favoriteItemId);
         setIsFavorite(false);
         setFavoriteItemId(null);
         pushToast("Series removed from your favorites.");
         return;
       }
 
-      const data = await addFavorite(token, buildSeriesPayload());
+      const data = await addFavorite(buildSeriesPayload());
       setIsFavorite(true);
       setFavoriteItemId(data.item.id);
       pushToast("Series added to your favorites.");
@@ -324,7 +330,7 @@ export default function SeriesDetailPage({ onBack, onSeriesSelect, showId }) {
   }
 
   async function handleToggleListsMenu() {
-    const token = localStorage.getItem("watchd_token");
+    const token = getSessionToken();
 
     if (!token) {
       pushToast("You need to be signed in to add this series to a list.", "error");
@@ -339,7 +345,7 @@ export default function SeriesDetailPage({ onBack, onSeriesSelect, showId }) {
     setIsListsLoading(true);
 
     try {
-      const data = await getMyLists(token);
+      const data = await getMyLists();
       setUserLists(data.items || []);
     } catch (error) {
       pushToast(error.message, "error");
@@ -349,13 +355,13 @@ export default function SeriesDetailPage({ onBack, onSeriesSelect, showId }) {
   }
 
   async function handleAddToList(listId, listTitle) {
-    const token = localStorage.getItem("watchd_token");
+    const token = getSessionToken();
     if (!token) return;
 
     setAddingToListId(listId);
 
     try {
-      await addListItem(token, listId, buildSeriesPayload());
+      await addListItem(listId, buildSeriesPayload());
       pushToast(`Added to "${listTitle}".`);
       setIsListsMenuOpen(false);
     } catch (error) {
@@ -371,14 +377,14 @@ export default function SeriesDetailPage({ onBack, onSeriesSelect, showId }) {
     const trimmedTitle = newListTitle.trim();
     if (!trimmedTitle) return;
 
-    const token = localStorage.getItem("watchd_token");
+    const token = getSessionToken();
     if (!token) return;
 
     setIsCreatingList(true);
 
     try {
-      const listData = await createList(token, { title: trimmedTitle, category: null });
-      await addListItem(token, listData.item.id, buildSeriesPayload());
+      const listData = await createList({ title: trimmedTitle, category: null });
+      await addListItem(listData.item.id, buildSeriesPayload());
       setNewListTitle("");
       pushToast(`Added to "${trimmedTitle}".`);
       setIsListsMenuOpen(false);
@@ -426,6 +432,7 @@ export default function SeriesDetailPage({ onBack, onSeriesSelect, showId }) {
 
   return (
     <section className="relative py-8">
+      {confirmDialog}
       <ToastStack onDismiss={dismissToast} toasts={toasts} />
 
       {show.image?.original && (
@@ -577,6 +584,7 @@ export default function SeriesDetailPage({ onBack, onSeriesSelect, showId }) {
                   >
                     <input
                       className="min-h-9 w-full min-w-0 rounded border border-slate-700 bg-[#14181c] px-3 text-sm font-semibold text-white outline-none transition placeholder:text-slate-600 focus:border-[#00c030]"
+                      maxLength={80}
                       onChange={(event) => setNewListTitle(event.target.value)}
                       placeholder="New list name"
                       value={newListTitle}

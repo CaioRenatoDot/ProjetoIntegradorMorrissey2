@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { fallbackPoster } from "../data/constants";
 import { getWatchlist } from "../services/api";
 import BackButton from "./BackButton";
+import { getSessionToken } from "../services/session";
 
 export default function MyWatchlistPage({ isLoggedIn, onBack, onSeriesSelect }) {
   const [watchlistItems, setWatchlistItems] = useState([]);
@@ -18,7 +19,7 @@ export default function MyWatchlistPage({ isLoggedIn, onBack, onSeriesSelect }) 
         return;
       }
 
-      const token = localStorage.getItem("watchd_token");
+      const token = getSessionToken();
 
       if (!token) {
         setWatchlistItems([]);
@@ -30,7 +31,7 @@ export default function MyWatchlistPage({ isLoggedIn, onBack, onSeriesSelect }) 
       setError("");
 
       try {
-        const data = await getWatchlist(token);
+        const data = await getWatchlist();
         if (isMounted) setWatchlistItems(data.items);
       } catch (requestError) {
         if (isMounted) {

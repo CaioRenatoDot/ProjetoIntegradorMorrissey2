@@ -1,4 +1,5 @@
 const reviewService = require("../services/review.service");
+const { LIMITS, SERIES_FIELDS, validateTextFields } = require("../utils/validation");
 
 async function listForMovie(req, res) {
     const { movieId } = req.params;
@@ -41,10 +42,19 @@ async function upsert(req, res) {
         });
     }
 
-    if (rating < 0.5 || rating > 5 || Math.round(rating * 2) !== rating * 2) {
+    if (typeof rating !== "number" || rating < 0.5 || rating > 5 || Math.round(rating * 2) !== rating * 2) {
         return res.status(400).json({
             message: "rating precisa ser entre 0.5 e 5, em passos de 0.5."
         });
+    }
+
+    const fieldsError = validateTextFields(req.body, {
+        ...SERIES_FIELDS,
+        text: LIMITS.reviewText
+    });
+
+    if (fieldsError) {
+        return res.status(400).json({ message: fieldsError });
     }
 
     const existingReview = await reviewService.findByUserAndMovie(req.user.id, movieId);

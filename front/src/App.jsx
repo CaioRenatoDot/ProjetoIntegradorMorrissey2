@@ -1,23 +1,43 @@
-import { useEffect, useState } from "react";
+import { Suspense, lazy, useEffect, useState } from "react";
 import { AnimatePresence, MotionConfig, motion } from "motion/react";
-import DiaryPage from "./components/DiaryPage";
-import EditProfilePage from "./components/EditProfilePage";
 import Hero from "./components/Hero";
 import AccessibilityMenu from "./components/AccessibilityMenu";
 import HomeFooter from "./components/HomeFooter";
-import ListDetailPage from "./components/ListDetailPage";
-import ListPage from "./components/ListPage";
-import LoginScreen from "./components/LoginScreen";
-import MyListsPage from "./components/MyListsPage";
-import MySeriesPage from "./components/MySeriesPage";
-import MyWatchlistPage from "./components/MyWatchlistPage";
 import Navbar from "./components/Navbar";
-import ProfilePage from "./components/ProfilePage";
 import ResultsSection from "./components/ResultsSection";
 import SearchResultsPage from "./components/SearchResultsPage";
-import SeriesDetailPage from "./components/SeriesDetailPage";
+
+// A home (hero + resultados) vai no bundle principal; as outras paginas so
+// sao baixadas quando o usuario chega nelas.
+const DiaryPage = lazy(() => import("./components/DiaryPage"));
+const EditProfilePage = lazy(() => import("./components/EditProfilePage"));
+const ListDetailPage = lazy(() => import("./components/ListDetailPage"));
+const ListPage = lazy(() => import("./components/ListPage"));
+const LoginScreen = lazy(() => import("./components/LoginScreen"));
+const MyListsPage = lazy(() => import("./components/MyListsPage"));
+const MySeriesPage = lazy(() => import("./components/MySeriesPage"));
+const MyWatchlistPage = lazy(() => import("./components/MyWatchlistPage"));
+const ProfilePage = lazy(() => import("./components/ProfilePage"));
+const SeriesDetailPage = lazy(() => import("./components/SeriesDetailPage"));
+
+function PageFallback() {
+  return (
+    <div aria-busy="true" aria-label="Loading page" className="grid min-h-[50vh] place-items-center">
+      <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-700 border-t-[#00c030]" />
+    </div>
+  );
+}
 import { getMostPopularShows, searchShows } from "./services/tvmaze";
 import { deleteAccount, login, logout, register, getMe, updateProfile } from "./services/api";
+import { clearSessionToken, getSessionToken, saveSessionToken } from "./services/session";
+import {
+  BASE_PATH,
+  LIST_HASH_PREFIX,
+  SERIES_HASH_PREFIX,
+  getHashFromPage,
+  getHistoryState,
+  getNavigationFromLocation,
+} from "./utils/routes";
 
 
 function getAuthModeFromHistoryState(state) {
@@ -31,41 +51,6 @@ function getAuthModeFromHistoryState(state) {
   return null;
 }
 
-const BASE_PATH = import.meta.env.BASE_URL;
-
-function getPageFromHash(hash) {
-  if (hash === "#diary") return "diary";
-  if (hash === "#my-series") return "mySeries";
-  if (hash === "#lists") return "lists";
-  if (hash === "#my-lists") return "myLists";
-  if (hash === "#profile") return "profile";
-  if (hash === "#edit-profile") return "editProfile";
-  if (hash === "#search") return "search";
-  return "home";
-}
-
-function getUsernameFromPath(pathname) {
-  if (!pathname.startsWith(BASE_PATH)) return null;
-  const segment = pathname.slice(BASE_PATH.length).replace(/\/+$/, "");
-  return segment ? decodeURIComponent(segment) : null;
-}
-
-function getRouteFromLocation() {
-  const username = getUsernameFromPath(window.location.pathname);
-  if (username) return { page: "publicProfile", username };
-  return { page: getPageFromHash(window.location.hash), username: null };
-}
-
-function getHashFromPage(page) {
-  if (page === "diary") return "#diary";
-  if (page === "mySeries") return "#my-series";
-  if (page === "lists") return "#lists";
-  if (page === "myLists") return "#my-lists";
-  if (page === "profile") return "#profile";
-  if (page === "editProfile") return "#edit-profile";
-  if (page === "search") return "#search";
-  return "#catalog";
-}
 
 function easeInOutCubic(progress) {
   return progress < 0.5
@@ -116,6 +101,14 @@ function getDefaultProfileDetails(displayName = "") {
   };
 }
 
+// A API so aceita site com http(s); quem digita "meusite.com" ganha o
+// https:// automaticamente em vez de um erro.
+function normalizeWebsite(website) {
+  const trimmed = website.trim();
+  if (!trimmed || /^https?:\/\//i.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
+}
+
 function mapUserToProfileDetails(user) {
   const defaults = getDefaultProfileDetails(user.name);
 
@@ -134,9 +127,8 @@ export default function App() {
   const [hasSearched, setHasSearched] = useState(false);
   const [isNavSearchOpen, setIsNavSearchOpen] = useState(false);
   const [isLoginVisible, setIsLoginVisible] = useState(false);
-  const [activePage, setActivePage] = useState(() =>
-    typeof window === "undefined" ? "home" : getRouteFromLocation().page
-  );
+  const [initialNavigation] = useState(getNavigationFromLocation);
+  const [activePage, setActivePage] = useState(initialNavigation.page);
   const [authMode, setAuthMode] = useState("login");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loginEmail, setLoginEmail] = useState("");
@@ -147,13 +139,13 @@ export default function App() {
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [profileSaveError, setProfileSaveError] = useState("");
   const [profileDetails, setProfileDetails] = useState(() => getDefaultProfileDetails(""));
-  const [selectedShowId, setSelectedShowId] = useState(null);
-  const [selectedListId, setSelectedListId] = useState(null);
-  const [selectedUsername, setSelectedUsername] = useState(() =>
-    typeof window === "undefined" ? null : getRouteFromLocation().username
+  const [selectedShowId, setSelectedShowId] = useState(initialNavigation.showId);
+  const [selectedListId, setSelectedListId] = useState(initialNavigation.listId);
+  const [selectedUsername, setSelectedUsername] = useState(initialNavigation.username);
+  const [detailReturnPage, setDetailReturnPage] = useState(initialNavigation.detailReturnPage);
+  const [listDetailReturnPage, setListDetailReturnPage] = useState(
+    initialNavigation.listDetailReturnPage
   );
-  const [detailReturnPage, setDetailReturnPage] = useState("home");
-  const [listDetailReturnPage, setListDetailReturnPage] = useState("lists");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [shouldScrollToResults, setShouldScrollToResults] = useState(false);
@@ -161,27 +153,17 @@ export default function App() {
 
   useEffect(() => {
     async function restoreSession() {
-      const token = localStorage.getItem("watchd_token");
+      const token = getSessionToken();
 
       if (!token) {
         return;
       }
 
       try {
-        const data = await getMe(token);
-
-        setProfileDetails(mapUserToProfileDetails(data.user));
-        setCurrentUserName(data.user.displayName || data.user.name);
-        setCurrentUsername(data.user.username || "");
-        setUsernameChangedAt(data.user.usernameChangedAt || null);
-        setCurrentUserEmail(data.user.email);
-        setIsLoggedIn(true);
+        const data = await getMe();
+        applySignedInUser(data.user);
       } catch (error) {
-        localStorage.removeItem("watchd_token");
-        setCurrentUserName("");
-        setCurrentUsername("");
-        setCurrentUserEmail("");
-        setIsLoggedIn(false);
+        clearSignedInUser();
       }
     }
 
@@ -266,31 +248,14 @@ export default function App() {
 
   useEffect(() => {
     function syncRouteFromUrl() {
-      const historyState = window.history.state;
-      const { page, username } = getRouteFromLocation();
+      const navigation = getNavigationFromLocation();
 
-      if (historyState && typeof historyState === "object" && historyState.watchdShowId) {
-        setSelectedShowId(historyState.watchdShowId);
-        setSelectedListId(historyState.watchdListId || null);
-        setDetailReturnPage(historyState.watchdReturnPage || "home");
-        setSelectedUsername(username);
-        setActivePage("details");
-        return;
-      }
-
-      if (historyState && typeof historyState === "object" && historyState.watchdListId) {
-        setSelectedShowId(null);
-        setSelectedListId(historyState.watchdListId);
-        setListDetailReturnPage(historyState.watchdListReturnPage || "lists");
-        setSelectedUsername(username);
-        setActivePage("listDetails");
-        return;
-      }
-
-      setSelectedShowId(null);
-      setSelectedListId(null);
-      setSelectedUsername(username);
-      setActivePage(page);
+      setSelectedShowId(navigation.showId);
+      setSelectedListId(navigation.listId);
+      setSelectedUsername(navigation.username);
+      setDetailReturnPage(navigation.detailReturnPage);
+      setListDetailReturnPage(navigation.listDetailReturnPage);
+      setActivePage(navigation.page);
     }
 
     window.addEventListener("hashchange", syncRouteFromUrl);
@@ -348,58 +313,53 @@ export default function App() {
     }
   }
 
-  async function handleLogin(credentials) {
-    const data = await login(credentials.email, credentials.password);
-
-    localStorage.setItem("watchd_token", data.token);
-
-    const me = await getMe(data.token);
-
-    setProfileDetails(mapUserToProfileDetails(me.user));
-    setCurrentUserName(me.user.displayName || me.user.name);
-    setCurrentUsername(me.user.username || "");
-    setUsernameChangedAt(me.user.usernameChangedAt || null);
-    setCurrentUserEmail(me.user.email);
+  function applySignedInUser(user) {
+    setProfileDetails(mapUserToProfileDetails(user));
+    setCurrentUserName(user.displayName || user.name);
+    setCurrentUsername(user.username || "");
+    setUsernameChangedAt(user.usernameChangedAt || null);
+    setCurrentUserEmail(user.email);
     setIsLoggedIn(true);
-    closeAuthScreen();
-
   }
 
-  async function handleRegister(credentials) {
-    await register(credentials.name, credentials.email, credentials.password);
-
-    const data = await login(credentials.email, credentials.password);
-
-    localStorage.setItem("watchd_token", data.token);
-
-    const me = await getMe(data.token);
-
-    setProfileDetails(mapUserToProfileDetails(me.user));
-    setCurrentUserName(me.user.displayName || me.user.name);
-    setCurrentUsername(me.user.username || "");
-    setUsernameChangedAt(me.user.usernameChangedAt || null);
-    setCurrentUserEmail(me.user.email);
-    setIsLoggedIn(true);
-    closeAuthScreen();
-  }
-
-
-  async function handleLogout() {
-    // Limpa o cookie httpOnly no servidor; o localStorage so guarda a flag de
-    // sessao usada para restaurar a tela ao recarregar a pagina.
-    try {
-      await logout();
-    } catch (error) {
-      console.error("Erro ao encerrar a sessao:", error);
-    }
-
-    localStorage.removeItem("watchd_token");
+  function clearSignedInUser() {
+    clearSessionToken();
     setCurrentUserName("");
     setCurrentUsername("");
     setUsernameChangedAt(null);
     setCurrentUserEmail("");
     setProfileDetails(getDefaultProfileDetails(""));
     setIsLoggedIn(false);
+  }
+
+  async function signIn(email, password) {
+    const data = await login(email, password);
+    saveSessionToken(data.token);
+
+    const me = await getMe();
+    applySignedInUser(me.user);
+    closeAuthScreen();
+  }
+
+  async function handleLogin(credentials) {
+    await signIn(credentials.email, credentials.password);
+  }
+
+  async function handleRegister(credentials) {
+    await register(credentials.name, credentials.email, credentials.password);
+    await signIn(credentials.email, credentials.password);
+  }
+
+  async function handleLogout() {
+    // Limpa o cookie httpOnly no servidor; o token local serve de alternativa
+    // quando o navegador bloqueia o cookie de terceiros.
+    try {
+      await logout();
+    } catch (error) {
+      console.error("Erro ao encerrar a sessao:", error);
+    }
+
+    clearSignedInUser();
   }
 
   function openAuthScreen(mode) {
@@ -455,9 +415,13 @@ export default function App() {
 
   function handleListSelect(listId, returnPage = "lists") {
     window.history.pushState(
-      { watchdListId: listId, watchdListReturnPage: returnPage },
+      {
+        watchdListId: listId,
+        watchdListReturnPage: returnPage,
+        watchdUsername: selectedUsername,
+      },
       "",
-      window.location.href
+      `${BASE_PATH}${LIST_HASH_PREFIX}${encodeURIComponent(listId)}`
     );
 
     setSelectedShowId(null);
@@ -488,15 +452,22 @@ export default function App() {
     }
   }
 
-  function handleSeriesSelect(showId, returnPage = "home") {
+  function handleSeriesSelect(rawShowId, returnPage = "home") {
+    // Listas e reviews guardam o id como texto; a URL e lida como numero.
+    // Normalizar aqui mantem o state e a rota comparaveis no botao voltar.
+    const showId = Number(rawShowId);
+    const isFromList = returnPage === "listDetails";
+
     window.history.pushState(
       {
         watchdShowId: showId,
         watchdReturnPage: returnPage,
-        watchdListId: returnPage === "listDetails" ? selectedListId : null,
+        watchdReturnListId: isFromList ? selectedListId : null,
+        watchdListReturnPage: isFromList ? listDetailReturnPage : null,
+        watchdUsername: selectedUsername,
       },
       "",
-      window.location.href
+      `${BASE_PATH}${SERIES_HASH_PREFIX}${showId}`
     );
 
     setSelectedShowId(showId);
@@ -505,22 +476,41 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  async function handleDeleteAccount(password) {
-    const token = localStorage.getItem("watchd_token");
+  // Botao voltar de serie/lista. Se a entrada atual foi empilhada pelo
+  // proprio app, o history.back() devolve a pagina anterior com URL e scroll.
+  // Se o usuario chegou por um link direto, nao ha para onde voltar no
+  // historico, entao navega para a pagina de origem (ou a padrao).
+  function leaveDetailPage(stateKey, currentId, returnPage) {
+    if (getHistoryState()[stateKey] === currentId && window.history.length > 1) {
+      window.history.back();
+      return;
+    }
 
-    await deleteAccount(token, password);
+    if (returnPage === "publicProfile" && selectedUsername) {
+      handleUserSelect(selectedUsername);
+      return;
+    }
+
+    if (returnPage === "listDetails" && selectedListId) {
+      handleListSelect(selectedListId, listDetailReturnPage);
+      return;
+    }
+
+    handleNavigate(returnPage);
+  }
+
+  async function handleDeleteAccount(password) {
+    await deleteAccount(password);
 
     handleLogout();
     handleNavigate("home");
   }
 
   async function handleProfileSave(nextProfile) {
-    const token = localStorage.getItem("watchd_token");
-
     const normalizedProfile = {
       displayName: nextProfile.displayName.trim() || currentUserName,
       location: nextProfile.location.trim(),
-      website: nextProfile.website.trim(),
+      website: normalizeWebsite(nextProfile.website),
       bio: nextProfile.bio.trim(),
       ...(nextProfile.username ? { username: nextProfile.username } : {}),
     };
@@ -529,7 +519,7 @@ export default function App() {
     setProfileSaveError("");
 
     try {
-      const data = await updateProfile(token, normalizedProfile);
+      const data = await updateProfile(normalizedProfile);
 
       setProfileDetails(mapUserToProfileDetails(data.user));
       setCurrentUserName(data.user.displayName || data.user.name);
@@ -596,6 +586,7 @@ export default function App() {
           key={pageKey}
           transition={{ duration: 0.18, ease: "easeOut" }}
         >
+        <Suspense fallback={<PageFallback />}>
         {isLoginVisible ? (
           <LoginScreen
             email={loginEmail}
@@ -667,19 +658,9 @@ export default function App() {
           <ListDetailPage
             isPublic={listDetailReturnPage === "lists"}
             listId={selectedListId}
-            onBack={() => {
-              const historyState = window.history.state;
-              if (
-                historyState &&
-                typeof historyState === "object" &&
-                historyState.watchdListId === selectedListId
-              ) {
-                window.history.back();
-                return;
-              }
-
-              setActivePage(listDetailReturnPage);
-            }}
+            onBack={() =>
+              leaveDetailPage("watchdListId", selectedListId, listDetailReturnPage)
+            }
             onSeriesSelect={(showId) => handleSeriesSelect(showId, "listDetails")}
           />
         ) : activePage === "diary" ? (
@@ -712,55 +693,7 @@ export default function App() {
         ) : activePage === "details" && selectedShowId ? (
           <SeriesDetailPage
             onSeriesSelect={(showId) => handleSeriesSelect(showId, detailReturnPage)}
-            onBack={() => {
-              const historyState = window.history.state;
-              if (
-                historyState &&
-                typeof historyState === "object" &&
-                historyState.watchdShowId === selectedShowId
-              ) {
-                window.history.back();
-                return;
-              }
-
-              setSelectedShowId(null);
-              if (detailReturnPage === "listDetails" && selectedListId) {
-                setActivePage("listDetails");
-                return;
-              }
-
-              if (detailReturnPage === "publicProfile" && selectedUsername) {
-                setActivePage("publicProfile");
-                return;
-              }
-
-              if (detailReturnPage === "profile") {
-                setActivePage("profile");
-                return;
-              }
-
-              if (detailReturnPage === "search") {
-                setActivePage("search");
-                return;
-              }
-
-              if (detailReturnPage === "diary") {
-                setActivePage("diary");
-                return;
-              }
-
-              if (detailReturnPage === "mySeries") {
-                setActivePage("mySeries");
-                return;
-              }
-
-              if (detailReturnPage === "myWatchlist") {
-                setActivePage("myWatchlist");
-                return;
-              }
-
-              setActivePage("home");
-            }}
+            onBack={() => leaveDetailPage("watchdShowId", selectedShowId, detailReturnPage)}
             showId={selectedShowId}
           />
         ) : (
@@ -804,6 +737,7 @@ export default function App() {
             />
           </>
         )}
+        </Suspense>
         </motion.div>
         </AnimatePresence>
       </div>
