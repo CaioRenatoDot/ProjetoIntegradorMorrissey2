@@ -1,21 +1,32 @@
-import { useEffect, useState } from "react";
+import { Suspense, lazy, useEffect, useState } from "react";
 import { AnimatePresence, MotionConfig, motion } from "motion/react";
-import DiaryPage from "./components/DiaryPage";
-import EditProfilePage from "./components/EditProfilePage";
 import Hero from "./components/Hero";
 import AccessibilityMenu from "./components/AccessibilityMenu";
 import HomeFooter from "./components/HomeFooter";
-import ListDetailPage from "./components/ListDetailPage";
-import ListPage from "./components/ListPage";
-import LoginScreen from "./components/LoginScreen";
-import MyListsPage from "./components/MyListsPage";
-import MySeriesPage from "./components/MySeriesPage";
-import MyWatchlistPage from "./components/MyWatchlistPage";
 import Navbar from "./components/Navbar";
-import ProfilePage from "./components/ProfilePage";
 import ResultsSection from "./components/ResultsSection";
 import SearchResultsPage from "./components/SearchResultsPage";
-import SeriesDetailPage from "./components/SeriesDetailPage";
+
+// A home (hero + resultados) vai no bundle principal; as outras paginas so
+// sao baixadas quando o usuario chega nelas.
+const DiaryPage = lazy(() => import("./components/DiaryPage"));
+const EditProfilePage = lazy(() => import("./components/EditProfilePage"));
+const ListDetailPage = lazy(() => import("./components/ListDetailPage"));
+const ListPage = lazy(() => import("./components/ListPage"));
+const LoginScreen = lazy(() => import("./components/LoginScreen"));
+const MyListsPage = lazy(() => import("./components/MyListsPage"));
+const MySeriesPage = lazy(() => import("./components/MySeriesPage"));
+const MyWatchlistPage = lazy(() => import("./components/MyWatchlistPage"));
+const ProfilePage = lazy(() => import("./components/ProfilePage"));
+const SeriesDetailPage = lazy(() => import("./components/SeriesDetailPage"));
+
+function PageFallback() {
+  return (
+    <div aria-busy="true" aria-label="Loading page" className="grid min-h-[50vh] place-items-center">
+      <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-700 border-t-[#00c030]" />
+    </div>
+  );
+}
 import { getMostPopularShows, searchShows } from "./services/tvmaze";
 import { deleteAccount, login, logout, register, getMe, updateProfile } from "./services/api";
 import { clearSessionToken, getSessionToken, saveSessionToken } from "./services/session";
@@ -575,6 +586,7 @@ export default function App() {
           key={pageKey}
           transition={{ duration: 0.18, ease: "easeOut" }}
         >
+        <Suspense fallback={<PageFallback />}>
         {isLoginVisible ? (
           <LoginScreen
             email={loginEmail}
@@ -725,6 +737,7 @@ export default function App() {
             />
           </>
         )}
+        </Suspense>
         </motion.div>
         </AnimatePresence>
       </div>
