@@ -1,3 +1,5 @@
+import { getSessionToken } from "./session";
+
 const API_URL = import.meta.env.VITE_API_URL || "/api";
 
 // O backend responde em portugues; a UI de login/registro esta em ingles,
@@ -27,7 +29,7 @@ function translateAuthMessage(message, fallback) {
 // que o backend aceita como alternativa quando nao ha cookie.
 function authHeaders(extraHeaders) {
     const headers = { ...extraHeaders };
-    const token = localStorage.getItem("watchd_token");
+    const token = getSessionToken();
 
     if (token) {
         headers.Authorization = `Bearer ${token}`;
@@ -103,15 +105,15 @@ export function register(name, email, password) {
     });
 }
 
-export function getMe(token) {
+export function getMe() {
     return request("/auth/me", { errorMessage: "Erro ao buscar usuario." });
 }
 
-export function getWatchlist(token) {
+export function getWatchlist() {
     return request("/watchlist", { errorMessage: "Erro ao buscar watchlist" });
 }
 
-export function addToWatchlist(token, item) {
+export function addToWatchlist(item) {
     return request("/watchlist", {
         method: "POST",
         body: item,
@@ -119,18 +121,18 @@ export function addToWatchlist(token, item) {
     });
 }
 
-export function removeFromWatchlist(token, itemId) {
+export function removeFromWatchlist(itemId) {
     return request(`/watchlist/${itemId}`, {
         method: "DELETE",
         errorMessage: "Erro ao remover item da watchlist.",
     });
 }
 
-export function getFavorites(token) {
+export function getFavorites() {
     return request("/favorites", { errorMessage: "Erro ao buscar favoritos." });
 }
 
-export function addFavorite(token, item) {
+export function addFavorite(item) {
     return request("/favorites", {
         method: "POST",
         body: item,
@@ -138,14 +140,14 @@ export function addFavorite(token, item) {
     });
 }
 
-export function removeFavorite(token, favoriteId) {
+export function removeFavorite(favoriteId) {
     return request(`/favorites/${favoriteId}`, {
         method: "DELETE",
         errorMessage: "Erro ao remover favorito.",
     });
 }
 
-export function reorderFavorites(token, ids) {
+export function reorderFavorites(ids) {
     return request("/favorites/reorder", {
         method: "PUT",
         body: { ids },
@@ -153,7 +155,7 @@ export function reorderFavorites(token, ids) {
     });
 }
 
-export function updateProfile(token, profile) {
+export function updateProfile(profile) {
     return request("/auth/me", {
         method: "PUT",
         body: profile,
@@ -161,7 +163,7 @@ export function updateProfile(token, profile) {
     });
 }
 
-export function deleteAccount(token, password) {
+export function deleteAccount(password) {
     return request("/auth/me", {
         method: "DELETE",
         body: { password },
@@ -175,11 +177,11 @@ export function getReviews(movieId) {
     return request(`/reviews/${movieId}`, { errorMessage: "Erro ao buscar reviews." });
 }
 
-export function getMyReviews(token) {
+export function getMyReviews() {
     return request("/reviews/mine", { errorMessage: "Erro ao buscar suas reviews." });
 }
 
-export function saveReview(token, review) {
+export function saveReview(review) {
     return request("/reviews", {
         method: "POST",
         body: review,
@@ -187,22 +189,22 @@ export function saveReview(token, review) {
     });
 }
 
-export function deleteReview(token, reviewId) {
+export function deleteReview(reviewId) {
     return request(`/reviews/${reviewId}`, {
         method: "DELETE",
         errorMessage: "Erro ao remover review.",
     });
 }
 
-export function getMyLists(token) {
+export function getMyLists() {
     return request("/lists", { errorMessage: "Erro ao buscar listas." });
 }
 
-export function getList(token, listId) {
+export function getList(listId) {
     return request(`/lists/${listId}`, { errorMessage: "Erro ao buscar lista." });
 }
 
-export function createList(token, { title, category }) {
+export function createList({ title, category }) {
     return request("/lists", {
         method: "POST",
         body: { title, category },
@@ -210,14 +212,14 @@ export function createList(token, { title, category }) {
     });
 }
 
-export function deleteList(token, listId) {
+export function deleteList(listId) {
     return request(`/lists/${listId}`, {
         method: "DELETE",
         errorMessage: "Erro ao remover lista.",
     });
 }
 
-export function addListItem(token, listId, item) {
+export function addListItem(listId, item) {
     return request(`/lists/${listId}/items`, {
         method: "POST",
         body: item,
@@ -225,7 +227,7 @@ export function addListItem(token, listId, item) {
     });
 }
 
-export function removeListItem(token, listId, itemId) {
+export function removeListItem(listId, itemId) {
     return request(`/lists/${listId}/items/${itemId}`, {
         method: "DELETE",
         errorMessage: "Erro ao remover item da lista.",

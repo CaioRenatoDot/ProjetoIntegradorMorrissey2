@@ -18,6 +18,7 @@ import SearchResultsPage from "./components/SearchResultsPage";
 import SeriesDetailPage from "./components/SeriesDetailPage";
 import { getMostPopularShows, searchShows } from "./services/tvmaze";
 import { deleteAccount, login, logout, register, getMe, updateProfile } from "./services/api";
+import { clearSessionToken, getSessionToken, saveSessionToken } from "./services/session";
 
 
 function getAuthModeFromHistoryState(state) {
@@ -169,27 +170,17 @@ export default function App() {
 
   useEffect(() => {
     async function restoreSession() {
-      const token = localStorage.getItem("watchd_token");
+      const token = getSessionToken();
 
       if (!token) {
         return;
       }
 
       try {
-        const data = await getMe(token);
-
-        setProfileDetails(mapUserToProfileDetails(data.user));
-        setCurrentUserName(data.user.displayName || data.user.name);
-        setCurrentUsername(data.user.username || "");
-        setUsernameChangedAt(data.user.usernameChangedAt || null);
-        setCurrentUserEmail(data.user.email);
-        setIsLoggedIn(true);
+        const data = await getMe();
+        applySignedInUser(data.user);
       } catch (error) {
-        localStorage.removeItem("watchd_token");
-        setCurrentUserName("");
-        setCurrentUsername("");
-        setCurrentUserEmail("");
-        setIsLoggedIn(false);
+        clearSignedInUser();
       }
     }
 
@@ -356,58 +347,53 @@ export default function App() {
     }
   }
 
-  async function handleLogin(credentials) {
-    const data = await login(credentials.email, credentials.password);
-
-    localStorage.setItem("watchd_token", data.token);
-
-    const me = await getMe(data.token);
-
-    setProfileDetails(mapUserToProfileDetails(me.user));
-    setCurrentUserName(me.user.displayName || me.user.name);
-    setCurrentUsername(me.user.username || "");
-    setUsernameChangedAt(me.user.usernameChangedAt || null);
-    setCurrentUserEmail(me.user.email);
+  function applySignedInUser(user) {
+    setProfileDetails(mapUserToProfileDetails(user));
+    setCurrentUserName(user.displayName || user.name);
+    setCurrentUsername(user.username || "");
+    setUsernameChangedAt(user.usernameChangedAt || null);
+    setCurrentUserEmail(user.email);
     setIsLoggedIn(true);
-    closeAuthScreen();
-
   }
 
-  async function handleRegister(credentials) {
-    await register(credentials.name, credentials.email, credentials.password);
-
-    const data = await login(credentials.email, credentials.password);
-
-    localStorage.setItem("watchd_token", data.token);
-
-    const me = await getMe(data.token);
-
-    setProfileDetails(mapUserToProfileDetails(me.user));
-    setCurrentUserName(me.user.displayName || me.user.name);
-    setCurrentUsername(me.user.username || "");
-    setUsernameChangedAt(me.user.usernameChangedAt || null);
-    setCurrentUserEmail(me.user.email);
-    setIsLoggedIn(true);
-    closeAuthScreen();
-  }
-
-
-  async function handleLogout() {
-    // Limpa o cookie httpOnly no servidor; o localStorage so guarda a flag de
-    // sessao usada para restaurar a tela ao recarregar a pagina.
-    try {
-      await logout();
-    } catch (error) {
-      console.error("Erro ao encerrar a sessao:", error);
-    }
-
-    localStorage.removeItem("watchd_token");
+  function clearSignedInUser() {
+    clearSessionToken();
     setCurrentUserName("");
     setCurrentUsername("");
     setUsernameChangedAt(null);
     setCurrentUserEmail("");
     setProfileDetails(getDefaultProfileDetails(""));
     setIsLoggedIn(false);
+  }
+
+  async function signIn(email, password) {
+    const data = await login(email, password);
+    saveSessionToken(data.token);
+
+    const me = await getMe();
+    applySignedInUser(me.user);
+    closeAuthScreen();
+  }
+
+  async function handleLogin(credentials) {
+    await signIn(credentials.email, credentials.password);
+  }
+
+  async function handleRegister(credentials) {
+    await register(credentials.name, credentials.email, credentials.password);
+    await signIn(credentials.email, credentials.password);
+  }
+
+  async function handleLogout() {
+    // Limpa o cookie httpOnly no servidor; o token local serve de alternativa
+    // quando o navegador bloqueia o cookie de terceiros.
+    try {
+      await logout();
+    } catch (error) {
+      console.error("Erro ao encerrar a sessao:", error);
+    }
+
+    clearSignedInUser();
   }
 
   function openAuthScreen(mode) {
@@ -514,17 +500,13 @@ export default function App() {
   }
 
   async function handleDeleteAccount(password) {
-    const token = localStorage.getItem("watchd_token");
-
-    await deleteAccount(token, password);
+    await deleteAccount(password);
 
     handleLogout();
     handleNavigate("home");
   }
 
   async function handleProfileSave(nextProfile) {
-    const token = localStorage.getItem("watchd_token");
-
     const normalizedProfile = {
       displayName: nextProfile.displayName.trim() || currentUserName,
       location: nextProfile.location.trim(),
@@ -537,7 +519,7 @@ export default function App() {
     setProfileSaveError("");
 
     try {
-      const data = await updateProfile(token, normalizedProfile);
+      const data = await updateProfile(normalizedProfile);
 
       setProfileDetails(mapUserToProfileDetails(data.user));
       setCurrentUserName(data.user.displayName || data.user.name);

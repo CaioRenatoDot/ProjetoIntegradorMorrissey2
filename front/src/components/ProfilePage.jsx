@@ -14,6 +14,7 @@ import Confetti from "./Confetti";
 import ListPosterStrip from "./ListPosterStrip";
 import RatingStars from "./RatingStars";
 import UserAvatar from "./UserAvatar";
+import { getSessionToken } from "../services/session";
 
 const favoriteLimit = 4;
 const watchlistPreviewLimit = 8;
@@ -131,7 +132,7 @@ export default function ProfilePage({
         return;
       }
 
-      const token = localStorage.getItem("watchd_token");
+      const token = getSessionToken();
 
       if (!token) {
         setUserLists([]);
@@ -143,7 +144,7 @@ export default function ProfilePage({
       setListsError("");
 
       try {
-        const data = await getMyLists(token);
+        const data = await getMyLists();
         if (isMounted) {
           const items = data.items || [];
           // GET /lists ja traz os 4 primeiros posteres de cada lista, entao nao
@@ -203,7 +204,7 @@ export default function ProfilePage({
         return;
       }
 
-      const token = localStorage.getItem("watchd_token");
+      const token = getSessionToken();
 
       if (!token) {
         setFavoriteItems([]);
@@ -215,7 +216,7 @@ export default function ProfilePage({
       setFavoriteError("");
 
       try {
-        const data = await getFavorites(token);
+        const data = await getFavorites();
         if (isMounted) setFavoriteItems(data.items || []);
       } catch (error) {
         if (isMounted) {
@@ -247,7 +248,7 @@ export default function ProfilePage({
         return;
       }
 
-      const token = localStorage.getItem("watchd_token");
+      const token = getSessionToken();
 
       if (!token) {
         setRecentActivityItems([]);
@@ -260,7 +261,7 @@ export default function ProfilePage({
       setRecentActivityError("");
 
       try {
-        const data = await getMyReviews(token);
+        const data = await getMyReviews();
 
         if (!isMounted) return;
 
@@ -307,7 +308,7 @@ export default function ProfilePage({
         return;
       }
 
-      const token = localStorage.getItem("watchd_token");
+      const token = getSessionToken();
 
       if (!token) {
         setWatchlistItems([]);
@@ -321,7 +322,7 @@ export default function ProfilePage({
       setWatchlistStatus("");
 
       try {
-        const data = await getWatchlist(token);
+        const data = await getWatchlist();
         if (isMounted) setWatchlistItems(data.items || []);
       } catch (error) {
         if (isMounted) {
@@ -341,7 +342,7 @@ export default function ProfilePage({
   }, [isLoggedIn]);
 
   async function handleRemoveWatchlistItem(itemId) {
-    const token = localStorage.getItem("watchd_token");
+    const token = getSessionToken();
 
     if (!token) {
       setWatchlistError("Sign in again to update your watchlist.");
@@ -353,7 +354,7 @@ export default function ProfilePage({
     setWatchlistStatus("");
 
     try {
-      await removeFromWatchlist(token, itemId);
+      await removeFromWatchlist(itemId);
       setWatchlistItems((currentItems) => {
         return currentItems.filter((item) => item.id !== itemId);
       });
@@ -368,7 +369,7 @@ export default function ProfilePage({
   async function handleFavoriteDrop(targetMovieId) {
     if (!draggedFavoriteId || draggedFavoriteId === targetMovieId) return;
 
-    const token = localStorage.getItem("watchd_token");
+    const token = getSessionToken();
 
     if (!token) {
       setFavoriteError("Sign in again to update your favorites.");

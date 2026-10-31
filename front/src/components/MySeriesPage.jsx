@@ -3,6 +3,7 @@ import { fallbackPoster } from "../data/constants";
 import { getMyReviews } from "../services/api";
 import BackButton from "./BackButton";
 import RatingStars from "./RatingStars";
+import { getSessionToken } from "../services/session";
 
 export default function MySeriesPage({ isLoggedIn, onBack, onSeriesSelect }) {
   const [reviews, setReviews] = useState([]);
@@ -19,7 +20,7 @@ export default function MySeriesPage({ isLoggedIn, onBack, onSeriesSelect }) {
         return;
       }
 
-      const token = localStorage.getItem("watchd_token");
+      const token = getSessionToken();
 
       if (!token) {
         setReviews([]);
@@ -31,7 +32,7 @@ export default function MySeriesPage({ isLoggedIn, onBack, onSeriesSelect }) {
       setError("");
 
       try {
-        const data = await getMyReviews(token);
+        const data = await getMyReviews();
         if (isMounted) setReviews(data.items);
       } catch (requestError) {
         if (isMounted) {
