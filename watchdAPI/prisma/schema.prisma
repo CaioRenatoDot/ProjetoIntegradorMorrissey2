@@ -84,6 +84,7 @@ model WatchListItem{
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@unique([userId, movieId])
 }
 
 model Review {
