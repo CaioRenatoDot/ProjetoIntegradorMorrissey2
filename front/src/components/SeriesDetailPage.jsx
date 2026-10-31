@@ -23,8 +23,10 @@ import SeriesCard from "./SeriesCard";
 import { getShowById, getSimilarShows } from "../services/tvmaze";
 import { cleanSummary } from "../utils/format";
 import { getSessionToken } from "../services/session";
+import { useConfirm } from "./ConfirmDialog";
 
 export default function SeriesDetailPage({ onBack, onSeriesSelect, showId }) {
+  const [confirm, confirmDialog] = useConfirm();
   const [show, setShow] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -255,7 +257,11 @@ export default function SeriesDetailPage({ onBack, onSeriesSelect, showId }) {
     const token = getSessionToken();
     if (!token) return;
 
-    if (!window.confirm("Delete this review? This cannot be undone.")) return;
+    const confirmed = await confirm({
+      title: "Delete this review?",
+      description: "This cannot be undone.",
+    });
+    if (!confirmed) return;
 
     setDeletingReviewId(reviewId);
     setReviewStatus("");
@@ -426,6 +432,7 @@ export default function SeriesDetailPage({ onBack, onSeriesSelect, showId }) {
 
   return (
     <section className="relative py-8">
+      {confirmDialog}
       <ToastStack onDismiss={dismissToast} toasts={toasts} />
 
       {show.image?.original && (

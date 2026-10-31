@@ -2,7 +2,7 @@ import { X } from "lucide-react";
 import { motion } from "motion/react";
 import { useEffect } from "react";
 
-export default function Modal({ children, onClose, title }) {
+export default function Modal({ children, onClose, size = "lg", title }) {
   useEffect(() => {
     function handleKeyDown(event) {
       if (event.key === "Escape") onClose();
@@ -28,7 +28,7 @@ export default function Modal({ children, onClose, title }) {
         animate={{ opacity: 1, scale: 1, y: 0 }}
         aria-label={title}
         aria-modal="true"
-        className="max-h-[88vh] w-full max-w-2xl overflow-y-auto rounded border border-slate-700 bg-slate-900 shadow-2xl shadow-black/50"
+        className={`max-h-[88vh] w-full ${size === "sm" ? "max-w-md" : "max-w-2xl"} overflow-y-auto rounded border border-slate-700 bg-slate-900 shadow-2xl shadow-black/50`}
         initial={{ opacity: 0, scale: 0.95, y: 12 }}
         onClick={(event) => event.stopPropagation()}
         role="dialog"

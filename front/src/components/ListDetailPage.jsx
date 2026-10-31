@@ -5,8 +5,10 @@ import BackButton from "./BackButton";
 import { fallbackPoster } from "../data/constants";
 import { deleteList, getList, getPublicList, removeListItem } from "../services/api";
 import { getSessionToken } from "../services/session";
+import { useConfirm } from "./ConfirmDialog";
 
 export default function ListDetailPage({ isPublic, listId, onBack, onSeriesSelect }) {
+  const [confirm, confirmDialog] = useConfirm();
   const [list, setList] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -71,7 +73,11 @@ export default function ListDetailPage({ isPublic, listId, onBack, onSeriesSelec
   }
 
   async function handleDeleteList() {
-    if (!window.confirm(`Delete "${list.title}"? This cannot be undone.`)) return;
+    const confirmed = await confirm({
+      title: `Delete "${list.title}"?`,
+      description: "This cannot be undone.",
+    });
+    if (!confirmed) return;
 
     const token = getSessionToken();
     if (!token) {
@@ -105,6 +111,7 @@ export default function ListDetailPage({ isPublic, listId, onBack, onSeriesSelec
 
   return (
     <section className="py-8">
+      {confirmDialog}
       <div className="flex items-center justify-between gap-4">
         <BackButton onBack={onBack} />
 
