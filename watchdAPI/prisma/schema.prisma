@@ -37,6 +37,8 @@ model List {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   items ListItem[]
+
+  @@index([userId])
 }
 
 model ListItem {
@@ -103,4 +105,5 @@ model Review {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, movieId])
+  @@index([movieId])
 }
