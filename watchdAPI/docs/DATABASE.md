@@ -6,7 +6,7 @@ PostgreSQL gerenciado pelo Prisma (`prisma/schema.prisma`). A conexão vem da `D
 
 - **User** — conta: email/senha (hash), username único (com data da última troca, por causa do cooldown de 30 dias) e campos de perfil (displayName, location, website, bio).
 - **Review** — nota (0.5 a 5, aceita meia estrela) + texto. Única por usuário/série: se avaliar de novo, atualiza a mesma.
-- **WatchListItem** — série salva no "quero assistir".
+- **WatchListItem** — série salva no "quero assistir". Única por usuário/série.
 - **FavoriteSeries** — os favoritos do perfil, com `position` para a ordem escolhida no drag & drop.
 - **List / ListItem** — listas criadas pelo usuário (título + categoria) e as séries dentro delas.
 

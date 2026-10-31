@@ -81,7 +81,7 @@ Ficam em `front/.env`, a partir do modelo em [`front/.env.example`](front/.env.e
 
 ## Como rodar o back
 
-Precisa de Node 18+ e Docker (para o Postgres).
+Precisa de Node 22+ e Docker (para o Postgres).
 
 ```bash
 cd watchdAPI
@@ -111,6 +111,15 @@ npm install
 npm run dev
 ```
 
+## Testes e lint
+
+```bash
+cd watchdAPI && npm test               # node:test + supertest, services mockados (nao conecta no banco)
+cd front && npm run lint && npm test   # ESLint + Vitest
+```
+
+O workflow [`ci.yml`](.github/workflows/ci.yml) roda os dois em todo pull request e push na `main`.
+
 ## Links publicados
 
 | Parte | Onde | URL |
@@ -132,20 +141,19 @@ npm run dev
 O projeto cobre o fluxo principal (contas, listas, reviews, watchlist e favoritos) de ponta a ponta, mas alguns pontos ficaram de fora do escopo desta entrega:
 
 - **Recuperação de senha é só interface**, a tela "Forgot password" existe no front, mas não chama nenhum endpoint, não há envio de email nem rota de reset no back.
-- **`GET /lists/all` não pagina**, devolve todas as listas públicas de uma vez (só limita a 4 pôsteres de prévia por lista). Funciona bem na escala atual, mas cresceria mal com muitos usuários.
 - **CRUD de listas incompleto**, dá para criar, listar e apagar uma lista, e adicionar/remover itens, mas não existe `PUT /lists/:id` para editar título ou categoria de uma lista já criada.
-- **Sem testes automatizados**, nem no front nem no back.
+- **Testes cobrem só o essencial**, a API tem testes de auth, checagem de dono e validações, e o front testa só utilitários (rotas e força da senha), sem testes de componentes.
 - **Rate limiting básico, mas não completo**, login e registro têm limite de tentativas por IP, mas não há bloqueio por conta específica nem CAPTCHA.
 - **Sem autorização por papéis**, todo usuário tem as mesmas permissões, não existe admin ou moderador.
 - **JWT não é revogável no servidor**, o logout limpa o cookie no navegador, mas o token em si continua válido até expirar (7 dias) se tiver sido copiado antes do logout.
-- **O cookie de sessão é "de terceiros" em produção**, porque o front (GitHub Pages) e a API (Railway) ficam em domínios diferentes. Navegadores em janela anônima bloqueiam esse tipo de cookie, então a API também aceita o token pelo header `Authorization`, usado como reserva quando o cookie não chega. Hospedar os dois sob o mesmo domínio eliminaria essa necessidade.
+- **O cookie de sessão é "de terceiros" em produção**, porque o front (GitHub Pages) e a API (Railway) ficam em domínios diferentes. Navegadores em janela anônima bloqueiam esse tipo de cookie, então a API também aceita o token pelo header `Authorization`, usado como reserva quando o cookie não chega. O custo disso é que o front guarda o token no `localStorage`, onde qualquer script injetado na página (XSS) conseguiria lê-lo, o que tira boa parte da proteção do cookie `httpOnly`. Hospedar front e API sob o mesmo domínio (ex.: `app.dominio.com` e `api.dominio.com`) permitiria usar só o cookie e apagar o token do `localStorage`.
 - **Depende diretamente da API pública do TVMaze**, sem cache, se ela cair ou limitar requisições, a busca de séries para de funcionar.
 
 Próximos passos, em ordem de prioridade:
 
-1. Implementar `PUT /lists/:id` para fechar o CRUD de listas.
-2. Adicionar paginação em `GET /lists/all` e nas demais listagens públicas.
-3. Escrever testes automatizados (pelo menos para os controllers e o fluxo de autenticação).
-4. Extrair uma camada de `services` entre os controllers e o Prisma, hoje eles acessam o banco diretamente.
-5. Implementar recuperação de senha de verdade (endpoint + envio de email).
-6. Avaliar refresh tokens ou uma blacklist de JWT para o logout invalidar a sessão também no servidor, não só no cookie do navegador.
+1. Colocar front e API sob o mesmo domínio e usar só o cookie `httpOnly`, tirando o token do `localStorage`.
+2. Implementar `PUT /lists/:id` para fechar o CRUD de listas.
+3. Paginar as listagens privadas (watchlist, reviews e listas do usuário), como já é feito em `GET /lists/all`.
+4. Implementar recuperação de senha de verdade (endpoint + envio de email).
+5. Avaliar refresh tokens ou uma blacklist de JWT para o logout invalidar a sessão também no servidor, não só no cookie do navegador.
+6. Ampliar os testes do front para os componentes principais (login, detalhe da série, perfil).
