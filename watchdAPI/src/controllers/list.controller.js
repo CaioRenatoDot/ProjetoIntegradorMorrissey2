@@ -147,10 +147,30 @@ async function removeItem(req, res) {
     });
 }
 
-async function listAll(req, res) {
-    const lists = await listService.findAllPublic();
+const PUBLIC_LISTS_DEFAULT_LIMIT = 12;
+const PUBLIC_LISTS_MAX_LIMIT = 50;
 
-    const items = lists.map((list) => ({
+function parsePositiveInt(value, fallback) {
+    const parsed = Number.parseInt(value, 10);
+    return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+async function listAll(req, res) {
+    const page = parsePositiveInt(req.query.page, 1);
+    const limit = Math.min(
+        parsePositiveInt(req.query.limit, PUBLIC_LISTS_DEFAULT_LIMIT),
+        PUBLIC_LISTS_MAX_LIMIT
+    );
+
+    // Busca um a mais so para saber se existe proxima pagina.
+    const lists = await listService.findAllPublic({
+        skip: (page - 1) * limit,
+        take: limit + 1
+    });
+
+    const hasMore = lists.length > limit;
+
+    const items = lists.slice(0, limit).map((list) => ({
         id: list.id,
         title: list.title,
         category: list.category,
@@ -161,7 +181,7 @@ async function listAll(req, res) {
         previewPosters: list.items.map((item) => item.posterUrl || "")
     }));
 
-    return res.json({ items });
+    return res.json({ items, page, hasMore });
 }
 
 async function getPublicOne(req, res) {

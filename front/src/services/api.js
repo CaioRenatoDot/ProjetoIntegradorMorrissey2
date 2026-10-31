@@ -430,8 +430,8 @@ export async function removeListItem(token, listId, itemId) {
     return data;
 }
 
-export async function getAllLists(){
-    const response = await fetch(`${API_URL}/lists/all`);
+export async function getAllLists({ page = 1, limit = 12 } = {}){
+    const response = await fetch(`${API_URL}/lists/all?page=${page}&limit=${limit}`);
 
     const data = await response.json();
 

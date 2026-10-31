@@ -37,9 +37,9 @@ async function getPublicProfile(req, res) {
             previewPosters: list.items.map((item) => item.posterUrl || "")
         })),
         stats: {
-            favorites: user.favoriteSeries.length,
-            lists: user.lists.length,
-            watchd: user.reviews.length
+            favorites: user._count.favoriteSeries,
+            lists: user._count.lists,
+            watchd: user._count.reviews
         }
     });
 }
