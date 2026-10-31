@@ -33,6 +33,14 @@ function errorHandler(error, req, res, next) {
         });
     }
 
+    // Conflito entre transacoes concorrentes (ex.: dois favoritos ao mesmo
+    // tempo). Repetir a acao resolve.
+    if (error.code === "P2034") {
+        return res.status(409).json({
+            message: "Conflito ao salvar. Tente novamente."
+        });
+    }
+
     if (error.type === "entity.parse.failed") {
         return res.status(400).json({
             message: "JSON invalido no corpo da requisicao."

@@ -1,5 +1,7 @@
 const favoriteService = require("../services/favorite.service");
 
+const FAVORITES_LIMIT = 4;
+
 async function list(req, res) {
     const items = await favoriteService.findManyByUser(req.user.id);
 
@@ -15,14 +17,6 @@ async function create(req, res) {
         });
     }
 
-    const favoritesCount = await favoriteService.countByUser(req.user.id);
-
-    if (favoritesCount >= 4) {
-        return res.status(400).json({
-            message: "Voce so pode ter 4 series favoritas.",
-        });
-    }
-
     const favoriteAlreadyExists = await favoriteService.findByUserAndMovie(req.user.id, movieId);
 
     if (favoriteAlreadyExists) {
@@ -31,15 +25,20 @@ async function create(req, res) {
         });
     }
 
-    const item = await favoriteService.create({
+    const item = await favoriteService.createWithinLimit({
         userId: req.user.id,
         movieId,
         title,
         posterUrl,
         releaseYear,
         type,
-        position: favoritesCount,
-    });
+    }, FAVORITES_LIMIT);
+
+    if (!item) {
+        return res.status(400).json({
+            message: `Voce so pode ter ${FAVORITES_LIMIT} series favoritas.`,
+        });
+    }
 
     return res.status(201).json({
         message: "Serie adicionada aos favoritos.",
