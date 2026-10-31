@@ -59,6 +59,7 @@ export default function DiaryPage({ currentUserName, isLoggedIn, onBack, onSerie
           setFavoriteMovieIds(new Set(favoritesData.items.map((item) => item.movieId)));
         }
       } catch {
+        // Favoritos so destacam itens do diario; se falhar, o diario segue sem o destaque.
       }
     }
 
