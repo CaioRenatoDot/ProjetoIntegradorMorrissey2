@@ -36,433 +36,214 @@ function authHeaders(extraHeaders) {
     return headers;
 }
 
-export async function login(email, password) {
-    const response = await fetch(`${API_URL}/auth/login`, {
-        credentials: "include",
+// Le o corpo sem quebrar quando a resposta nao e JSON: um 502 do proxy ou a
+// API fora do ar devolvem HTML, e o response.json() direto estourava com um
+// "Unexpected token <" no lugar de uma mensagem util.
+async function readJson(response) {
+    const text = await response.text();
+    if (!text) return {};
+
+    try {
+        return JSON.parse(text);
+    } catch {
+        return {};
+    }
+}
+
+// Centraliza o que toda chamada fazia igual: cookie, header de auth, corpo
+// em JSON e erro com a mensagem do backend (ou a de fallback).
+async function request(path, { method = "GET", body, errorMessage, translate } = {}) {
+    let response;
+
+    try {
+        response = await fetch(`${API_URL}${path}`, {
+            method,
+            credentials: "include",
+            headers: authHeaders(body === undefined ? {} : { "Content-Type": "application/json" }),
+            body: body === undefined ? undefined : JSON.stringify(body),
+        });
+    } catch {
+        throw new Error("Could not reach the server. Check your connection and try again.");
+    }
+
+    const data = await readJson(response);
+
+    if (!response.ok) {
+        const message = translate
+            ? translateAuthMessage(data.message, errorMessage)
+            : data.message || errorMessage;
+        throw new Error(message);
+    }
+
+    return data;
+}
+
+export function login(email, password) {
+    return request("/auth/login", {
         method: "POST",
-        headers: authHeaders({
-            "Content-Type": "application/json",
-        }),
-        body: JSON.stringify({ email, password }),
+        body: { email, password },
+        errorMessage: "Could not sign in.",
+        translate: true,
     });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-        throw new Error(translateAuthMessage(data.message, "Could not sign in."));
-    }
-
-    return data;
-
 }
 
-export async function logout() {
-    const response = await fetch(`${API_URL}/auth/logout`, {
-        credentials: "include",
-        headers: authHeaders(),
+export function logout() {
+    return request("/auth/logout", {
         method: "POST",
+        errorMessage: "Erro ao encerrar a sessao.",
     });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-        throw new Error(data.message || "Erro ao encerrar a sessao.");
-    }
-
-    return data;
 }
 
-export async function register(name, email, password) {
-    const response = await fetch(`${API_URL}/auth/register`, {
-        credentials: "include",
+export function register(name, email, password) {
+    return request("/auth/register", {
         method: "POST",
-        headers: authHeaders({
-            "Content-Type": "application/json",
-        }),
-        body: JSON.stringify({ name, email, password }),
+        body: { name, email, password },
+        errorMessage: "Could not create your account.",
+        translate: true,
     });
-    const data = await response.json();
-
-    if (!response.ok) {
-        throw new Error(translateAuthMessage(data.message, "Could not create your account."));
-    }
-
-    return data;
 }
 
-export async function getMe(token) {
-    const response = await fetch(`${API_URL}/auth/me`, {
-        credentials: "include",
-        headers: authHeaders(),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-        throw new Error(data.message || "Erro ao buscar usuario.")
-    }
-
-    return data;
+export function getMe(token) {
+    return request("/auth/me", { errorMessage: "Erro ao buscar usuario." });
 }
 
-export async function getWatchlist(token) {
-    const response = await fetch(`${API_URL}/watchlist`, {
-        credentials: "include",
-        headers: authHeaders(),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-        throw new Error(data.message || "Erro ao buscar watchlist");
-    }
-    return data;
+export function getWatchlist(token) {
+    return request("/watchlist", { errorMessage: "Erro ao buscar watchlist" });
 }
 
-export async function addToWatchlist(token, item) {
-    const response = await fetch(`${API_URL}/watchlist`, {
-        credentials: "include",
+export function addToWatchlist(token, item) {
+    return request("/watchlist", {
         method: "POST",
-        headers: authHeaders({
-            "Content-Type": "application/json",
-        }),
-        body: JSON.stringify(item),
-
+        body: item,
+        errorMessage: "Erro ao adicionar item na watchlist.",
     });
-    const data = await response.json();
-
-
-
-    if (!response.ok) {
-        throw new Error(data.message || "Erro ao adicionar item na watchlist.")
-    }
-
-    return data;
 }
 
-export async function removeFromWatchlist(token, itemId) {
-    const response = await fetch(`${API_URL}/watchlist/${itemId}`, {
+export function removeFromWatchlist(token, itemId) {
+    return request(`/watchlist/${itemId}`, {
         method: "DELETE",
-        credentials: "include",
-        headers: authHeaders(),
+        errorMessage: "Erro ao remover item da watchlist.",
     });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-        throw new Error(data.message || "Erro ao remover item da watchlist.")
-    }
-
-    return data;
 }
 
-export async function getFavorites(token) {
-    const response = await fetch(`${API_URL}/favorites`, {
-        credentials: "include",
-        headers: authHeaders(),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-        throw new Error(data.message || "Erro ao buscar favoritos.");
-    }
-
-    return data;
+export function getFavorites(token) {
+    return request("/favorites", { errorMessage: "Erro ao buscar favoritos." });
 }
 
-export async function addFavorite(token, item) {
-    const response = await fetch(`${API_URL}/favorites`, {
-        credentials: "include",
+export function addFavorite(token, item) {
+    return request("/favorites", {
         method: "POST",
-        headers: authHeaders({
-            "Content-Type": "application/json",
-        }),
-        body: JSON.stringify(item),
+        body: item,
+        errorMessage: "Erro ao adicionar favorito.",
     });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-        throw new Error(data.message || "Erro ao adicionar favorito.");
-    }
-
-    return data;
 }
 
-export async function removeFavorite(token, favoriteId) {
-    const response = await fetch(`${API_URL}/favorites/${favoriteId}`, {
+export function removeFavorite(token, favoriteId) {
+    return request(`/favorites/${favoriteId}`, {
         method: "DELETE",
-        credentials: "include",
-        headers: authHeaders(),
+        errorMessage: "Erro ao remover favorito.",
     });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-        throw new Error(data.message || "Erro ao remover favorito.");
-    }
-
-    return data;
 }
 
-export async function reorderFavorites(token, ids) {
-    const response = await fetch(`${API_URL}/favorites/reorder`, {
-        credentials: "include",
+export function reorderFavorites(token, ids) {
+    return request("/favorites/reorder", {
         method: "PUT",
-        headers: authHeaders({
-            "Content-Type": "application/json",
-        }),
-        body: JSON.stringify({ ids }),
+        body: { ids },
+        errorMessage: "Erro ao reordenar favoritos.",
     });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-        throw new Error(data.message || "Erro ao reordenar favoritos.");
-    }
-
-    return data;
 }
 
-export async function updateProfile(token, profile){
-    const response = await fetch(`${API_URL}/auth/me`, {
-        credentials: "include",
+export function updateProfile(token, profile) {
+    return request("/auth/me", {
         method: "PUT",
-        headers: authHeaders({
-            "Content-Type" : "application/json",
-        }),
-        body: JSON.stringify(profile),
+        body: profile,
+        errorMessage: "Erro ao atualizar perfil.",
     });
-
-    const data = await response.json();
-
-    if(!response.ok){
-        throw new Error(data.message || "Erro ao atualizar perfil.");
-    }
-
-    return data;
 }
 
-export async function deleteAccount(token, password) {
-    const response = await fetch(`${API_URL}/auth/me`, {
-        credentials: "include",
+export function deleteAccount(token, password) {
+    return request("/auth/me", {
         method: "DELETE",
-        headers: authHeaders({
-            "Content-Type": "application/json",
-        }),
-        body: JSON.stringify({ password }),
+        body: { password },
+        errorMessage: "Erro ao excluir conta.",
     });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-        throw new Error(data.message || "Erro ao excluir conta.");
-    }
-
-    return data;
 }
 
-export async function getReviews(movieId) {
-    // Rota com auth opcional: o cookie, quando existe, destaca a review do
-    // proprio usuario.
-    const response = await fetch(`${API_URL}/reviews/${movieId}`, {
-        credentials: "include",
-        headers: authHeaders(),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-        throw new Error(data.message || "Erro ao buscar reviews.");
-    }
-
-    return data;
+// Rota com auth opcional: o cookie, quando existe, destaca a review do
+// proprio usuario.
+export function getReviews(movieId) {
+    return request(`/reviews/${movieId}`, { errorMessage: "Erro ao buscar reviews." });
 }
 
-export async function getMyReviews(token) {
-    const response = await fetch(`${API_URL}/reviews/mine`, {
-        credentials: "include",
-        headers: authHeaders(),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-        throw new Error(data.message || "Erro ao buscar suas reviews.");
-    }
-
-    return data;
+export function getMyReviews(token) {
+    return request("/reviews/mine", { errorMessage: "Erro ao buscar suas reviews." });
 }
 
-export async function saveReview(token, review) {
-    const response = await fetch(`${API_URL}/reviews`, {
-        credentials: "include",
+export function saveReview(token, review) {
+    return request("/reviews", {
         method: "POST",
-        headers: authHeaders({
-            "Content-Type": "application/json",
-        }),
-        body: JSON.stringify(review),
+        body: review,
+        errorMessage: "Erro ao salvar review.",
     });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-        throw new Error(data.message || "Erro ao salvar review.");
-    }
-
-    return data;
 }
 
-export async function deleteReview(token, reviewId) {
-    const response = await fetch(`${API_URL}/reviews/${reviewId}`, {
+export function deleteReview(token, reviewId) {
+    return request(`/reviews/${reviewId}`, {
         method: "DELETE",
-        credentials: "include",
-        headers: authHeaders(),
+        errorMessage: "Erro ao remover review.",
     });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-        throw new Error(data.message || "Erro ao remover review.");
-    }
-
-    return data;
 }
 
-export async function getMyLists(token) {
-    const response = await fetch(`${API_URL}/lists`, {
-        credentials: "include",
-        headers: authHeaders(),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-        throw new Error(data.message || "Erro ao buscar listas.");
-    }
-
-    return data;
+export function getMyLists(token) {
+    return request("/lists", { errorMessage: "Erro ao buscar listas." });
 }
 
-export async function getList(token, listId) {
-    const response = await fetch(`${API_URL}/lists/${listId}`, {
-        credentials: "include",
-        headers: authHeaders(),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-        throw new Error(data.message || "Erro ao buscar lista.");
-    }
-
-    return data;
+export function getList(token, listId) {
+    return request(`/lists/${listId}`, { errorMessage: "Erro ao buscar lista." });
 }
 
-export async function createList(token, { title, category }) {
-    const response = await fetch(`${API_URL}/lists`, {
-        credentials: "include",
+export function createList(token, { title, category }) {
+    return request("/lists", {
         method: "POST",
-        headers: authHeaders({
-            "Content-Type": "application/json",
-        }),
-        body: JSON.stringify({ title, category }),
+        body: { title, category },
+        errorMessage: "Erro ao criar lista.",
     });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-        throw new Error(data.message || "Erro ao criar lista.");
-    }
-
-    return data;
 }
 
-export async function deleteList(token, listId) {
-    const response = await fetch(`${API_URL}/lists/${listId}`, {
+export function deleteList(token, listId) {
+    return request(`/lists/${listId}`, {
         method: "DELETE",
-        credentials: "include",
-        headers: authHeaders(),
+        errorMessage: "Erro ao remover lista.",
     });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-        throw new Error(data.message || "Erro ao remover lista.");
-    }
-
-    return data;
 }
 
-export async function addListItem(token, listId, item) {
-    const response = await fetch(`${API_URL}/lists/${listId}/items`, {
-        credentials: "include",
+export function addListItem(token, listId, item) {
+    return request(`/lists/${listId}/items`, {
         method: "POST",
-        headers: authHeaders({
-            "Content-Type": "application/json",
-        }),
-        body: JSON.stringify(item),
+        body: item,
+        errorMessage: "Erro ao adicionar item na lista.",
     });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-        throw new Error(data.message || "Erro ao adicionar item na lista.");
-    }
-
-    return data;
 }
 
-export async function removeListItem(token, listId, itemId) {
-    const response = await fetch(`${API_URL}/lists/${listId}/items/${itemId}`, {
+export function removeListItem(token, listId, itemId) {
+    return request(`/lists/${listId}/items/${itemId}`, {
         method: "DELETE",
-        credentials: "include",
-        headers: authHeaders(),
+        errorMessage: "Erro ao remover item da lista.",
     });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-        throw new Error(data.message || "Erro ao remover item da lista.");
-    }
-
-    return data;
 }
 
-export async function getAllLists({ page = 1, limit = 12 } = {}){
-    const response = await fetch(`${API_URL}/lists/all?page=${page}&limit=${limit}`);
-
-    const data = await response.json();
-
-    if(!response.ok){
-        throw new Error(data.message || "Erro ao buscar listas." );
-    }
-
-    return data;
+export function getAllLists({ page = 1, limit = 12 } = {}) {
+    return request(`/lists/all?page=${page}&limit=${limit}`, {
+        errorMessage: "Erro ao buscar listas.",
+    });
 }
 
-export async function getPublicList(listId){
-    const response = await fetch(`${API_URL}/lists/public/${listId}`);
-
-    const data = await response.json();
-
-    if(!response.ok){
-        throw new Error(data.message || "Erro ao buscar lista.");
-
-    }
-
-    return data;
+export function getPublicList(listId) {
+    return request(`/lists/public/${listId}`, { errorMessage: "Erro ao buscar lista." });
 }
 
-export async function getPublicProfile(username) {
-    const response = await fetch(`${API_URL}/users/${username}`);
-
-    const data = await response.json();
-
-    if (!response.ok) {
-        throw new Error(data.message || "Erro ao buscar perfil.");
-    }
-
-    return data;
+export function getPublicProfile(username) {
+    return request(`/users/${encodeURIComponent(username)}`, {
+        errorMessage: "Erro ao buscar perfil.",
+    });
 }
