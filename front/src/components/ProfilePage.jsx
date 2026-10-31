@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from "react";
 import { fallbackPoster } from "../data/constants";
 import {
   getFavorites,
-  getList,
   getMyLists,
   getMyReviews,
   getPublicProfile,
@@ -145,7 +144,15 @@ export default function ProfilePage({
 
       try {
         const data = await getMyLists(token);
-        if (isMounted) setUserLists(data.items || []);
+        if (isMounted) {
+          const items = data.items || [];
+          // GET /lists ja traz os 4 primeiros posteres de cada lista, entao nao
+          // precisa buscar cada lista de novo so para montar a previa.
+          setUserLists(items);
+          setListPreviewImages(
+            Object.fromEntries(items.map((list) => [list.id, list.previewPosters || []]))
+          );
+        }
       } catch (error) {
         if (isMounted) {
           setUserLists([]);
@@ -162,47 +169,6 @@ export default function ProfilePage({
       isMounted = false;
     };
   }, [isLoggedIn]);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    async function fetchListPreviews() {
-      if (isPublicView) return;
-
-      if (!userLists.length) {
-        setListPreviewImages({});
-        return;
-      }
-
-      const token = localStorage.getItem("watchd_token");
-      if (!token) return;
-
-      const previewEntries = await Promise.all(
-        userLists.slice(0, listPreviewLimit).map(async (list) => {
-          try {
-            const data = await getList(token, list.id);
-            const posters = (data.list.items || [])
-              .slice(0, 4)
-              .map((item) => item.posterUrl || "");
-
-            return [list.id, posters];
-          } catch {
-            return [list.id, []];
-          }
-        })
-      );
-
-      if (isMounted) {
-        setListPreviewImages(Object.fromEntries(previewEntries));
-      }
-    }
-
-    fetchListPreviews();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [userLists]);
 
   useEffect(() => {
     if (!isProfileActionsOpen) return undefined;
